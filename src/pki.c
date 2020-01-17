@@ -878,9 +878,10 @@ int ssh_pki_export_privkey_base64(const ssh_key privkey,
 }
 
 /**
- * @brief Import a key from a file.
+ * @brief Import a private key from a file or a PKCS #11 device.
  *
- * @param[in]  filename The filename of the the private key.
+ * @param[in]  filename The filename of the private key or the
+ *                      PKCS #11 URI corresponding to the private key.
  *
  * @param[in]  passphrase The passphrase to decrypt the private key. Set to NULL
  *                        if none is needed or it is unknown.
@@ -1702,9 +1703,10 @@ char *ssh_pki_export_pub_uri_from_priv_uri(const char *priv_uri)
 }
 
 /**
- * @brief Import a public key from the given filename.
+ * @brief Import a public key from a file or a PKCS #11 device.
  *
- * @param[in]  filename The path to the public key.
+ * @param[in]  filename The filename of the public key or the
+ *                      PKCS #11 URI corresponding to the public key.
  *
  * @param[out] pkey     A pointer to store the allocated public key. You need to
  *                      free the memory.
