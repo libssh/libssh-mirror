@@ -1799,7 +1799,7 @@ err:
  * @returns  src_replaced a pointer that points to the replaced string.
  * NULL if allocation fails or if src is NULL.
  */
-char *ssh_strreplace(char *src, const char *pattern, const char *replace)
+char *ssh_strreplace(const char *src, const char *pattern, const char *replace)
 {
     char *p = NULL;
     char *src_replaced = NULL;
