@@ -3119,6 +3119,11 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
     }
     len = ssh_buffer_get_len(stdbuf);
     if (len > 0) {
+        if (len > INT_MAX) {
+            rc = SSH_ERROR;
+        } else {
+            rc = (int)len;
+        }
         goto out;
     }
     if (channel->remote_eof) {
