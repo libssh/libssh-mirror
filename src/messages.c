@@ -692,6 +692,9 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     int rc;
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+    if (crypto == NULL) {
+        return NULL;
+    }
 
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
