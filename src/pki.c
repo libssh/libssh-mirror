@@ -1610,9 +1610,9 @@ bool ssh_pki_is_uri(const char *cmp)
  */
 char *ssh_pki_export_pub_uri_from_priv_uri(const char *priv_uri)
 {
-    char *pub_uri_temp = strdup(priv_uri);
+    char *pub_uri_temp = NULL;
 
-    pub_uri_temp = ssh_strreplace(pub_uri_temp,
+    pub_uri_temp = ssh_strreplace(priv_uri,
                                   "type=private",
                                   "type=public");
 
