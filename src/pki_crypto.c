@@ -1576,9 +1576,9 @@ static int pki_signature_from_rsa_blob(const ssh_key pubkey,
                                        ssh_signature sig)
 {
     uint32_t pad_len = 0;
-    char *blob_orig;
-    char *blob_padded_data;
-    ssh_string sig_blob_padded;
+    char *blob_orig = NULL;
+    char *blob_padded_data = NULL;
+    ssh_string sig_blob_padded = NULL;
 
     size_t rsalen = 0;
     size_t len = ssh_string_len(sig_blob);
@@ -1636,6 +1636,7 @@ static int pki_signature_from_rsa_blob(const ssh_key pubkey,
     return SSH_OK;
 
 errout:
+    SSH_STRING_FREE(sig_blob_padded);
     return SSH_ERROR;
 }
 
