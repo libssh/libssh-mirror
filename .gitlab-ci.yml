@@ -70,8 +70,14 @@ fedora/openssl_1.1.x/x86_64:
 fedora/openssl_1.1.x/x86_64/fips:
   extends: .fedora
   before_script:
-  - echo 1 > /etc/system-fips
+  - echo "# userspace fips" > /etc/system-fips
+    # We do not need the kernel part, but in case we ever do:
+    # mkdir -p /var/tmp/userspace-fips
+    # echo 1 > /var/tmp/userspace-fips/fips_enabled
+    # mount --bind /var/tmp/userspace-fips/fips_enabled /proc/sys/crypto/fips_enabled
+  - update-crypto-policies --show
   - update-crypto-policies --set FIPS
+  - update-crypto-policies --show
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
