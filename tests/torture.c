@@ -825,20 +825,15 @@ static int torture_wait_for_daemon(unsigned int seconds)
     return 1;
 }
 
-void torture_setup_sshd_server(void **state, bool pam)
+static int torture_start_sshd_server(void **state)
 {
-    struct torture_state *s;
+    struct torture_state *s = *state;
     char sshd_start_cmd[1024];
     int rc;
-
-    torture_setup_socket_dir(state);
-    torture_setup_create_sshd_config(state, pam);
 
     /* Set the default interface for the server */
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "10", 1);
     setenv("PAM_WRAPPER", "1", 1);
-
-    s = *state;
 
     snprintf(sshd_start_cmd, sizeof(sshd_start_cmd),
              SSHD_EXECUTABLE " -r -f %s -E %s/sshd/daemon.log 2> %s/sshd/cwrap.log",
@@ -851,7 +846,20 @@ void torture_setup_sshd_server(void **state, bool pam)
     unsetenv("PAM_WRAPPER");
 
     /* Wait until the sshd is ready to accept connections */
-    rc = torture_wait_for_daemon(5);
+    rc = torture_wait_for_daemon(15);
+    assert_int_equal(rc, 0);
+
+    return SSH_OK;
+}
+
+void torture_setup_sshd_server(void **state, bool pam)
+{
+    int rc;
+
+    torture_setup_socket_dir(state);
+    torture_setup_create_sshd_config(state, pam);
+
+    rc = torture_start_sshd_server(state);
     assert_int_equal(rc, 0);
 }
 
@@ -908,29 +916,14 @@ static int
 torture_reload_sshd_server(void **state)
 {
     struct torture_state *s = *state;
-    pid_t pid;
     int rc;
 
-    /* read the pidfile */
-    pid = torture_read_pidfile(s->srv_pidfile);
-    assert_int_not_equal(pid, -1);
-
-    kill(pid, SIGHUP);
-
-    /* 10 ms */
-    usleep(10 * 1000);
-
-    rc = kill(pid, 0);
+    rc = torture_terminate_process(s->srv_pidfile);
     if (rc != 0) {
-        fprintf(stderr,
-                "ERROR: SSHD process %u died during reload!\n", pid);
-        return SSH_ERROR;
+        fprintf(stderr, "XXXXXX Failed to terminate sshd\n");
     }
 
-    /* Wait until the sshd is ready to accept connections */
-    rc = torture_wait_for_daemon(10);
-    assert_int_equal(rc, 0);
-    return SSH_OK;
+    return torture_start_sshd_server(state);
 }
 
 /* @brief: Updates SSHD server configuration with more options and
