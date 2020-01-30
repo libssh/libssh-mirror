@@ -194,7 +194,8 @@ static int agent_teardown(void **state)
     assert_non_null(ssh_agent_pidfile);
 
     /* kill agent pid */
-    torture_terminate_process(ssh_agent_pidfile);
+    rc = torture_terminate_process(ssh_agent_pidfile);
+    assert_return_code(rc, errno);
 
     unlink(ssh_agent_pidfile);
 

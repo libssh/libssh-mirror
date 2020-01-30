@@ -246,8 +246,12 @@ int torture_terminate_process(const char *pidfile)
 
         rc = kill(pid, 0);
         if (rc != 0) {
-            is_running = 0;
-            break;
+            /* Process not found */
+            if (errno == ESRCH) {
+                is_running = 0;
+                rc = 0;
+                break;
+            }
         }
     }
 
@@ -256,7 +260,7 @@ int torture_terminate_process(const char *pidfile)
                 "WARNING: The process with pid %u is still running!\n", pid);
     }
 
-    return 0;
+    return rc;
 }
 
 ssh_session torture_ssh_session(struct torture_state *s,
@@ -923,9 +927,7 @@ torture_reload_sshd_server(void **state)
     int rc;
 
     rc = torture_terminate_process(s->srv_pidfile);
-    if (rc != 0) {
-        fprintf(stderr, "XXXXXX Failed to terminate sshd\n");
-    }
+    assert_return_code(rc, errno);
 
     return torture_start_sshd_server(state);
 }
@@ -963,9 +965,7 @@ void torture_teardown_sshd_server(void **state)
     int rc;
 
     rc = torture_terminate_process(s->srv_pidfile);
-    if (rc != 0) {
-        fprintf(stderr, "XXXXXX Failed to terminate sshd\n");
-    }
+    assert_return_code(rc, errno);
 
     torture_teardown_socket_dir(state);
 }
