@@ -475,6 +475,10 @@ void torture_sftp_close(struct torture_sftp *t) {
         sftp_free(t->sftp);
     }
 
+    if (t->testdir) {
+        torture_rmdirs(t->testdir);
+    }
+
     free(t->testdir);
     free(t);
 }
