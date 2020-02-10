@@ -64,7 +64,7 @@ static int pki_key_ecdsa_to_nid(mbedtls_ecdsa_context *ecdsa)
 
 static enum ssh_keytypes_e pki_key_ecdsa_to_key_type(mbedtls_ecdsa_context *ecdsa)
 {
-    static int nid;
+    int nid;
 
     nid = pki_key_ecdsa_to_nid(ecdsa);
 
