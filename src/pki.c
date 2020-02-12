@@ -2468,10 +2468,16 @@ int ssh_pki_signature_verify(ssh_session session,
             return SSH_ERROR;
         }
 
-        ssh_buffer_pack(sk_buffer, "PbdP",
-                        SHA256_DIGEST_LEN, application_hash,
-                        sig->sk_flags, sig->sk_counter,
-                        SHA256_DIGEST_LEN, input_hash);
+        rc = ssh_buffer_pack(sk_buffer, "PbdP",
+                             SHA256_DIGEST_LEN, application_hash,
+                             sig->sk_flags, sig->sk_counter,
+                             SHA256_DIGEST_LEN, input_hash);
+        if (rc != SSH_OK) {
+            SSH_BUFFER_FREE(sk_buffer);
+            explicit_bzero(input_hash, SHA256_DIGEST_LEN);
+            explicit_bzero(application_hash, SHA256_DIGEST_LEN);
+            return SSH_ERROR;
+        }
 
         rc = pki_verify_data_signature(sig, key, ssh_buffer_get(sk_buffer),
                                        ssh_buffer_get_len(sk_buffer));
