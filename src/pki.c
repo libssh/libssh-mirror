@@ -2482,7 +2482,7 @@ int ssh_pki_signature_verify(ssh_session session,
         rc = pki_verify_data_signature(sig, key, ssh_buffer_get(sk_buffer),
                                        ssh_buffer_get_len(sk_buffer));
 
-        ssh_buffer_free(sk_buffer);
+        SSH_BUFFER_FREE(sk_buffer);
         explicit_bzero(input_hash, SHA256_DIGEST_LEN);
         explicit_bzero(application_hash, SHA256_DIGEST_LEN);
 
