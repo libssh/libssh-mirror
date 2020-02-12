@@ -2446,7 +2446,8 @@ int ssh_pki_signature_verify(ssh_session session,
         unsigned char application_hash[SHA256_DIGEST_LEN] = {0};
         unsigned char input_hash[SHA256_DIGEST_LEN] = {0};
 
-        if ((ctx = sha256_init())== NULL) {
+        ctx = sha256_init();
+        if (ctx == NULL) {
             SSH_LOG(SSH_LOG_WARN,
                     "Can not create SHA256CTX for application hash");
            return SSH_ERROR;
@@ -2455,7 +2456,8 @@ int ssh_pki_signature_verify(ssh_session session,
                ssh_string_len(key->sk_application));
         sha256_final(application_hash, ctx);
 
-        if ((ctx = sha256_init())== NULL) {
+        ctx = sha256_init();
+        if (ctx == NULL) {
             SSH_LOG(SSH_LOG_WARN,
                     "Can not create SHA256CTX for input hash");
            return SSH_ERROR;
