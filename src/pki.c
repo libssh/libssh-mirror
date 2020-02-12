@@ -2293,6 +2293,7 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
         rc = ssh_buffer_unpack(buf, "bd", &flags, &counter);
         if (rc < 0) {
             SSH_BUFFER_FREE(buf);
+            SSH_STRING_FREE(blob);
             return SSH_ERROR;
         }
     }
