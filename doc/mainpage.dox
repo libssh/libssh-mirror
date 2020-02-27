@@ -211,6 +211,8 @@ It was later modified and expanded by the following RFCs.
     (only the "server-sig-algs" extension implemented)
  - <a href="https://tools.ietf.org/html/rfc8332" target="_blank">RFC 8332</a>,
     Use of RSA Keys with SHA-256 and SHA-512 in the Secure Shell (SSH) Protocol
+ - <a href="https://tools.ietf.org/html/rfc8709" target="_blank">RFC 8709</a>,
+    Ed25519 and Ed448 Public Key Algorithms for the Secure Shell (SSH) Protocol
 
 There are also drafts that are being currently developed and followed.
 
