@@ -986,11 +986,15 @@ void torture_setup_libssh_server(void **state, const char *server_path)
                            s->srv_additional_config);
         if (printed < 0) {
             fail_msg("Failed to print additional config!");
+            /* Unreachable */
+            __builtin_unreachable();
         }
     } else {
         printed = snprintf(extra_options, sizeof(extra_options), " ");
         if (printed < 0) {
             fail_msg("Failed to print empty additional config!");
+            /* Unreachable */
+            __builtin_unreachable();
         }
     }
 
@@ -1009,6 +1013,8 @@ void torture_setup_libssh_server(void **state, const char *server_path)
                        s->socket_dir, ld_preload, force_fips);
     if (printed < 0) {
         fail_msg("Failed to print env!");
+        /* Unreachable */
+        __builtin_unreachable();
     }
 
 #ifdef WITH_TIMEOUT
@@ -1027,6 +1033,8 @@ void torture_setup_libssh_server(void **state, const char *server_path)
                        s->srv_config, extra_options, TORTURE_SSH_SERVER);
     if (printed < 0) {
         fail_msg("Failed to print start command!");
+        /* Unreachable */
+        __builtin_unreachable();
     }
 
     pid = fork();
@@ -1035,23 +1043,31 @@ void torture_setup_libssh_server(void **state, const char *server_path)
         env_tokens = ssh_tokenize(env, ' ');
         if (env_tokens == NULL || env_tokens->tokens == NULL) {
             fail_msg("Failed to tokenize env!");
+            /* Unreachable */
+            __builtin_unreachable();
         }
 
         arg_tokens = ssh_tokenize(start_cmd, ' ');
         if (arg_tokens == NULL || arg_tokens->tokens == NULL) {
             ssh_tokens_free(env_tokens);
             fail_msg("Failed to tokenize args!");
+            /* Unreachable */
+            __builtin_unreachable();
         }
 
-        rc = execve(arg_tokens->tokens[0], (char **)arg_tokens->tokens,
-                    (char **)env_tokens->tokens);
+        execve(arg_tokens->tokens[0], (char **)arg_tokens->tokens,
+               (char **)env_tokens->tokens);
 
         /* execve returns only in case of error */
         ssh_tokens_free(env_tokens);
         ssh_tokens_free(arg_tokens);
         fail_msg("Error in execve: %s", strerror(errno));
+        /* Unreachable */
+        __builtin_unreachable();
     case -1:
         fail_msg("Failed to fork!");
+        /* Unreachable */
+        __builtin_unreachable();
     default:
         /* The parent continues the execution of the tests */
         setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
