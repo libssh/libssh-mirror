@@ -637,7 +637,13 @@ LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);
 LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
 
 /**
- * @brief SSH authentication callback.
+ * @addtogroup libssh_auth
+ *
+ * @{
+ */
+
+/**
+ * @brief SSH authentication callback for password and publickey auth.
  *
  * @param prompt        Prompt to be displayed.
  * @param buf           Buffer to save the password. You should null-terminate it.
@@ -651,6 +657,8 @@ LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
  */
 typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata);
+
+/** @} */
 
 LIBSSH_API ssh_key ssh_key_new(void);
 #define SSH_KEY_FREE(x) \
