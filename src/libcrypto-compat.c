@@ -282,7 +282,8 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 
 int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
 {
-	EVP_CIPHER_CTX_init(ctx);
+    EVP_CIPHER_CTX_init(ctx);
+    return 1;
 }
 
 HMAC_CTX *HMAC_CTX_new(void)
