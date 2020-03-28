@@ -7,6 +7,11 @@ variables:
   MINGW_BUILD: buildenv-mingw
 
 .build:
+  variables:
+      CMAKE_DEFAULT_OPTIONS: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DPICKY_DEVELOPER=ON"
+      CMAKE_BUILD_OPTIONS: "-DWITH_BLOWFISH_CIPHER=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON"
+      CMAKE_TEST_OPTIONS: "-DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON"
+      CMAKE_OPTIONS: $CMAKE_DEFAULT_OPTIONS $CMAKE_BUILD_OPTIONS $CMAKE_TEST_OPTIONS
   before_script:
     - uname -a
     - cat /etc/os-release
@@ -16,7 +21,9 @@ variables:
     - free -h
     - mkdir -p obj && cd obj
   script:
-    - make -j$(nproc)
+    - cmake $CMAKE_OPTIONS $CMAKE_ADDTIONAL_OPTIONS .. &&
+      make -j$(nproc) &&
+      make -j$(nproc) install
   # Do not use after_script as it does not make the targets fail
   tags:
     - shared
@@ -31,12 +38,16 @@ variables:
 .tests:
   extends: .build
   script:
-  - make -j$(nproc) && ctest --output-on-failure
+    - cmake $CMAKE_OPTIONS $CMAKE_ADDTIONAL_OPTIONS .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
   # Do not use after_script as it does not make the targets fail
 
 .fedora:
   extends: .tests
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  variables:
+      CMAKE_ADDTIONAL_OPTIONS: -DWITH_PKCS11_URI=ON
 
 .tumbleweed:
   extends: .tests
@@ -51,13 +62,10 @@ variables:
 centos7/openssl_1.0.x/x86_64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
   extends: .tests
-  before_script:
-  - mkdir -p obj && cd obj && cmake3
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON ..
-
+  script:
+    - cmake3 $CMAKE_OPTIONS .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 
 ###############################################################################
@@ -75,19 +83,6 @@ fedora/docs:
 
 fedora/openssl_1.1.x/x86_64:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_INSTALL_PREFIX=/tmp/local
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_BLOWFISH_CIPHER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DWITH_DEBUG_CRYPTO=ON
-    -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
-    -DWITH_PKCS11_URI=ON ..
-  script:
-  - make -j$(nproc) && ctest --output-on-failure && make install
 
 fedora/openssl_1.1.x/x86_64/fips:
   extends: .fedora
@@ -108,98 +103,114 @@ fedora/openssl_1.1.x/x86_64/fips:
     -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
   script:
-  - make -j$(nproc) && OPENSSL_FORCE_FIPS_MODE=1 ctest --output-on-failure
+    - cmake $CMAKE_OPTIONS .. &&
+      make -j$(nproc) &&
+      OPENSSL_FORCE_FIPS_MODE=1 ctest --output-on-failure
 
 fedora/openssl_1.1.x/x86_64/minimal:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=OFF -DWITH_SERVER=OFF -DWITH_ZLIB=OFF -DWITH_PCAP=OFF
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DWITH_GEX=OFF ..
+  variables:
+  script:
+    - cmake $CMAKE_DEFAULT_OPTIONS
+      -DWITH_SFTP=OFF
+      -DWITH_SERVER=OFF
+      -DWITH_ZLIB=OFF
+      -DWITH_PCAP=OFF
+      -DUNIT_TESTING=ON
+      -DCLIENT_TESTING=ON
+      -DWITH_GEX=OFF .. &&
+      make -j$(nproc)
 
 # Address sanitizer doesn't mix well with LD_PRELOAD used in the testsuite
 # so, this is only enabled for unit tests right now.
 # TODO: add -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
 fedora/address-sanitizer:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=AddressSanitizer
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DFUZZ_TESTING=ON ..
+  script:
+    - cmake
+      -DCMAKE_BUILD_TYPE=AddressSanitizer
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++
+      -DPICKY_DEVELOPER=ON
+      $CMAKE_BUILD_OPTIONS
+      -DUNIT_TESTING=ON
+      -DFUZZ_TESTING=ON .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 # This is disabled as it report OpenSSL issues
 # It also has ethe same issues with cwrap as AddressSanitizer
 .fedora/memory-sanitizer:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=MemorySanitizer
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON ..
+  script:
+    - cmake
+      -DCMAKE_BUILD_TYPE=MemorySanitizer
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++
+      -DPICKY_DEVELOPER=ON
+      $CMAKE_BUILD_OPTIONS
+      -DUNIT_TESTING=ON
+      -DFUZZ_TESTING=ON .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 fedora/undefined-sanitizer:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=UndefinedSanitizer
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
+  script:
+    - cmake
+      -DCMAKE_BUILD_TYPE=UndefinedSanitizer
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++
+      -DPICKY_DEVELOPER=ON
+      $CMAKE_BUILD_OPTIONS
+      -DUNIT_TESTING=ON
+      -DFUZZ_TESTING=ON .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 fedora/libgcrypt/x86_64:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
-    -DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON ..
+  variables:
+      CMAKE_ADDTIONAL_OPTIONS: "-DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON"
 
 fedora/mbedtls/x86_64:
   extends: .fedora
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
-    -DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON ..
+  variables:
+      CMAKE_ADDTIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON"
 
 # Unit testing only, no client and pkd testing, because cwrap is not available
 # for MinGW
 fedora/mingw64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   extends: .tests
-  before_script:
-  - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin
-  - export WINEDEBUG=-all
-  - mkdir obj && cd obj && mingw64-cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON ..
+  script:
+    - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin
+    - export WINEDEBUG=-all
+    - mingw64-cmake $CMAKE_DEFAULT_OPTIONS
+      -DWITH_SFTP=ON
+      -DWITH_SERVER=ON
+      -DWITH_ZLIB=ON
+      -DWITH_PCAP=ON
+      -DUNIT_TESTING=ON .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 # Unit testing only, no client and pkd testing, because cwrap is not available
 # for MinGW
 fedora/mingw32:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   extends: .tests
-  before_script:
-  - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin
-  - export WINEDEBUG=-all
-  - mkdir obj && cd obj && mingw32-cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON ..
+  script:
+    - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin
+    - export WINEDEBUG=-all
+    - mingw32-cmake $CMAKE_DEFAULT_OPTIONS
+      -DWITH_SFTP=ON
+      -DWITH_SERVER=ON
+      -DWITH_ZLIB=ON
+      -DWITH_PCAP=ON
+      -DUNIT_TESTING=ON .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 
 
@@ -270,16 +281,6 @@ fedora/csbuild/mbedtls:
 ubuntu/openssl_1.1.x/x86_64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$UBUNTU_BUILD
   extends: .tests
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_INSTALL_PREFIX=/tmp/local
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_BLOWFISH_CIPHER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DWITH_DEBUG_CRYPTO=ON
-    -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
 
 
 
@@ -288,82 +289,57 @@ ubuntu/openssl_1.1.x/x86_64:
 ###############################################################################
 tumbleweed/openssl_1.1.x/x86_64/gcc:
   extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
-    -DUNIT_TESTING=ON -DSERVER_TESTING=ON ..
+  variables:
+      CMAKE_ADDTIONAL_OPTIONS: "-DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/openssl_1.1.x/x86/gcc:
   extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON ..
+  script:
+    - cmake
+      -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
+      $CMAKE_DEFAULT_OPTIONS
+      -DWITH_SFTP=ON
+      -DWITH_SERVER=ON
+      -DWITH_ZLIB=ON
+      -DWITH_PCAP=ON
+      -DUNIT_TESTING=ON ..
 
 tumbleweed/openssl_1.1.x/x86_64/gcc7:
   extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
+  variables:
+      CMAKE_ADDTIONAL_OPTIONS: "-DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/openssl_1.1.x/x86/gcc7:
   extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
-    -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON ..
+  script:
+    - cmake
+      -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
+      -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
+      $CMAKE_DEFAULT_OPTIONS
+      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+      -DUNIT_TESTING=ON .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
 
 tumbleweed/openssl_1.1.x/x86_64/clang:
   extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
-
-tumbleweed/undefined-sanitizer:
-  extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=UndefinedSanitizer
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DSERVER_TESTING=ON ..
+  variables:
+      CMAKE_ADDTIONAL_OPTIONS: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/static-analysis:
+  extends: .tests
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
-  - export CCC_CC=clang
-  - export CCC_CXX=clang++
-  - mkdir -p obj && cd obj && scan-build cmake
-    -DCMAKE_BUILD_TYPE=Debug
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DSERVER_TESTING=ON .. &&
-    scan-build --status-bugs -o scan make -j$(nproc)
-  tags:
-  - shared
-  except:
-  - tags
+    - export CCC_CC=clang
+    - export CCC_CXX=clang++
+    - scan-build cmake
+      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++
+      -DPICKY_DEVELOPER=ON
+      $CMAKE_BUILD_OPTIONS
+      $CMAKE_TEST_OPTIONS .. &&
+      scan-build --status-bugs -o scan make -j$(nproc)
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -387,7 +363,14 @@ freebsd/x86_64:
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON ..
   script:
-  - make && ctest --output-on-failure
+    - cmake $CMAKE_DEFAULT_OPTIONS
+      -DWITH_SFTP=ON
+      -DWITH_SERVER=ON
+      -DWITH_ZLIB=ON
+      -DWITH_PCAP=ON
+      -DUNIT_TESTING=ON .. &&
+      make &&
+      ctest --output-on-failure
   tags:
   - freebsd
   only:
