@@ -63,6 +63,16 @@ centos7/openssl_1.0.x/x86_64:
 ###############################################################################
 #                               Fedora builds                                 #
 ###############################################################################
+fedora/build:
+  extends: .build
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+
+fedora/docs:
+  extends: .build
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  script:
+    - cmake .. && make docs
+
 fedora/openssl_1.1.x/x86_64:
   extends: .fedora
   before_script:
