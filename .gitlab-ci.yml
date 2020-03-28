@@ -339,13 +339,6 @@ tumbleweed/openssl_1.1.x/x86_64/clang:
     -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
 
-tumbleweed/docs:
-  extends: .tumbleweed
-  before_script:
-  - mkdir -p obj && cd obj && cmake ..
-  script:
-  - make docs
-
 tumbleweed/undefined-sanitizer:
   extends: .tumbleweed
   before_script:
