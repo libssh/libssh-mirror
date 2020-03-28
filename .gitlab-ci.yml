@@ -6,7 +6,13 @@ variables:
   TUMBLEWEED_BUILD: buildenv-tumbleweed
   MINGW_BUILD: buildenv-mingw
 
+stages:
+  - build
+  - test
+  - analysis
+
 .build:
+  stage: build
   variables:
       CMAKE_DEFAULT_OPTIONS: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DPICKY_DEVELOPER=ON"
       CMAKE_BUILD_OPTIONS: "-DWITH_BLOWFISH_CIPHER=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON"
@@ -37,6 +43,7 @@ variables:
 
 .tests:
   extends: .build
+  stage: test
   script:
     - cmake $CMAKE_OPTIONS $CMAKE_ADDTIONAL_OPTIONS .. &&
       make -j$(nproc) &&
@@ -126,6 +133,7 @@ fedora/openssl_1.1.x/x86_64/minimal:
 # TODO: add -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
 fedora/address-sanitizer:
   extends: .fedora
+  stage: analysis
   script:
     - cmake
       -DCMAKE_BUILD_TYPE=AddressSanitizer
@@ -142,6 +150,7 @@ fedora/address-sanitizer:
 # It also has ethe same issues with cwrap as AddressSanitizer
 .fedora/memory-sanitizer:
   extends: .fedora
+  stage: analysis
   script:
     - cmake
       -DCMAKE_BUILD_TYPE=MemorySanitizer
@@ -156,6 +165,7 @@ fedora/address-sanitizer:
 
 fedora/undefined-sanitizer:
   extends: .fedora
+  stage: analysis
   script:
     - cmake
       -DCMAKE_BUILD_TYPE=UndefinedSanitizer
@@ -218,6 +228,7 @@ fedora/mingw32:
 #                               Fedora csbuild                                #
 ###############################################################################
 .csbuild:
+  stage: analysis
   variables:
       GIT_DEPTH: "100"
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
@@ -328,6 +339,7 @@ tumbleweed/openssl_1.1.x/x86_64/clang:
 
 tumbleweed/static-analysis:
   extends: .tests
+  stage: analysis
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
     - export CCC_CC=clang
