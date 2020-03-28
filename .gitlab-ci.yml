@@ -6,21 +6,33 @@ variables:
   TUMBLEWEED_BUILD: buildenv-tumbleweed
   MINGW_BUILD: buildenv-mingw
 
-.tests:
+.build:
   before_script:
-  - mkdir -p obj && cd obj
+    - uname -a
+    - cat /etc/os-release
+    - mount
+    - df -h
+    - cat /proc/swaps
+    - free -h
+    - mkdir -p obj && cd obj
   script:
-  - make -j$(nproc) && ctest --output-on-failure
+    - make -j$(nproc)
   # Do not use after_script as it does not make the targets fail
   tags:
-  - shared
+    - shared
   except:
-  - tags
+    - tags
   artifacts:
     expire_in: 1 week
     when: on_failure
     paths:
       - obj/
+
+.tests:
+  extends: .build
+  script:
+  - make -j$(nproc) && ctest --output-on-failure
+  # Do not use after_script as it does not make the targets fail
 
 .fedora:
   extends: .tests
