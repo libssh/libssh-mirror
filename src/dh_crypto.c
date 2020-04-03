@@ -179,6 +179,7 @@ int ssh_dh_init_common(struct ssh_crypto_struct *crypto)
         rc = ssh_dh_set_parameters(ctx, ssh_dh_group1, ssh_dh_generator);
         break;
     case SSH_KEX_DH_GROUP14_SHA1:
+    case SSH_KEX_DH_GROUP14_SHA256:
         rc = ssh_dh_set_parameters(ctx, ssh_dh_group14, ssh_dh_generator);
         break;
     case SSH_KEX_DH_GROUP16_SHA512:

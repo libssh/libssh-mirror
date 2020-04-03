@@ -154,6 +154,7 @@
     ECDH \
     "diffie-hellman-group18-sha512,diffie-hellman-group16-sha512," \
     GEX_SHA256 \
+    "diffie-hellman-group14-sha256," \
     "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define KEY_EXCHANGE_SUPPORTED \
     GEX_SHA1 \
@@ -183,6 +184,7 @@
                          "ecdh-sha2-nistp384,"\
                          "ecdh-sha2-nistp521,"\
                          "diffie-hellman-group-exchange-sha256,"\
+                         "diffie-hellman-group14-sha256,"\
                          "diffie-hellman-group16-sha512,"\
                          "diffie-hellman-group18-sha512"
 
@@ -764,6 +766,8 @@ int ssh_kex_select_methods (ssh_session session){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP1_SHA1;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group14-sha1") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP14_SHA1;
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group14-sha256") == 0){
+      session->next_crypto->kex_type=SSH_KEX_DH_GROUP14_SHA256;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group16-sha512") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP16_SHA512;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group18-sha512") == 0){
@@ -1026,6 +1030,7 @@ int ssh_make_sessionid(ssh_session session)
     switch(session->next_crypto->kex_type) {
     case SSH_KEX_DH_GROUP1_SHA1:
     case SSH_KEX_DH_GROUP14_SHA1:
+    case SSH_KEX_DH_GROUP14_SHA256:
     case SSH_KEX_DH_GROUP16_SHA512:
     case SSH_KEX_DH_GROUP18_SHA512:
         rc = ssh_dh_keypair_get_keys(session->next_crypto->dh_ctx,
@@ -1137,6 +1142,7 @@ int ssh_make_sessionid(ssh_session session)
         sha1(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
                                    session->next_crypto->secret_hash);
         break;
+    case SSH_KEX_DH_GROUP14_SHA256:
     case SSH_KEX_ECDH_SHA2_NISTP256:
     case SSH_KEX_CURVE25519_SHA256:
     case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:

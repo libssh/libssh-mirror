@@ -691,6 +691,16 @@ static void torture_algorithms_dh_group14(void **state) {
     test_algorithm(s->ssh.session, "diffie-hellman-group14-sha1", NULL/*cipher*/, NULL/*hmac*/);
 }
 
+static void torture_algorithms_dh_group14_sha256(void **state) {
+    struct torture_state *s = *state;
+
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
+    test_algorithm(s->ssh.session, "diffie-hellman-group14-sha256", NULL/*cipher*/, NULL/*hmac*/);
+}
+
 static void torture_algorithms_dh_group16(void **state) {
     struct torture_state *s = *state;
 
@@ -899,6 +909,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_algorithms_dh_group14,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_dh_group14_sha256,
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_algorithms_dh_group16,

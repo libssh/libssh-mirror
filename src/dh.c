@@ -482,6 +482,7 @@ int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet)
     switch (crypto->kex_type){
     case SSH_KEX_DH_GROUP1_SHA1:
     case SSH_KEX_DH_GROUP14_SHA1:
+    case SSH_KEX_DH_GROUP14_SHA256:
     case SSH_KEX_DH_GROUP16_SHA512:
     case SSH_KEX_DH_GROUP18_SHA512:
         packet_type = SSH2_MSG_KEXDH_REPLY;

@@ -80,6 +80,8 @@ enum ssh_key_exchange_e {
   SSH_KEX_DH_GROUP16_SHA512,
   /* diffie-hellman-group18-sha512 */
   SSH_KEX_DH_GROUP18_SHA512,
+  /* diffie-hellman-group14-sha256 */
+  SSH_KEX_DH_GROUP14_SHA256,
 };
 
 enum ssh_cipher_e {

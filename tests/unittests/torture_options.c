@@ -110,18 +110,21 @@ static void torture_options_set_key_exchange(void **state)
                          "curve25519-sha256,curve25519-sha256@libssh.org,"
                          "ecdh-sha2-nistp256,diffie-hellman-group16-sha512,"
                          "diffie-hellman-group18-sha512,"
+                         "diffie-hellman-group14-sha256,"
                          "diffie-hellman-group14-sha1");
     assert_true(rc == 0);
     assert_non_null(session->opts.wanted_methods[SSH_KEX]);
     if (ssh_fips_mode()) {
         assert_string_equal(session->opts.wanted_methods[SSH_KEX],
                             "ecdh-sha2-nistp256,diffie-hellman-group16-sha512,"
-                            "diffie-hellman-group18-sha512");
+                            "diffie-hellman-group18-sha512,"
+                            "diffie-hellman-group14-sha256");
     } else {
         assert_string_equal(session->opts.wanted_methods[SSH_KEX],
                             "curve25519-sha256,curve25519-sha256@libssh.org,"
                             "ecdh-sha2-nistp256,diffie-hellman-group16-sha512,"
                             "diffie-hellman-group18-sha512,"
+                            "diffie-hellman-group14-sha256,"
                             "diffie-hellman-group14-sha1");
     }
 
@@ -1387,18 +1390,21 @@ static void torture_bind_options_set_key_exchange(void **state)
                               "curve25519-sha256,curve25519-sha256@libssh.org,"
                               "ecdh-sha2-nistp256,diffie-hellman-group16-sha512,"
                               "diffie-hellman-group18-sha512,"
+                              "diffie-hellman-group14-sha256,"
                               "diffie-hellman-group14-sha1");
     assert_int_equal(rc, 0);
     assert_non_null(bind->wanted_methods[SSH_KEX]);
     if (ssh_fips_mode()) {
         assert_string_equal(bind->wanted_methods[SSH_KEX],
                             "ecdh-sha2-nistp256,diffie-hellman-group16-sha512,"
-                            "diffie-hellman-group18-sha512");
+                            "diffie-hellman-group18-sha512,"
+                            "diffie-hellman-group14-sha256");
     } else {
         assert_string_equal(bind->wanted_methods[SSH_KEX],
                             "curve25519-sha256,curve25519-sha256@libssh.org,"
                             "ecdh-sha2-nistp256,diffie-hellman-group16-sha512,"
                             "diffie-hellman-group18-sha512,"
+                            "diffie-hellman-group14-sha256,"
                             "diffie-hellman-group14-sha1");
     }
 
