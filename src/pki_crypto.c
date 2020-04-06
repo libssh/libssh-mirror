@@ -2578,7 +2578,7 @@ int pki_uri_import(const char *uri_name,
     SSH_LOG(SSH_LOG_INFO, "Engine init success");
 
     switch (key_type) {
-    case SSH_KEY_CMP_PRIVATE:
+    case SSH_KEY_PRIVATE:
         pkey = ENGINE_load_private_key(engine, uri_name, NULL, NULL);
         if (pkey == NULL) {
             SSH_LOG(SSH_LOG_WARN,
@@ -2587,7 +2587,7 @@ int pki_uri_import(const char *uri_name,
             goto fail;
         }
         break;
-    case SSH_KEY_CMP_PUBLIC:
+    case SSH_KEY_PUBLIC:
         pkey = ENGINE_load_public_key(engine, uri_name, NULL, NULL);
         if (pkey == NULL) {
             SSH_LOG(SSH_LOG_WARN,
