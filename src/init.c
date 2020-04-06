@@ -261,4 +261,23 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,
 
 #endif /* _WIN32 */
 
+/**
+ * @internal
+ * @brief Return whether the library is initialized
+ *
+ * @returns true if the library is initialized; false otherwise.
+ *
+ * @see ssh_init()
+ */
+bool is_ssh_initialized() {
+
+    bool is_initialized = false;
+
+    ssh_mutex_lock(&ssh_init_mutex);
+    is_initialized = _ssh_initialized > 0;
+    ssh_mutex_unlock(&ssh_init_mutex);
+
+    return is_initialized;
+}
+
 /** @} */
