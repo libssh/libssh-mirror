@@ -509,6 +509,13 @@ int ssh_connect(ssh_session session)
 {
     int ret;
 
+    if (!is_ssh_initialized()) {
+        ssh_set_error(session, SSH_FATAL,
+                      "Library not initialized.");
+
+        return SSH_ERROR;
+    }
+
     if (session == NULL) {
         return SSH_ERROR;
     }
