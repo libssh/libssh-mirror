@@ -121,6 +121,8 @@ static int setup_config_files(void **state)
                         "GSSAPIKexAlgorithms yes\n"
                         "ControlMaster auto\n" /* SOC_NA */
                         "VisualHostkey yes\n" /* SOC_UNSUPPORTED */
+                        "HostName =equal.sign\n" /* valid */
+                        "ProxyJump = many-spaces.com\n" /* valid */
                         "");
 
     /* Match keyword */
@@ -428,6 +430,9 @@ static void torture_config_unknown(void **state) {
     /* test corner cases */
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG9);
     assert_true(ret == 0);
+    assert_string_equal(session->opts.ProxyCommand, "ssh -W [%h]:%p many-spaces.com");
+    assert_string_equal(session->opts.host, "equal.sign");
+
     ret = ssh_config_parse_file(session, "/etc/ssh/ssh_config");
     assert_true(ret == 0);
     ret = ssh_config_parse_file(session, GLOBAL_CLIENT_CONFIG);
@@ -447,6 +452,7 @@ static void torture_config_match(void **state)
     int ret = 0;
 
     /* Without any settings we should get all-matched.com hostname */
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "unmatched");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_ssh_return_code(session, ret);
@@ -654,6 +660,7 @@ static void torture_config_proxyjump(void **state) {
     int ret = 0;
 
     /* Simplest version with just a hostname */
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "simple");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
     assert_ssh_return_code(session, ret);
@@ -1013,14 +1020,23 @@ static void torture_config_parser_get_token(void **state)
     assert_string_equal(tok, "string");
     assert_int_equal(*p, '\0');
 
+    strncpy(data, "  \t\t  string", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "string");
+    assert_int_equal(*p, '\0');
+
     /* drops trailing whitespace */
     strncpy(data, "string  \t\t  \n", sizeof(data));
     p = data;
     tok = ssh_config_get_token(&p);
     assert_string_equal(tok, "string");
-    assert_int_equal(*p, ' ');
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "string  \t\t  ", sizeof(data));
+    p = data;
     tok = ssh_config_get_token(&p);
-    assert_string_equal(tok, "\0");
+    assert_string_equal(tok, "string");
     assert_int_equal(*p, '\0');
 
     /* Correctly handles tokens in quotes */
@@ -1028,13 +1044,34 @@ static void torture_config_parser_get_token(void **state)
     p = data;
     tok = ssh_config_get_token(&p);
     assert_string_equal(tok, "multi string");
-    assert_int_equal(*p, ' ');
+    assert_int_equal(*p, 's');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "something");
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "\"multi string\" something", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "multi string");
+    assert_int_equal(*p, 's');
     tok = ssh_config_get_token(&p);
     assert_string_equal(tok, "something");
     assert_int_equal(*p, '\0');
 
     /* Consistently splits unquoted strings */
     strncpy(data, "multi string something\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "multi");
+    assert_int_equal(*p, 's');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "string");
+    assert_int_equal(*p, 's');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "something");
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "multi string something", sizeof(data));
     p = data;
     tok = ssh_config_get_token(&p);
     assert_string_equal(tok, "multi");
@@ -1054,9 +1091,34 @@ static void torture_config_parser_get_token(void **state)
     assert_int_equal(*p, 'v');
     tok = ssh_config_get_token(&p);
     assert_string_equal(tok, "value");
-    assert_int_equal(*p, ' ');
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "  key=value  ", sizeof(data));
+    p = data;
     tok = ssh_config_get_token(&p);
-    assert_string_equal(tok, "\0");
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, 'v');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
+    assert_int_equal(*p, '\0');
+
+    /* spaces are allowed also around the equal sign */
+    strncpy(data, "  key  =  value  \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, 'v');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "  key  =  value  ", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, 'v');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
     assert_int_equal(*p, '\0');
 
     /* correctly parses even key=value pairs with either one in quotes */
@@ -1067,9 +1129,53 @@ static void torture_config_parser_get_token(void **state)
     assert_int_equal(*p, '\"');
     tok = ssh_config_get_token(&p);
     assert_string_equal(tok, "value with spaces");
-    assert_int_equal(*p, ' ');
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "  key=\"value with spaces\" ", sizeof(data));
+    p = data;
     tok = ssh_config_get_token(&p);
-    assert_string_equal(tok, "\0");
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, '\"');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value with spaces");
+    assert_int_equal(*p, '\0');
+
+    /* Only one equal sign is allowed */
+    strncpy(data, "key==value\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, '=');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "");
+    assert_int_equal(*p, 'v');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, "key==value", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, '=');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "");
+    assert_int_equal(*p, 'v');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
+    assert_int_equal(*p, '\0');
+
+    /* Unmatched quotes */
+    strncpy(data, " \"value\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
+    assert_int_equal(*p, '\0');
+
+    strncpy(data, " \"value", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
     assert_int_equal(*p, '\0');
 }
 
