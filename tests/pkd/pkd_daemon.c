@@ -300,6 +300,7 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     }
 
     if (!ssh_fips_mode()) {
+        const char *all_hostkeys = NULL;
         /* Add methods not enabled by default */
 #define GEX_SHA1 "diffie-hellman-group-exchange-sha1"
         default_kex = ssh_kex_get_default_methods(SSH_KEX);
@@ -331,6 +332,15 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
             pkderr("ssh_bind_options_set Ciphers S-C: %s\n", ssh_get_error(b));
             goto outclose;
         }
+
+        /* Enable all hostkey algorithms */
+        all_hostkeys = ssh_kex_get_supported_method(SSH_HOSTKEYS);
+        rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, all_hostkeys);
+        if (rc != 0) {
+            pkderr("ssh_bind_options_set Hostkeys: %s\n", ssh_get_error(b));
+            goto outclose;
+        }
+
     }
 
     s = ssh_new();
