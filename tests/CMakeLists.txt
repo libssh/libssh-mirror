@@ -181,7 +181,7 @@ if (CLIENT_TESTING OR SERVER_TESTING)
     # ssh_ping
     add_executable(ssh_ping ssh_ping.c)
     target_compile_options(ssh_ping PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
-    target_link_libraries(ssh_ping ssh::ssh)
+    target_link_libraries(ssh_ping ssh::static)
 
     # homedir will be used in passwd
     set(HOMEDIR ${CMAKE_CURRENT_BINARY_DIR}/home)

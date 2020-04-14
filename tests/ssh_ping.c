@@ -14,15 +14,19 @@ The goal is to show the API in action. It's not a reference on how terminal
 clients must be made or how a client should react.
 */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <libssh/libssh.h>
+#include <libssh/kex.h>
 
 int main(int argc, char **argv)
 {
     const char *banner = NULL;
     ssh_session session = NULL;
+    const char *hostkeys = NULL;
     int rc = 1;
 
     bool process_config = false;
@@ -31,6 +35,8 @@ int main(int argc, char **argv)
         fprintf(stderr, "Error: Need an argument (hostname)\n");
         goto out;
     }
+
+    ssh_init();
 
     session = ssh_new();
     if (session == NULL) {
@@ -54,6 +60,13 @@ int main(int argc, char **argv)
         goto out;
     }
 
+    /* Enable all supported algorithms (including DSA) */
+    hostkeys = ssh_kex_get_supported_method(SSH_HOSTKEYS);
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, hostkeys);
+    if (rc < 0) {
+        goto out;
+    }
+
     rc = ssh_connect(session);
     if (rc != SSH_OK) {
         fprintf(stderr, "Connection failed : %s\n", ssh_get_error(session));
@@ -71,6 +84,7 @@ int main(int argc, char **argv)
 
 out:
     ssh_free(session);
+    ssh_finalize();
     return rc;
 }
 
