@@ -237,6 +237,7 @@ static int session_setup(void **state)
     struct test_server_st *tss = *state;
     struct torture_state *s;
     int verbosity = torture_libssh_verbosity();
+    const char *compat_hostkeys = ssh_kex_get_supported_method(SSH_HOSTKEYS);
     struct passwd *pwd;
     bool b = false;
     int rc;
@@ -264,6 +265,8 @@ static int session_setup(void **state)
     assert_ssh_return_code(s->ssh.session, rc);
     /* Make sure no other configuration options from system will get used */
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG, &b);
+    assert_ssh_return_code(s->ssh.session, rc);
+    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_HOSTKEYS, compat_hostkeys);
     assert_ssh_return_code(s->ssh.session, rc);
 
     return 0;
