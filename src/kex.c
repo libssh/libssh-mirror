@@ -131,6 +131,11 @@
                  "rsa-sha2-256," \
                  "ssh-rsa" \
                  DSA_HOSTKEYS
+#define DEFAULT_HOSTKEYS "ssh-ed25519," \
+                         EC_HOSTKEYS \
+                         "rsa-sha2-512," \
+                         "rsa-sha2-256"
+
 #define PUBLIC_KEY_ALGORITHMS "ssh-ed25519-cert-v01@openssh.com," \
                               EC_PUBLIC_KEY_ALGORITHMS \
                               "rsa-sha2-512-cert-v01@openssh.com," \
@@ -138,6 +143,11 @@
                               "ssh-rsa-cert-v01@openssh.com" \
                               DSA_PUBLIC_KEY_ALGORITHMS "," \
                               HOSTKEYS
+#define DEFAULT_PUBLIC_KEY_ALGORITHMS "ssh-ed25519-cert-v01@openssh.com," \
+                                      EC_PUBLIC_KEY_ALGORITHMS \
+                                      "rsa-sha2-512-cert-v01@openssh.com," \
+                                      "rsa-sha2-256-cert-v01@openssh.com," \
+                                      DEFAULT_HOSTKEYS
 
 #ifdef WITH_GEX
 #define GEX_SHA256 "diffie-hellman-group-exchange-sha256,"
@@ -212,17 +222,17 @@ static const char *fips_methods[] = {
 
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *default_methods[] = {
-  KEY_EXCHANGE,
-  PUBLIC_KEY_ALGORITHMS,
-  AES BLOWFISH DES,
-  AES BLOWFISH DES,
-  "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
-  "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
-  "none",
-  "none",
-  "",
-  "",
-  NULL
+    KEY_EXCHANGE,
+    DEFAULT_PUBLIC_KEY_ALGORITHMS,
+    CHACHA20 AES BLOWFISH DES,
+    CHACHA20 AES BLOWFISH DES,
+    "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
+    "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
+    "none",
+    "none",
+    "",
+    "",
+    NULL
 };
 
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
