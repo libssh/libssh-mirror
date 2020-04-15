@@ -44,6 +44,8 @@ stages:
 .tests:
   extends: .build
   stage: test
+  # This is needed to prevent passing artifacts from previous stages
+  dependencies: []
   script:
     - cmake $CMAKE_OPTIONS $CMAKE_ADDTIONAL_OPTIONS .. &&
       make -j$(nproc) &&
