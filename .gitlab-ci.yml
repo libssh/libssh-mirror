@@ -147,7 +147,7 @@ fedora/address-sanitizer:
       ctest --output-on-failure
 
 # This is disabled as it report OpenSSL issues
-# It also has ethe same issues with cwrap as AddressSanitizer
+# It also has the same issues with cwrap as AddressSanitizer
 .fedora/memory-sanitizer:
   extends: .fedora
   stage: analysis
