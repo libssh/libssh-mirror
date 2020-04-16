@@ -3095,7 +3095,7 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
     size_t len;
     int rc;
 
-    if(channel == NULL) {
+    if (channel == NULL) {
         return SSH_ERROR;
     }
 
@@ -3113,7 +3113,7 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
                                         ssh_channel_read_termination,
                                         &ctx);
     if (rc == SSH_ERROR ||
-       session->session_state == SSH_SESSION_STATE_ERROR) {
+        session->session_state == SSH_SESSION_STATE_ERROR) {
         rc = SSH_ERROR;
         goto out;
     }
