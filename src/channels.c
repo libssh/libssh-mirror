@@ -3116,6 +3116,12 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
         session->session_state == SSH_SESSION_STATE_ERROR) {
         rc = SSH_ERROR;
         goto out;
+    } else if (rc == SSH_AGAIN) {
+        /* If the above timeout expired, it is ok and we do not need to
+         * attempt to check the read buffer. The calling functions do not
+         * expect us to return SSH_AGAIN either here. */
+        rc = SSH_OK;
+        goto out;
     }
     len = ssh_buffer_get_len(stdbuf);
     if (len > 0) {
