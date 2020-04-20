@@ -400,6 +400,9 @@ ssh_match_exec(ssh_session session, const char *command, bool negate)
 
     /* TODO There should be more supported expansions */
     cmd = ssh_path_expand_escape(session, command);
+    if (cmd == NULL) {
+        return 0;
+    }
     rv = ssh_exec_shell(cmd);
     if (rv > 0 && negate == true) {
         result = 1;
