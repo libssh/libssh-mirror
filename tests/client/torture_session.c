@@ -118,10 +118,64 @@ static void torture_channel_read_error(void **state) {
     ssh_channel_free(channel);
 }
 
+static void torture_channel_poll_timeout_valid(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    ssh_channel channel;
+    int rc;
+
+    channel = ssh_channel_new(session);
+    assert_non_null(channel);
+
+    rc = ssh_channel_open_session(channel);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_channel_request_exec(channel, "echo -n ABCD");
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_channel_poll_timeout(channel, 500, 0);
+    assert_int_equal(rc, strlen("ABCD"));
+}
+
+static void torture_channel_poll_timeout(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    ssh_channel channel;
+    int rc;
+    int fd;
+
+    channel = ssh_channel_new(session);
+    assert_non_null(channel);
+
+    rc = ssh_channel_open_session(channel);
+    assert_ssh_return_code(session, rc);
+
+    fd = ssh_get_fd(session);
+    assert_true(fd > 2);
+
+    rc = ssh_channel_poll_timeout(channel, 500, 0);
+    assert_int_equal(rc, SSH_OK);
+
+    /* send crap and for server to send us a disconnect */
+    rc = write(fd, "AAAA", 4);
+    assert_int_equal(rc, 4);
+
+    rc = ssh_channel_poll_timeout(channel, 500, 0);
+    assert_int_equal(rc, SSH_ERROR);
+
+    ssh_channel_free(channel);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_channel_read_error,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_channel_poll_timeout_valid,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_channel_poll_timeout,
                                         session_setup,
                                         session_teardown),
     };
