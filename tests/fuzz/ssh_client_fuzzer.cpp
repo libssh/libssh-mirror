@@ -40,8 +40,8 @@ static int auth_callback(const char *prompt,
 }
 
 struct ssh_callbacks_struct cb = {
-    .auth_function = auth_callback,
     .userdata = NULL,
+    .auth_function = auth_callback,
 };
 
 static void select_loop(ssh_session session, ssh_channel channel)
