@@ -1969,23 +1969,27 @@ ssh_packet_set_newkeys(ssh_session session,
                 session->opts.rekey_time/1000);
     }
 
-    /* Initialize the encryption and decryption keys in next_crypto */
-    rc = in_cipher->set_decrypt_key(in_cipher,
-                                    session->next_crypto->decryptkey,
-                                    session->next_crypto->decryptIV);
-    if (rc < 0) {
-        /* On error, make sure it is not used */
-        session->next_crypto->used = 0;
-        return SSH_ERROR;
+    if (in_cipher->set_decrypt_key) {
+        /* Initialize the encryption and decryption keys in next_crypto */
+        rc = in_cipher->set_decrypt_key(in_cipher,
+                                        session->next_crypto->decryptkey,
+                                        session->next_crypto->decryptIV);
+        if (rc < 0) {
+            /* On error, make sure it is not used */
+            session->next_crypto->used = 0;
+            return SSH_ERROR;
+        }
     }
 
-    rc = out_cipher->set_encrypt_key(out_cipher,
-                                     session->next_crypto->encryptkey,
-                                     session->next_crypto->encryptIV);
-    if (rc < 0) {
-        /* On error, make sure it is not used */
-        session->next_crypto->used = 0;
-        return SSH_ERROR;
+    if (out_cipher->set_encrypt_key) {
+        rc = out_cipher->set_encrypt_key(out_cipher,
+                                         session->next_crypto->encryptkey,
+                                         session->next_crypto->encryptIV);
+        if (rc < 0) {
+            /* On error, make sure it is not used */
+            session->next_crypto->used = 0;
+            return SSH_ERROR;
+        }
     }
 
     return SSH_OK;
