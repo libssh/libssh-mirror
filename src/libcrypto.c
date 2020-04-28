@@ -1275,6 +1275,17 @@ chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
 }
 #endif /* defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305) */
 
+#ifdef WITH_INSECURE_NONE
+static void
+none_crypt(UNUSED_PARAM(struct ssh_cipher_struct *cipher),
+           void *in,
+           void *out,
+           size_t len)
+{
+    memcpy(out, in, len);
+}
+#endif /* WITH_INSECURE_NONE */
+
 /*
  * The table of supported ciphers
  */
@@ -1463,6 +1474,15 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .name = "chacha20-poly1305@openssh.com"
 #endif /* defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305) */
   },
+#ifdef WITH_INSECURE_NONE
+  {
+    .name = "none",
+    .blocksize = 8,
+    .keysize = 0,
+    .encrypt = none_crypt,
+    .decrypt = none_crypt,
+  },
+#endif /* WITH_INSECURE_NONE */
   {
     .name = NULL
   }

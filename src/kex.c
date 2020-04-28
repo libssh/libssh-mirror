@@ -125,6 +125,12 @@
 #define DSA_PUBLIC_KEY_ALGORITHMS ""
 #endif
 
+#ifdef WITH_INSECURE_NONE
+#define NONE ",none"
+#else
+#define NONE
+#endif
+
 #define HOSTKEYS "ssh-ed25519," \
                  EC_HOSTKEYS \
                  "rsa-sha2-512," \
@@ -239,10 +245,10 @@ static const char *default_methods[] = {
 static const char *supported_methods[] = {
   KEY_EXCHANGE_SUPPORTED,
   PUBLIC_KEY_ALGORITHMS,
-  CHACHA20 AES BLOWFISH DES_SUPPORTED,
-  CHACHA20 AES BLOWFISH DES_SUPPORTED,
-  "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
-  "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
+  CHACHA20 AES BLOWFISH DES_SUPPORTED NONE,
+  CHACHA20 AES BLOWFISH DES_SUPPORTED NONE,
+  "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1" NONE,
+  "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1" NONE,
   ZLIB,
   ZLIB,
   "",
