@@ -1213,7 +1213,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 if (crypto != NULL) {
                     mac = packet_second_block + packet_remaining;
 
-                    if (etm) {
+                    if (crypto->in_hmac != SSH_HMAC_NONE && etm) {
                         rc = ssh_packet_hmac_verify(session,
                                                     data,
                                                     processed,
@@ -1243,7 +1243,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                         }
                     }
 
-                    if (!etm) {
+                    if (crypto->in_hmac != SSH_HMAC_NONE && !etm) {
                         rc = ssh_packet_hmac_verify(session,
                                                     ssh_buffer_get(session->in_buffer),
                                                     ssh_buffer_get_len(session->in_buffer),
@@ -1684,6 +1684,9 @@ static int packet_send2(ssh_session session)
     hmac = ssh_packet_encrypt(session,
                               ssh_buffer_get(session->out_buffer),
                               ssh_buffer_get_len(session->out_buffer));
+    /* XXX This returns null before switching on crypto, with none MAC
+     * and on various errors.
+     * We should distinguish between these cases to avoid hiding errors. */
     if (hmac != NULL) {
         rc = ssh_buffer_add_data(session->out_buffer,
                                  hmac,
