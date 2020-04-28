@@ -117,6 +117,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     assert(rc == 0);
     rc = ssh_options_set(session, SSH_OPTIONS_USER, "alice");
     assert(rc == 0);
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, "none");
+    assert(rc == 0);
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, "none");
+    assert(rc == 0);
+    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, "none");
+    assert(rc == 0);
+    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "none");
+    assert(rc == 0);
 
     ssh_callbacks_init(&cb);
     ssh_set_callbacks(session, &cb);

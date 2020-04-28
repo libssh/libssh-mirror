@@ -155,9 +155,18 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     ssh_session session = ssh_new();
     assert(session != NULL);
 
-    ssh_bind_options_set(sshbind,
+    rc = ssh_bind_options_set(sshbind,
                          SSH_BIND_OPTIONS_RSAKEY,
                          "/tmp/libssh_fuzzer_private_key");
+    assert(rc == 0);
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_CIPHERS_C_S, "none");
+    assert(rc == 0);
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_CIPHERS_S_C, "none");
+    assert(rc == 0);
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_C_S, "none");
+    assert(rc == 0);
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_S_C, "none");
+    assert(rc == 0);
 
     ssh_set_auth_methods(session, SSH_AUTH_METHOD_NONE);
 
