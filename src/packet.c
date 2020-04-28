@@ -1877,6 +1877,7 @@ int
 ssh_packet_set_newkeys(ssh_session session,
                        enum ssh_crypto_direction_e direction)
 {
+    struct ssh_cipher_struct *in_cipher = NULL, *out_cipher = NULL;
     int rc;
 
     SSH_LOG(SSH_LOG_TRACE,
@@ -1953,16 +1954,15 @@ ssh_packet_set_newkeys(ssh_session session,
         return SSH_ERROR;
     }
 
-    if (session->next_crypto->in_cipher == NULL ||
-        session->next_crypto->out_cipher == NULL) {
+    in_cipher = session->next_crypto->in_cipher;
+    out_cipher = session->next_crypto->out_cipher;
+    if (in_cipher == NULL || out_cipher == NULL) {
         return SSH_ERROR;
     }
 
     /* Initialize rekeying states */
-    ssh_init_rekey_state(session,
-                         session->next_crypto->out_cipher);
-    ssh_init_rekey_state(session,
-                         session->next_crypto->in_cipher);
+    ssh_init_rekey_state(session, out_cipher);
+    ssh_init_rekey_state(session, in_cipher);
     if (session->opts.rekey_time != 0) {
         ssh_timestamp_init(&session->last_rekey_time);
         SSH_LOG(SSH_LOG_PROTOCOL, "Set rekey after %" PRIu32 " seconds",
@@ -1970,20 +1970,18 @@ ssh_packet_set_newkeys(ssh_session session,
     }
 
     /* Initialize the encryption and decryption keys in next_crypto */
-    rc = session->next_crypto->in_cipher->set_decrypt_key(
-        session->next_crypto->in_cipher,
-        session->next_crypto->decryptkey,
-        session->next_crypto->decryptIV);
+    rc = in_cipher->set_decrypt_key(in_cipher,
+                                    session->next_crypto->decryptkey,
+                                    session->next_crypto->decryptIV);
     if (rc < 0) {
         /* On error, make sure it is not used */
         session->next_crypto->used = 0;
         return SSH_ERROR;
     }
 
-    rc = session->next_crypto->out_cipher->set_encrypt_key(
-        session->next_crypto->out_cipher,
-        session->next_crypto->encryptkey,
-        session->next_crypto->encryptIV);
+    rc = out_cipher->set_encrypt_key(out_cipher,
+                                     session->next_crypto->encryptkey,
+                                     session->next_crypto->encryptIV);
     if (rc < 0) {
         /* On error, make sure it is not used */
         session->next_crypto->used = 0;
