@@ -119,6 +119,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     int socket_fds[2] = {-1, -1};
     ssize_t nwritten;
+    bool no = false;
     int rc;
 
     /* Our struct holding information about the session. */
@@ -166,6 +167,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_C_S, "none");
     assert(rc == 0);
     rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_S_C, "none");
+    assert(rc == 0);
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_PROCESS_CONFIG, &no);
     assert(rc == 0);
 
     ssh_set_auth_methods(session, SSH_AUTH_METHOD_NONE);

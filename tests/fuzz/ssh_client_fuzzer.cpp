@@ -90,6 +90,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     const char *env = NULL;
     int socket_fds[2] = {-1, -1};
     ssize_t nwritten;
+    bool no = false;
     int rc;
 
     /* Set up the socket to send data */
@@ -124,6 +125,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     rc = ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, "none");
     assert(rc == 0);
     rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "none");
+    assert(rc == 0);
+    rc = ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &no);
     assert(rc == 0);
 
     ssh_callbacks_init(&cb);
