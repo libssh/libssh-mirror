@@ -1217,6 +1217,11 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
     int saveopterr = opterr;
     int opt;
 
+    /* Nothing to do here */
+    if (argc <= 1) {
+        return SSH_OK;
+    }
+
     opterr = 0; /* shut up getopt */
     while((opt = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1) {
         switch(opt) {
@@ -1266,8 +1271,19 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
                     return -1;
                 }
                 current++;
-                if (optarg) {
-                    save[current++] = argv[optind + 1];
+                /* We can not use optarg here as getopt does not set it for
+                 * unknown options. We need to manually extract following
+                 * option and skip it manually from further processing */
+                if (optind < argc && argv[optind][0] != '-') {
+                    tmp = realloc(save, (current + 1) * sizeof(char*));
+                    if (tmp == NULL) {
+                        SAFE_FREE(save);
+                        ssh_set_error_oom(session);
+                        return -1;
+                    }
+                    save = tmp;
+                    save[current++] = argv[optind];
+                    optind++;
                 }
             }
         } /* switch */
