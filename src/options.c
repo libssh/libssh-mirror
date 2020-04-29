@@ -1255,8 +1255,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
             break;
         default:
             {
-                char optv[3] = "- ";
-                optv[1] = optopt;
                 tmp = realloc(save, (current + 1) * sizeof(char*));
                 if (tmp == NULL) {
                     SAFE_FREE(save);
@@ -1264,12 +1262,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
                     return -1;
                 }
                 save = tmp;
-                save[current] = strdup(optv);
-                if (save[current] == NULL) {
-                    SAFE_FREE(save);
-                    ssh_set_error_oom(session);
-                    return -1;
-                }
+                save[current] = argv[optind-1];
                 current++;
                 /* We can not use optarg here as getopt does not set it for
                  * unknown options. We need to manually extract following
