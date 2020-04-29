@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -120,6 +121,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     int socket_fds[2] = {-1, -1};
     ssize_t nwritten;
     bool no = false;
+    const char *env = NULL;
     int rc;
 
     /* Our struct holding information about the session. */
@@ -156,6 +158,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     ssh_session session = ssh_new();
     assert(session != NULL);
 
+
+    env = getenv("LIBSSH_VERBOSITY");
+    if (env != NULL && strlen(env) > 0) {
+        rc = ssh_bind_options_set(sshbind,
+                                  SSH_BIND_OPTIONS_LOG_VERBOSITY_STR,
+                                  env);
+        assert(rc == 0);
+    }
     rc = ssh_bind_options_set(sshbind,
                          SSH_BIND_OPTIONS_RSAKEY,
                          "/tmp/libssh_fuzzer_private_key");
