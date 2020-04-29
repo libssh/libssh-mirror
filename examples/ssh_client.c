@@ -44,9 +44,10 @@
 #include "examples_common.h"
 #define MAXCMD 10
 
-static char *host;
-static char *user;
+static char *host = NULL;
+static char *user = NULL;
 static char *cmds[MAXCMD];
+static char *config_file = NULL;
 static struct termios terminal;
 
 static char *pcap_file = NULL;
@@ -94,6 +95,7 @@ static void usage(void)
             "  -p port : connect to port\n"
             "  -d : use DSS to verify host public key\n"
             "  -r : use RSA to verify host public key\n"
+            "  -F file : parse configuration file instead of default one\n"
 #ifdef WITH_PCAP
             "  -P file : create a pcap debugging file\n"
 #endif
@@ -110,10 +112,13 @@ static int opts(int argc, char **argv)
 {
     int i;
 
-    while((i = getopt(argc,argv,"T:P:")) != -1) {
+    while((i = getopt(argc,argv,"T:P:F:")) != -1) {
         switch(i){
         case 'P':
             pcap_file = optarg;
+            break;
+        case 'F':
+            config_file = optarg;
             break;
 #ifndef _WIN32
         case 'T':
@@ -326,7 +331,7 @@ static int client(ssh_session session)
             return -1;
         }
     }
-    if (ssh_options_set(session, SSH_OPTIONS_HOST ,host) < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
         return -1;
     }
     if (proxycommand != NULL) {
@@ -334,7 +339,13 @@ static int client(ssh_session session)
             return -1;
         }
     }
-    ssh_options_parse_config(session, NULL);
+    /* Parse configuration file if specified: The command-line options will
+     * overwrite items loaded from configuration file */
+    if (config_file != NULL) {
+        ssh_options_parse_config(session, config_file);
+    } else {
+        ssh_options_parse_config(session, NULL);
+    }
 
     if (ssh_connect(session)) {
         fprintf(stderr, "Connection failed : %s\n", ssh_get_error(session));
