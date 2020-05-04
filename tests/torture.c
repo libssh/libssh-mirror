@@ -747,6 +747,9 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "\n"
              /* add all supported algorithms */
              "HostKeyAlgorithms " OPENSSH_KEYS "\n"
+#if OPENSSH_VERSION_MAJOR == 8 && OPENSSH_VERSION_MINOR >= 2
+             "CASignatureAlgorithms " OPENSSH_KEYS "\n"
+#endif
              "Ciphers " OPENSSH_CIPHERS "\n"
              "KexAlgorithms " OPENSSH_KEX "\n"
              "MACs " OPENSSH_MACS "\n"
