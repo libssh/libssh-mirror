@@ -32,6 +32,7 @@ static int auth_callback(const char *prompt,
 {
     (void)prompt;   /* unused */
     (void)echo;     /* unused */
+    (void)verify;   /* unused */
     (void)userdata; /* unused */
 
     snprintf(buf, len, "secret");
@@ -86,7 +87,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     ssh_session session = NULL;
     ssh_channel channel = NULL;
-    char *banner = NULL;
     const char *env = NULL;
     int socket_fds[2] = {-1, -1};
     ssize_t nwritten;
@@ -98,7 +98,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     assert(rc == 0);
 
     nwritten = send(socket_fds[1], data, size, 0);
-    assert(nwritten == size);
+    assert((size_t)nwritten == size);
 
     rc = shutdown(socket_fds[1], SHUT_WR);
     assert(rc == 0);

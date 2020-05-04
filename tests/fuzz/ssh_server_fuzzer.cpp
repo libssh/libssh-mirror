@@ -73,6 +73,7 @@ static int auth_none(ssh_session session, const char *user, void *userdata)
         (struct session_data_struct *)userdata;
 
     (void)session;
+    (void)user;
 
     if (sdata->auth_attempts > 0) {
         sdata->authenticated = true;
@@ -146,7 +147,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     assert(rc == 0);
 
     nwritten = send(socket_fds[1], data, size, 0);
-    assert(nwritten == size);
+    assert((size_t)nwritten == size);
 
     rc = shutdown(socket_fds[1], SHUT_WR);
     assert(rc == 0);
