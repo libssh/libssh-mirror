@@ -83,7 +83,7 @@ static int setup_tokens(void **state)
     torture_write_file(keys_path_pub,
                        torture_get_testkey_pub_pem(SSH_KEYTYPE_RSA));
 
-    torture_setup_tokens(cwd, keys_path, obj_tempname);
+    torture_setup_tokens(cwd, keys_path, obj_tempname, "1");
 
     snprintf(conf_path, sizeof(conf_path), "%s/softhsm.conf", cwd);
 

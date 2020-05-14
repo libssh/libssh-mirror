@@ -37,7 +37,7 @@ struct pki_st {
     enum ssh_keytypes_e type;
 };
 
-static int setup_tokens_ecdsa(void **state, int ecdsa_bits, const char *obj_tempname)
+static int setup_tokens_ecdsa(void **state, int ecdsa_bits, const char *obj_tempname, const char *load_public)
 {
 
     struct pki_st *test_state = *state;
@@ -67,7 +67,7 @@ static int setup_tokens_ecdsa(void **state, int ecdsa_bits, const char *obj_temp
                        torture_get_testkey(test_state->type, 0));
     torture_write_file(pub_filename,
                        torture_get_testkey_pub_pem(test_state->type));
-    torture_setup_tokens(cwd, priv_filename, obj_tempname);
+    torture_setup_tokens(cwd, priv_filename, obj_tempname, load_public);
 
     return 0;
 }
@@ -99,9 +99,9 @@ static int setup_directory_structure(void **state)
     snprintf(conf_path, sizeof(conf_path), "%s/softhsm.conf", test_state->temp_dir);
     setenv("SOFTHSM2_CONF", conf_path, 1);
 
-    setup_tokens_ecdsa(state, 256, "ecdsa256");
-    setup_tokens_ecdsa(state, 384, "ecdsa384");
-    setup_tokens_ecdsa(state, 521, "ecdsa521");
+    setup_tokens_ecdsa(state, 256, "ecdsa256", "1");
+    setup_tokens_ecdsa(state, 384, "ecdsa384", "1");
+    setup_tokens_ecdsa(state, 521, "ecdsa521", "1");
 
     return 0;
 }

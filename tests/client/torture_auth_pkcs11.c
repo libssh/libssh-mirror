@@ -61,7 +61,7 @@ static int setup_tokens(void **state, const char *type, const char *obj_name)
 
     snprintf(priv_filename, sizeof(priv_filename), "%s%s", test_state->keys_dir, type);
 
-    torture_setup_tokens(cwd, priv_filename, obj_name);
+    torture_setup_tokens(cwd, priv_filename, obj_name, "1");
 
     return 0;
 }

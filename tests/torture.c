@@ -1127,16 +1127,18 @@ void torture_setup_sshd_server(void **state, bool pam)
 
 void torture_setup_tokens(const char *temp_dir,
                           const char *filename,
-                          const char object_name[])
+                          const char object_name[],
+                          const char *load_public)
 {
     char token_setup_start_cmd[1024] = {0};
     int rc;
 
     snprintf(token_setup_start_cmd, sizeof(token_setup_start_cmd),
-             "%s/tests/pkcs11/setup-softhsm-tokens.sh %s %s %s",
+             "%s/tests/pkcs11/setup-softhsm-tokens.sh %s %s %s %s",
              BINARYDIR,
              temp_dir,
-             filename, object_name);
+             filename,
+             object_name, load_public);
 
     rc = system(token_setup_start_cmd);
     assert_return_code(rc, errno);
