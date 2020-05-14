@@ -1330,6 +1330,14 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
                 return NULL;
             }
 
+#ifdef WITH_PKCS11_URI
+            if (ssh_key_is_private(key) && !EC_KEY_get0_public_key(key->ecdsa)) {
+                SSH_LOG(SSH_LOG_INFO, "It is mandatory to have separate public"
+                        " ECDSA key objects in the PKCS #11 device. Unlike RSA,"
+                        " ECDSA public keys cannot be derived from their private keys.");
+                goto fail;
+            }
+#endif
             e = make_ecpoint_string(EC_KEY_get0_group(key->ecdsa),
                                     EC_KEY_get0_public_key(key->ecdsa));
             if (e == NULL) {
