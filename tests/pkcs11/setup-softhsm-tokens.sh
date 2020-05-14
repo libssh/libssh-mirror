@@ -5,7 +5,8 @@
 TESTDIR=$1
 PRIVKEY=$2
 OBJNAME=$3
-shift 3
+LOADPUBLIC=$4
+shift 4
 
 PUBKEY="$PRIVKEY.pub"
 
@@ -13,6 +14,7 @@ echo "TESTDIR: $TESTDIR"
 echo "PRIVKEY: $PRIVKEY"
 echo "PUBKEY: $PUBKEY"
 echo "OBJNAME: $OBJNAME"
+echo "LOADPUBLIC: $LOADPUBLIC"
 
 # Create temporary directory for tokens
 install -d -m 0755 $TESTDIR/db
@@ -54,15 +56,17 @@ cat $PUBKEY
 
 ls -l $TESTDIR
 
+if [ $LOADPUBLIC -ne 0 ]; then
 #load public key
-cmd='p11tool --provider /usr/lib64/pkcs11/libsofthsm2.so --write --load-pubkey "$PUBKEY" --label "$OBJNAME" --login --set-pin=1234 "pkcs11:token="$OBJNAME""'
-eval echo "$cmd"
-out=$(eval $cmd)
-ret=$?
-if [ $ret -ne 0 ]; then
-    echo "Loading pubkey failed"
-    echo "$out"
-    exit 1
+    cmd='p11tool --provider /usr/lib64/pkcs11/libsofthsm2.so --write --load-pubkey "$PUBKEY" --label "$OBJNAME" --login --set-pin=1234 "pkcs11:token="$OBJNAME""'
+    eval echo "$cmd"
+    out=$(eval $cmd)
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        echo "Loading pubkey failed"
+        echo "$out"
+        exit 1
+    fi
 fi
 
 cmd='p11tool --list-all --login "pkcs11:token="$OBJNAME"" --set-pin=1234'
