@@ -1370,7 +1370,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
  *
  * This should be the last call of all options, it may overwrite options which
  * are already set. It requires that the host name is already set with
- * ssh_options_set_host().
+ * ssh_options_set(SSH_OPTIONS_HOST).
  *
  * @param  session      SSH session handle
  *
@@ -1379,7 +1379,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
  *
  * @return 0 on success, < 0 on error.
  *
- * @see ssh_options_set_host()
+ * @see ssh_options_set()
  */
 int ssh_options_parse_config(ssh_session session, const char *filename) {
   char *expanded_filename;
