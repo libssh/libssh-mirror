@@ -299,6 +299,10 @@ int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
  */
 int ssh_buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t len)
 {
+    if (buffer == NULL) {
+        return -1;
+    }
+
     buffer_verify(buffer);
 
     if (data == NULL) {
