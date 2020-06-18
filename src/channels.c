@@ -2932,14 +2932,15 @@ int ssh_channel_read_timeout(ssh_channel channel,
   if (session->session_state == SSH_SESSION_STATE_ERROR) {
       return SSH_ERROR;
   }
+  /* If the server closed the channel properly, there is nothing to do */
+  if (channel->remote_eof && ssh_buffer_get_len(stdbuf) == 0) {
+      return 0;
+  }
   if (channel->state == SSH_CHANNEL_STATE_CLOSED) {
       ssh_set_error(session,
                     SSH_FATAL,
                     "Remote channel is closed.");
       return SSH_ERROR;
-  }
-  if (channel->remote_eof && ssh_buffer_get_len(stdbuf) == 0) {
-    return 0;
   }
   len = ssh_buffer_get_len(stdbuf);
   /* Read count bytes if len is greater, everything otherwise */
