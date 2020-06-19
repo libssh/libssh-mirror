@@ -1036,7 +1036,7 @@ static bool ssh_packet_need_rekey(ssh_session session,
                          in_cipher->blocks + next_blocks > in_cipher->max_blocks);
 
     SSH_LOG(SSH_LOG_PACKET,
-            "packet: [data_rekey_needed=%d, out_blocks=%" PRIu64 ", in_blocks=%" PRIu64,
+            "rekey: [data_rekey_needed=%d, out_blocks=%" PRIu64 ", in_blocks=%" PRIu64 "]",
             data_rekey_needed,
             out_cipher->blocks + next_blocks,
             in_cipher->blocks + next_blocks);
