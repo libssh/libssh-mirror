@@ -1300,7 +1300,8 @@ int ssh_analyze_banner(ssh_session session, int server)
             session->openssh = SSH_VERSION_INT(((int) major), ((int) minor), 0);
 
             SSH_LOG(SSH_LOG_PROTOCOL,
-                    "We are talking to an OpenSSH client version: %lu.%lu (%x)",
+                    "We are talking to an OpenSSH %s version: %lu.%lu (%x)",
+                    server ? "client" : "server",
                     major, minor, session->openssh);
         }
     }
