@@ -1,9 +1,126 @@
-Coding conventions in the libssh tree
-======================================
+# How to contribute a patch to libssh
 
-===========
-Quick Start
-===========
+Please checkout the libssh source code using git.
+
+For contributions we prefer Merge Requests on Gitlab:
+
+https://gitlab.com/libssh/libssh-mirror/
+
+This way you get contintious integration which runs the complete libssh
+testsuite for you.
+
+For larger code changes, breaking the changes up into a set of simple
+patches, each of which does a single thing, are much easier to review.
+Patch sets like that will most likely have an easier time being merged
+into the libssh code than large single patches that make lots of
+changes in one large diff.
+
+Also bugfixes and new features should be covered by tests. We use the cmocka
+and cwrap framework for our testing and you can simply run it locally by
+calling `make test`.
+
+## Ownership of the contributed code
+
+libssh is a project with distributed copyright ownership, which means
+we prefer the copyright on parts of libssh to be held by individuals
+rather than corporations if possible. There are historical legal
+reasons for this, but one of the best ways to explain it is that it's
+much easier to work with individuals who have ownership than corporate
+legal departments if we ever need to make reasonable compromises with
+people using and working with libssh.
+
+We track the ownership of every part of libssh via https://git.libssh.org,
+our source code control system, so we know the provenance of every piece
+of code that is committed to libssh.
+
+So if possible, if you're doing libssh changes on behalf of a company
+who normally owns all the work you do please get them to assign
+personal copyright ownership of your changes to you as an individual,
+that makes things very easy for us to work with and avoids bringing
+corporate legal departments into the picture.
+
+If you can't do this we can still accept patches from you owned by
+your employer under a standard employment contract with corporate
+copyright ownership. It just requires a simple set-up process first.
+
+We use a process very similar to the way things are done in the Linux
+Kernel community, so it should be very easy to get a sign off from
+your corporate legal department. The only changes we've made are to
+accommodate the license we use, which is LGPLv2 (or later) whereas the
+Linux kernel uses GPLv2.
+
+The process is called signing.
+
+## How to sign your work
+
+Once you have permission to contribute to libssh from your employer, simply
+email a copy of the following text from your corporate email address to:
+
+contributing@libssh.org
+
+
+```
+libssh Developer's Certificate of Origin. Version 1.0
+
+
+By making a contribution to this project, I certify that:
+
+(a) The contribution was created in whole or in part by me and I
+    have the right to submit it under the appropriate
+    version of the GNU General Public License; or
+
+(b) The contribution is based upon previous work that, to the best of
+    my knowledge, is covered under an appropriate open source license
+    and I have the right under that license to submit that work with
+    modifications, whether created in whole or in part by me, under
+    the GNU General Public License, in the appropriate version; or
+
+(c) The contribution was provided directly to me by some other
+    person who certified (a) or (b) and I have not modified it.
+
+(d) I understand and agree that this project and the contribution are
+    public and that a record of the contribution (including all
+    metadata and personal information I submit with it, including my
+    sign-off) is maintained indefinitely and may be redistributed
+    consistent with the libssh Team's policies and the requirements of
+    the GNU GPL where they are relevant.
+
+(e) I am granting this work to this project under the terms of the
+    GNU Lesser General Public License as published by the
+    Free Software Foundation; either version 2.1 of
+    the License, or (at the option of the project) any later version.
+
+    https://www.gnu.org/licenses/lgpl-2.1.html
+```
+
+We will maintain a copy of that email as a record that you have the
+rights to contribute code to libssh under the required licenses whilst
+working for the company where the email came from.
+
+Then when sending in a patch via the normal mechanisms described
+above, add a line that states:
+
+    Signed-off-by: Random J Developer <random@developer.example.org>
+
+using your real name and the email address you sent the original email
+you used to send the libssh Developer's Certificate of Origin to us
+(sorry, no pseudonyms or anonymous contributions.)
+
+That's it! Such code can then quite happily contain changes that have
+copyright messages such as:
+
+    (c) Example Corporation.
+
+and can be merged into the libssh codebase in the same way as patches
+from any other individual. You don't need to send in a copy of the
+libssh Developer's Certificate of Origin for each patch, or inside each
+patch. Just the sign-off message is all that is required once we've
+received the initial email.
+
+
+# Coding conventions in the libssh tree
+
+## Quick Start
 
 Coding style guidelines are about reducing the number of unnecessary
 reformatting patches and making things easier for developers to work together.
@@ -36,31 +153,28 @@ are the highlights.
   have a copy of "The C Programming Language" anyways right?
 
 
-=============
-Editor Hints
-=============
+## Editor Hints
 
-Emacs
-------
+### Emacs
+
 Add the follow to your $HOME/.emacs file:
 
-  (add-hook 'c-mode-hook
-    (lambda ()
-        (c-set-style "linux")
-        (c-toggle-auto-state)))
+    (add-hook 'c-mode-hook
+      (lambda ()
+          (c-set-style "linux")
+          (c-toggle-auto-state)))
 
 
-Vim
-----
+## Neovim/VIM
 
 For the basic vi editor included with all variants of \*nix, add the
-following to $HOME/.vimrc:
+following to ~/.config/nvim/init.rc or ~/.vimrc:
 
     set ts=4 sw=4 et cindent
 
 You can use the Vim gitmodline plugin to store this in the git config:
 
-    https://git.cryptomilk.org/projects/vim-gitmodeline.git/
+https://git.cryptomilk.org/projects/vim-gitmodeline.git/
 
 For Vim, the following settings in $HOME/.vimrc will also deal with
 displaying trailing whitespace:
@@ -81,12 +195,9 @@ displaying trailing whitespace:
     autocmd BufNewFile,BufRead *.c,*.h exec 'match Todo /\%>' . &textwidth . 'v.\+/'
 
 
-==========================
-FAQ & Statement Reference
-==========================
+## FAQ & Statement Reference
 
-Comments
----------
+### Comments
 
 Comments should always use the standard C syntax.  C++ style comments are not
 currently allowed.
@@ -163,8 +274,7 @@ This is bad:
      * This is a multi line comment,
      * with some more words...*/
 
-Indention & Whitespace & 80 columns
-------------------------------------
+### Indention & Whitespace & 80 columns
 
 To avoid confusion, indentations have to be 4 spaces. Do not use tabs!.  When
 wrapping parameters for function calls, align the parameter list with the first
@@ -180,8 +290,7 @@ splitting.  Never split a line before columns 70 - 79 unless you
 have a really good reason.  Be smart about formatting.
 
 
-If, switch, & Code blocks
---------------------------
+### If, switch, & Code blocks
 
 Always follow an 'if' keyword with a space but don't include additional
 spaces following or preceding the parentheses in the conditional.
@@ -207,7 +316,7 @@ invoking functions.
 Braces for code blocks used by for, if, switch, while, do..while, etc.  should
 begin on the same line as the statement keyword and end on a line of their own.
 You should always include braces, even if the block only contains one
-statement.  NOTE: Functions are different and the beginning left brace should
+statement.  **NOTE**: Functions are different and the beginning left brace should
 be located in the first column on the next line.
 
 If the beginning statement has to be broken across lines due to length, the
@@ -254,8 +363,7 @@ Bad examples:
         print("I should be in braces.\n");
 
 
-Goto
------
+### Goto
 
 While many people have been academically taught that "goto"s are fundamentally
 evil, they can greatly enhance readability and reduce memory leaks when used as
@@ -287,14 +395,13 @@ Good Examples:
         return rc;
     }
 
-Initialize pointers
--------------------
+### Initialize pointers
 
-All pointer variables MUST be initialized to NULL. History has
+All pointer variables **MUST** be initialized to `NULL`. History has
 demonstrated that uninitialized pointer variables have lead to various
 bugs and security issues.
 
-Pointers MUST be initialized even if the assignment directly follows
+Pointers **MUST** be initialized even if the assignment directly follows
 the declaration, like pointer2 in the example below, because the
 instructions sequence may change over time.
 
@@ -309,15 +416,13 @@ Good Example:
 
     pointer1 = some_func1();
 
-Typedefs
----------
+### Typedefs
 
-libssh tries to avoid "typedef struct { .. } x_t;" so we do always try to use
-"struct x { .. };". We know there are still such typedefs in the code, but for
+libssh tries to avoid `typedef struct { .. } x_t;` so we do always try to use
+`struct x { .. };`. We know there are still such typedefs in the code, but for
 new code, please don't do that anymore.
 
-Make use of helper variables
------------------------------
+### Make use of helper variables
 
 Please try to avoid passing function calls as function parameters in new code.
 This makes the code much easier to read and it's also easier to use the "step"
@@ -367,9 +472,13 @@ an iterator style:
 But in general, please try to avoid this pattern.
 
 
-Control-Flow changing macros
------------------------------
+### Control-Flow changing macros
 
-Macros like STATUS_NOT_OK_RETURN that change control flow (return/goto/etc)
+Macros like `STATUS_NOT_OK_RETURN` that change control flow (return/goto/etc)
 from within the macro are considered bad, because they look like function calls
 that never change control flow. Please do not introduce them.
+
+
+Have fun and happy libssh hacking!
+
+The libssh Team
