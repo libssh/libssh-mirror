@@ -166,6 +166,58 @@ static void torture_channel_poll_timeout(void **state) {
     ssh_channel_free(channel);
 }
 
+/*
+ * Check that the client can properly handle the error returned from the server
+ * when the maximum number of sessions is exceeded.
+ *
+ * Related: T75, T239
+ *
+ */
+static void torture_max_sessions(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char max_session_config[32] = {0};
+#define MAX_CHANNELS 10
+    ssh_channel channels[MAX_CHANNELS + 1];
+    size_t i;
+    int rc;
+
+    snprintf(max_session_config,
+             sizeof(max_session_config),
+             "MaxSessions %u",
+             MAX_CHANNELS);
+
+    /* Update server configuration to limit number of sessions */
+    torture_update_sshd_config(state, max_session_config);
+
+    /* Open the maximum number of channel sessions */
+    for (i = 0; i < MAX_CHANNELS; i++) {
+        channels[i] = ssh_channel_new(session);
+        assert_non_null(channels[i]);
+
+        rc = ssh_channel_open_session(channels[i]);
+        assert_ssh_return_code(session, rc);
+    }
+
+    /* Try to open an extra session and expect failure */
+    channels[i] = ssh_channel_new(session);
+    assert_non_null(channels[i]);
+
+    rc = ssh_channel_open_session(channels[i]);
+    assert_int_equal(rc, SSH_ERROR);
+
+    /* Free the unused channel */
+    ssh_channel_free(channels[i]);
+
+    /* Close and free channels */
+    for (i = 0; i < MAX_CHANNELS; i++) {
+        ssh_channel_close(channels[i]);
+        ssh_channel_free(channels[i]);
+    }
+#undef MAX_CHANNELS
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -178,12 +230,16 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_channel_poll_timeout,
                                         session_setup,
                                         session_teardown),
+        cmocka_unit_test_setup_teardown(torture_max_sessions,
+                                        session_setup,
+                                        session_teardown),
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, sshd_setup, sshd_teardown);
+
     ssh_finalize();
 
     return rc;
