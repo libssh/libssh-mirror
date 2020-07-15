@@ -703,6 +703,103 @@ static void torture_server_config_unknown(void **state)
     assert_int_equal(rc, 0);
 }
 
+/*
+ * Check that the server returns the correct signature when the negotiated host
+ * key is RSA but the signature algorithm is not the server's preferred
+ * algorithm (e.g. when the client prefers ssh-rsa over rsa-sha2-256 or
+ * rsa-sha2-512).
+ *
+ * Related: T191, T240
+ */
+static void torture_server_config_rsa_hostkey_order(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    char config_content[4096];
+    size_t num_hostkey_files;
+    const char *allowed = NULL;
+
+    ssh_session session = NULL;
+
+    int rc;
+
+    assert_non_null(tss);
+    s = tss->state;
+    assert_non_null(s);
+
+    /* Prepare key files */
+    num_hostkey_files = setup_hostkey_files(tss);
+    assert_true(num_hostkey_files > 0);
+
+    /* Create the server configuration file */
+    if (ssh_fips_mode()) {
+        allowed = "rsa-sha2-512,rsa-sha2-256";
+    } else {
+        allowed = "rsa-sha2-256,ssh-rsa";
+    }
+
+    snprintf(config_content,
+            sizeof(config_content),
+            "HostKey %s\nHostkeyAlgorithms %s\n",
+            tss->rsa_hostkey, allowed);
+
+    assert_non_null(s->srv_config);
+    torture_write_file(s->srv_config, config_content);
+
+    fprintf(stderr, "Config file %s content: \n\n%s\n", s->srv_config,
+            config_content);
+    fflush(stderr);
+
+    /* Start server */
+    rc = start_server(state);
+    assert_int_equal(rc, 0);
+
+    /* Setup session */
+    rc = session_setup(state);
+    assert_int_equal(rc, 0);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Set client order of preference different from the server */
+    if (ssh_fips_mode()) {
+        /* Set the host keys with rsa-sha2-256 before rsa-sha2-512 */
+        rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS,
+                             "rsa-sha2-256,rsa-sha2-512");
+        assert_int_equal(rc, SSH_OK);
+    } else {
+        /* Set the host keys with ssh-rsa before rsa-sha2-256 */
+        rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS,
+                             "ssh-rsa,rsa-sha2-256");
+        assert_int_equal(rc, SSH_OK);
+    }
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_none(session, NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    assert_ssh_return_code(session, rc);
+
+    rc = session_teardown(state);
+    assert_int_equal(rc, 0);
+
+    rc = stop_server(state);
+    assert_int_equal(rc, 0);
+
+    SAFE_FREE(s->srv_additional_config);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -717,6 +814,8 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_server_config_hostkey_algorithms,
                                         setup_temp_dir, teardown_temp_dir),
         cmocka_unit_test_setup_teardown(torture_server_config_unknown,
+                                        setup_temp_dir, teardown_temp_dir),
+        cmocka_unit_test_setup_teardown(torture_server_config_rsa_hostkey_order,
                                         setup_temp_dir, teardown_temp_dir),
     };
 
