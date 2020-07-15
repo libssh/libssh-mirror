@@ -57,8 +57,8 @@
 
 #ifdef HAVE_LIBGCRYPT
 # define AES "aes256-gcm@openssh.com,aes128-gcm@openssh.com," \
-             "aes256-ctr,aes192-ctr,aes128-ctr," \
-             "aes256-cbc,aes192-cbc,aes128-cbc,"
+             "aes256-ctr,aes192-ctr,aes128-ctr,"
+# define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
 # define DES "3des-cbc"
 # define DES_SUPPORTED "3des-cbc"
 
@@ -68,8 +68,8 @@
 # else
 #  define GCM ""
 # endif /* MBEDTLS_GCM_C */
-# define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr," \
-             "aes256-cbc,aes192-cbc,aes128-cbc,"
+# define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr,"
+# define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
 # define DES "3des-cbc"
 # define DES_SUPPORTED "3des-cbc"
 
@@ -81,12 +81,15 @@
 #   define GCM ""
 #  endif /* HAVE_OPENSSL_EVP_AES_GCM */
 #  ifdef BROKEN_AES_CTR
-#   define AES GCM "aes256-cbc,aes192-cbc,aes128-cbc,"
+#   define AES GCM
+#   define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
 #  else /* BROKEN_AES_CTR */
-#   define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+#   define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr,"
+#   define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
 #  endif /* BROKEN_AES_CTR */
 # else /* HAVE_OPENSSL_AES_H */
 #  define AES ""
+#  define AES_CBC ""
 # endif /* HAVE_OPENSSL_AES_H */
 
 # define DES "3des-cbc"
@@ -230,8 +233,8 @@ static const char *fips_methods[] = {
 static const char *default_methods[] = {
     KEY_EXCHANGE,
     DEFAULT_PUBLIC_KEY_ALGORITHMS,
-    CHACHA20 AES BLOWFISH DES,
-    CHACHA20 AES BLOWFISH DES,
+    CHACHA20 AES DES,
+    CHACHA20 AES DES,
     "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
     "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
     "none",
@@ -245,8 +248,8 @@ static const char *default_methods[] = {
 static const char *supported_methods[] = {
   KEY_EXCHANGE_SUPPORTED,
   PUBLIC_KEY_ALGORITHMS,
-  CHACHA20 AES BLOWFISH DES_SUPPORTED NONE,
-  CHACHA20 AES BLOWFISH DES_SUPPORTED NONE,
+  CHACHA20 AES AES_CBC BLOWFISH DES_SUPPORTED NONE,
+  CHACHA20 AES AES_CBC BLOWFISH DES_SUPPORTED NONE,
   "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1" NONE,
   "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1" NONE,
   ZLIB,
