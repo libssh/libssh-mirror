@@ -1373,6 +1373,8 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(i));
                 SSH_STRING_FREE(i);
                 if (nid == -1) {
+                    ssh_string_burn(e);
+                    SSH_STRING_FREE(e);
                     goto fail;
                 }
 
