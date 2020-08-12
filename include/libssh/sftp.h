@@ -806,7 +806,7 @@ LIBSSH_API void sftp_statvfs_free(sftp_statvfs_t statvfs_o);
 /**
  * @brief Synchronize a file's in-core state with storage device
  *
- * This calls the "fsync@openssh.com" extention. You should check if the
+ * This calls the "fsync@openssh.com" extension. You should check if the
  * extensions is supported using:
  *
  * @code

@@ -1269,7 +1269,7 @@ static char *sftp_parse_longname(const char *longname,
     size_t len, field = 0;
 
     p = longname;
-    /* Find the beginning of the field which is specified by sftp_longanme_field_e. */
+    /* Find the beginning of the field which is specified by sftp_longname_field_e. */
     while(field != longname_field) {
         if(isspace(*p)) {
             field++;
