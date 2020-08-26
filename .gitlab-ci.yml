@@ -15,7 +15,7 @@ stages:
   stage: build
   variables:
       CMAKE_DEFAULT_OPTIONS: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DPICKY_DEVELOPER=ON"
-      CMAKE_BUILD_OPTIONS: "-DWITH_BLOWFISH_CIPHER=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON"
+      CMAKE_BUILD_OPTIONS: "-DWITH_BLOWFISH_CIPHER=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON -DWITH_DSA=ON"
       CMAKE_TEST_OPTIONS: "-DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON"
       CMAKE_OPTIONS: $CMAKE_DEFAULT_OPTIONS $CMAKE_BUILD_OPTIONS $CMAKE_TEST_OPTIONS
   before_script:
@@ -109,7 +109,7 @@ fedora/openssl_1.1.x/x86_64/fips:
     -DPICKY_DEVELOPER=ON
     -DWITH_BLOWFISH_CIPHER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
+    -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON -DWITH_DSA=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
   script:
     - cmake $CMAKE_OPTIONS .. &&
@@ -125,6 +125,7 @@ fedora/openssl_1.1.x/x86_64/minimal:
       -DWITH_SERVER=OFF
       -DWITH_ZLIB=OFF
       -DWITH_PCAP=OFF
+      -DWITH_DSA=OFF
       -DUNIT_TESTING=ON
       -DCLIENT_TESTING=ON
       -DWITH_GEX=OFF .. &&
@@ -188,7 +189,7 @@ fedora/libgcrypt/x86_64:
 fedora/mbedtls/x86_64:
   extends: .fedora
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON"
+      CMAKE_ADDTIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DSA=OFF"
 
 # Unit testing only, no client and pkd testing, because cwrap is not available
 # for MinGW
@@ -260,7 +261,7 @@ fedora/csbuild/openssl_1.1.x:
   script:
   - csbuild
     --build-dir=obj-csbuild
-    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON @SRCDIR@ && make clean && make -j$(nproc)"
+    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
     --git-commit-range $CI_COMMIT_RANGE
     --color
     --print-current --print-fixed
@@ -270,7 +271,7 @@ fedora/csbuild/libgcrypt:
   script:
   - csbuild
     --build-dir=obj-csbuild
-    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_GCRYPT=ON @SRCDIR@ && make clean && make -j$(nproc)"
+    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_GCRYPT=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
     --git-commit-range $CI_COMMIT_RANGE
     --color
     --print-current --print-fixed
@@ -315,6 +316,7 @@ tumbleweed/openssl_1.1.x/x86/gcc:
       -DWITH_SERVER=ON
       -DWITH_ZLIB=ON
       -DWITH_PCAP=ON
+      -DWITH_DSA=ON
       -DUNIT_TESTING=ON ..
 
 tumbleweed/openssl_1.1.x/x86_64/gcc7:
@@ -329,7 +331,7 @@ tumbleweed/openssl_1.1.x/x86/gcc7:
       -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
       -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
       $CMAKE_DEFAULT_OPTIONS
-      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DSA=ON
       -DUNIT_TESTING=ON .. &&
       make -j$(nproc) &&
       ctest --output-on-failure

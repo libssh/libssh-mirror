@@ -185,9 +185,11 @@ if (NOT WITH_GCRYPT AND NOT WITH_MBEDTLS)
     endif (HAVE_OPENSSL_ECC)
 endif ()
 
-if (NOT WITH_MBEDTLS)
-    set(HAVE_DSA 1)
-endif (NOT WITH_MBEDTLS)
+if (WITH_DSA)
+    if (NOT WITH_MBEDTLS)
+        set(HAVE_DSA 1)
+    endif (NOT WITH_MBEDTLS)
+endif()
 
 # FUNCTIONS
 
@@ -480,9 +482,16 @@ if (WITH_PKCS11_URI)
         message(FATAL_ERROR "PKCS #11 is not supported for gcrypt.")
         set(WITH_PKCS11_URI 0)
     endif()
-    if (WITH_WITH_MBEDTLS)
+    if (WITH_MBEDTLS)
         message(FATAL_ERROR "PKCS #11 is not supported for mbedcrypto")
         set(WITH_PKCS11_URI 0)
+    endif()
+endif()
+
+if (WITH_MBEDTLS)
+    if (WITH_DSA)
+        message(FATAL_ERROR "DSA is not supported with mbedTLS crypto")
+        set(HAVE_DSA 0)
     endif()
 endif()
 
