@@ -168,16 +168,17 @@
 
 #define CHACHA20 "chacha20-poly1305@openssh.com,"
 
-#define KEY_EXCHANGE \
+#define DEFAULT_KEY_EXCHANGE \
     CURVE25519 \
     ECDH \
     "diffie-hellman-group18-sha512,diffie-hellman-group16-sha512," \
     GEX_SHA256 \
-    "diffie-hellman-group14-sha256," \
-    "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
+    "diffie-hellman-group14-sha256" \
+
 #define KEY_EXCHANGE_SUPPORTED \
     GEX_SHA1 \
-    KEY_EXCHANGE
+    DEFAULT_KEY_EXCHANGE \
+    ",diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 
 /* RFC 8308 */
 #define KEX_EXTENSION_CLIENT "ext-info-c"
@@ -231,12 +232,12 @@ static const char *fips_methods[] = {
 
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *default_methods[] = {
-    KEY_EXCHANGE,
+    DEFAULT_KEY_EXCHANGE,
     DEFAULT_PUBLIC_KEY_ALGORITHMS,
-    CHACHA20 AES DES,
-    CHACHA20 AES DES,
-    "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
-    "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1",
+    CHACHA20 AES,
+    CHACHA20 AES,
+    "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512",
+    "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512",
     "none",
     "none",
     "",
