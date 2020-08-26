@@ -445,6 +445,11 @@ visualstudio/x86:
 ###############################################################################
 #                                 Coverity                                    #
 ###############################################################################
+#
+# git push -o ci.variable="COVERITY_SCAN_TOKEN=XXXXXX" \
+#          -o ci.variable="COVERITY_SCAN_PROJECT_NAME=XXXXXX" \
+#          -o ci.variable="COVERITY_SCAN_EMAIL=XXXXXX" \
+#          -f gitlab
 
 coverity:
   stage: analysis
@@ -477,4 +482,4 @@ coverity:
     expire_in: 1 week
     when: on_failure
     paths:
-      - cov-int/*.txt
+      - obj/cov-int/*.txt
