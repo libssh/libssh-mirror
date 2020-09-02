@@ -281,6 +281,96 @@ static void torture_auth_autopubkey(void **state) {
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
+struct torture_auth_autopubkey_protected_data {
+    ssh_session session;
+    int n_calls;
+};
+
+static int
+torture_auth_autopubkey_protected_auth_function (const char *prompt, char *buf, size_t len,
+                                                 int echo, int verify, void *userdata)
+{
+    int rc;
+    char *id, *expected_id;
+    struct torture_auth_autopubkey_protected_data *data = userdata;
+
+    assert_true(prompt != NULL);
+    assert_int_equal(echo, 0);
+    assert_int_equal(verify, 0);
+
+    expected_id = ssh_path_expand_escape(data->session, "%d/id_rsa_protected");
+    assert_true(expected_id != NULL);
+
+    rc = ssh_userauth_publickey_auto_get_current_identity(data->session, &id);
+    assert_int_equal(rc, SSH_OK);
+
+    assert_string_equal(expected_id, id);
+
+    ssh_string_free_char(id);
+    ssh_string_free_char(expected_id);
+
+    data->n_calls += 1;
+    strncpy(buf, "secret", len);
+    return 0;
+}
+
+static void torture_auth_autopubkey_protected(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char *id;
+    int rc;
+
+    struct torture_auth_autopubkey_protected_data data = {
+        .session = session,
+        .n_calls = 0
+    };
+
+    struct ssh_callbacks_struct callbacks = {
+        .userdata = &data,
+        .auth_function = torture_auth_autopubkey_protected_auth_function
+    };
+
+    /* no session pointer */
+    rc = ssh_userauth_publickey_auto_get_current_identity(NULL, &id);
+    assert_int_equal(rc, SSH_ERROR);
+
+    /* no result pointer */
+    rc = ssh_userauth_publickey_auto_get_current_identity(session, NULL);
+    assert_int_equal(rc, SSH_ERROR);
+
+    /* no auto auth going on */
+    rc = ssh_userauth_publickey_auto_get_current_identity(session, &id);
+    assert_int_equal(rc, SSH_ERROR);
+
+    ssh_callbacks_init(&callbacks);
+    ssh_set_callbacks(session, &callbacks);
+
+    /* Authenticate as alice with bob his pubkey */
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Try id_rsa_protected first.
+     */
+    rc = ssh_options_set(session, SSH_OPTIONS_IDENTITY, "%d/id_rsa_protected");
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    assert_int_equal (data.n_calls, 1);
+}
+
 static void torture_auth_autopubkey_nonblocking(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
@@ -916,6 +1006,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_autopubkey,
+                                        pubkey_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_autopubkey_protected,
                                         pubkey_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_autopubkey_nonblocking,

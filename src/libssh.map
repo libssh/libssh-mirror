@@ -402,6 +402,7 @@ LIBSSH_4_5_0    # Released
         ssh_userauth_pubkey;
         ssh_userauth_publickey;
         ssh_userauth_publickey_auto;
+        ssh_userauth_publickey_auto_get_current_identity;
         ssh_userauth_try_publickey;
         ssh_version;
         ssh_write_knownhost;
