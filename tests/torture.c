@@ -719,6 +719,7 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
     struct stat sb;
     const char *sftp_server_locations[] = {
         "/usr/lib/ssh/sftp-server",
+        "/usr/libexec/ssh/sftp-server", /* Tumbleweed 20200829 */
         "/usr/libexec/sftp-server",
         "/usr/libexec/openssh/sftp-server",
         "/usr/lib/openssh/sftp-server",     /* Debian */
