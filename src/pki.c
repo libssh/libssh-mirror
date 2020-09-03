@@ -1218,6 +1218,10 @@ int pki_import_privkey_buffer(enum ssh_keytypes_e type,
                 nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(i));
                 SSH_STRING_FREE(i);
                 if (nid == -1) {
+                    ssh_string_burn(e);
+                    SSH_STRING_FREE(e);
+                    ssh_string_burn(exp);
+                    SSH_STRING_FREE(exp);
                     goto fail;
                 }
 
