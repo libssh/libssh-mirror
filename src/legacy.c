@@ -735,7 +735,7 @@ int ssh_accept(ssh_session session) {
 }
 
 int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
-    return ssh_channel_write(channel, data, len);
+    return ssh_channel_write_stderr(channel, data, len);
 }
 
 /** @deprecated

@@ -221,8 +221,8 @@ typedef int (*ssh_auth_gssapi_mic_callback) (ssh_session session, const char *us
  * @param user User that wants to authenticate
  * @param pubkey public key used for authentication
  * @param signature_state SSH_PUBLICKEY_STATE_NONE if the key is not signed (simple public key probe),
- * 							SSH_PUBLICKEY_STATE_VALID if the signature is valid. Others values should be
- * 							replied with a SSH_AUTH_DENIED.
+ *							SSH_PUBLICKEY_STATE_VALID if the signature is valid. Others values should be
+ *							replied with a SSH_AUTH_DENIED.
  * @param userdata Userdata to be passed to the callback function.
  * @returns SSH_AUTH_SUCCESS Authentication is accepted.
  * @returns SSH_AUTH_PARTIAL Partial authentication, more authentication means are needed.
@@ -272,7 +272,7 @@ typedef ssh_string (*ssh_gssapi_select_oid_callback) (ssh_session session, const
  * @param session current session handler
  * @param[in] input_token input token provided by client
  * @param[out] output_token output of the gssapi accept_sec_context method,
- * 				NULL after completion.
+ *				NULL after completion.
  * @returns SSH_OK if the token was generated correctly or accept_sec_context
  * returned GSS_S_COMPLETE
  * @returns SSH_ERROR in case of error

@@ -478,8 +478,6 @@ LIBSSH_API int ssh_channel_request_x11(ssh_channel channel, int single_connectio
     const char *cookie, int screen_number);
 LIBSSH_API int ssh_channel_request_auth_agent(ssh_channel channel);
 LIBSSH_API int ssh_channel_send_eof(ssh_channel channel);
-LIBSSH_API int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans, ssh_channel *exceptchans, struct
-        timeval * timeout);
 LIBSSH_API void ssh_channel_set_blocking(ssh_channel channel, int blocking);
 LIBSSH_API void ssh_channel_set_counter(ssh_channel channel,
                                         ssh_counter counter);
@@ -557,6 +555,8 @@ SSH_DEPRECATED LIBSSH_API int ssh_write_knownhost(ssh_session session);
 SSH_DEPRECATED LIBSSH_API char *ssh_dump_knownhost(ssh_session session);
 SSH_DEPRECATED LIBSSH_API int ssh_is_server_known(ssh_session session);
 SSH_DEPRECATED LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
+SSH_DEPRECATED LIBSSH_API int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans, ssh_channel *exceptchans, struct
+        timeval * timeout);
 
 SSH_DEPRECATED LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 SSH_DEPRECATED LIBSSH_API int ssh_scp_close(ssh_scp scp);

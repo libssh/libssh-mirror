@@ -693,7 +693,6 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len)
         scp->processed += w;
     } else {
         scp->state = SSH_SCP_ERROR;
-        //return = channel_get_exit_status(scp->channel);
         return SSH_ERROR;
     }
 

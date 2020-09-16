@@ -422,7 +422,7 @@ my_fd_data_function(UNUSED_PARAM(socket_t fd),
                     break;
                 }
                 wr += i;
-                _ssh_log(SSH_LOG_FUNCTIONS, "=== my_fd_data_function", "channel_write (%d from %d)", wr, len);
+                _ssh_log(SSH_LOG_FUNCTIONS, "=== my_fd_data_function", "ssh_channel_write (%d from %d)", wr, len);
             } while (i > 0 && wr < len);
         }
         else {

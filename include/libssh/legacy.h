@@ -117,4 +117,5 @@ SSH_DEPRECATED LIBSSH_API size_t string_len(ssh_string str);
 SSH_DEPRECATED LIBSSH_API ssh_string string_new(size_t size);
 SSH_DEPRECATED LIBSSH_API char *string_to_char(ssh_string str);
 
+SSH_DEPRECATED LIBSSH_API const char* ssh_message_channel_request_x11_auth_cookie(ssh_message msg);
 #endif /* LEGACY_H_ */

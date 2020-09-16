@@ -630,8 +630,8 @@ public:
    * @param is_stderr write should be done on the stderr channel (server only)
    * @returns number of bytes written
    * @throws SshException in case of error
-   * @see channel_write
-   * @see channel_write_stderr
+   * @see ssh_channel_write
+   * @see ssh_channel_write_stderr
    */
   int write(const void *data, size_t len, bool is_stderr=false){
     int ret;

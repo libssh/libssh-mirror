@@ -1036,7 +1036,7 @@ int ssh_channel_open_auth_agent(ssh_channel channel)
  *
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
- *          use channel_read and channel_write for this.
+ *          use ssh_channel_read and ssh_channel_write for this.
  */
 int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport)
@@ -1108,7 +1108,7 @@ error:
  *
  * @warning This function does not bind the local port and does not
  *          automatically forward the content of a socket to the channel.
- *          You still have to use channel_read and channel_write for this.
+ *          You still have to use ssh_channel_read and ssh_channel_write for this.
  * @warning Requires support of OpenSSH for UNIX domain socket forwarding.
   */
 int ssh_channel_open_forward_unix(ssh_channel channel,
@@ -1551,7 +1551,7 @@ static int channel_write_common(ssh_channel channel,
     }
 
     SSH_LOG(SSH_LOG_PACKET,
-        "channel_write wrote %ld bytes", (long int) effectivelen);
+        "ssh_channel_write wrote %ld bytes", (long int) effectivelen);
 
     channel->remote_window -= effectivelen;
     len -= effectivelen;
@@ -2940,8 +2940,6 @@ static int ssh_channel_read_termination(void *s)
  *
  * @warning This function may return less than count bytes of data, and won't
  *          block until count bytes have been read.
- * @warning The read function using a buffer has been renamed to
- *          channel_read_buffer().
  */
 int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
 {
@@ -2972,8 +2970,6 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
  *
  * @warning This function may return less than count bytes of data, and won't
  *          block until count bytes have been read.
- * @warning The read function using a buffer has been renamed to
- *          channel_read_buffer().
  */
 int ssh_channel_read_timeout(ssh_channel channel,
                              void *dest,
@@ -3604,7 +3600,7 @@ int ssh_channel_write_stderr(ssh_channel channel, const void *data, uint32_t len
  *
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
- *          use channel_read and channel_write for this.
+ *          use ssh_channel_read and ssh_channel_write for this.
  */
 int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost,
                                      int remoteport, const char *sourcehost, int localport)
@@ -3668,7 +3664,7 @@ error:
  *                      to be done again.
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
- *          use channel_read and channel_write for this.
+ *          use shh_channel_read and ssh_channel_write for this.
  */
 int ssh_channel_open_x11(ssh_channel channel,
                          const char *orig_addr, int orig_port)
