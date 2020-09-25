@@ -37,7 +37,7 @@ https://www.libssh.org
 
 # Contributing
 
-Please read the file 'SubmittingPatches' next to this README file. It explains
+Please read the file 'CONTRIBUTING.md' next to this README file. It explains
 our copyright policy and how you should send patches for upstream inclusion.
 
 Have fun and happy libssh hacking!
