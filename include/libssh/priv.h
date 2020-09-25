@@ -341,7 +341,7 @@ void explicit_bzero(void *s, size_t n);
 #define discard_const_p(type, ptr) ((type *)discard_const(ptr))
 
 /**
- * Get the argument cound of variadic arguments
+ * Get the argument count of variadic arguments
  */
 /*
  * Since MSVC 2010 there is a bug in passing __VA_ARGS__ to subsequent
