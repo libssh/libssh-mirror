@@ -403,7 +403,7 @@ version 0.2 (released 2007-11-29)
 version 0.11-dev
   * Server implementation development.
   * Small bug corrected when connecting to sun ssh servers.
-  * Channel wierdness corrected (writing huge data packets)
+  * Channel weirdness corrected (writing huge data packets)
   * Channel_read_nonblocking added
   * Channel bug where stderr wasn't correctly read fixed.
   * Added sftp_file_set_nonblocking(), which is nonblocking SFTP IO
