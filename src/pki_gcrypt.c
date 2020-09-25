@@ -1983,8 +1983,9 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 
             if (len > rsalen) {
                 SSH_LOG(SSH_LOG_WARN,
-                        "Signature is to big size: %lu",
-                        (unsigned long)len);
+                        "Signature is too big: %lu > %lu",
+                        (unsigned long)len,
+                        (unsigned long)rsalen);
                 ssh_signature_free(sig);
                 return NULL;
             }
