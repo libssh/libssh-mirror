@@ -744,7 +744,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "\n"
              "StrictModes no\n"
              "\n"
-             "%s" /* Here comes UsePam */
+             "%s\n" /* Here comes UsePam */
+             "%s" /* The space for test-specific options */
              "\n"
              /* add all supported algorithms */
              "HostKeyAlgorithms " OPENSSH_KEYS "\n"
@@ -759,8 +760,7 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
              "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
              "\n"
-             "PidFile %s\n"
-             "%s\n"; /* The space for test-specific options */
+             "PidFile %s\n";
     /* FIPS config */
     const char fips_config_string[]=
              "Port 22\n"
@@ -778,7 +778,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "\n"
              "StrictModes no\n"
              "\n"
-             "%s" /* UsePam */
+             "%s\n" /* Here comes UsePam */
+             "%s" /* The space for test-specific options */
              "\n"
              "Ciphers "
                 "aes256-gcm@openssh.com,aes256-ctr,aes256-cbc,"
@@ -807,8 +808,7 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
              "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
              "\n"
-             "PidFile %s\n" /* PID file */
-             "%s\n"; /* The space for test-specific options */
+             "PidFile %s\n"; /* PID file */
     const char usepam_yes[] =
              "UsePAM yes\n"
              "KbdInteractiveAuthentication yes\n";
@@ -909,8 +909,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
                 trusted_ca_pubkey,
                 sftp_server,
                 usepam,
-                s->srv_pidfile,
-                additional_config);
+                additional_config,
+                s->srv_pidfile);
     } else {
         snprintf(sshd_config, sizeof(sshd_config),
                 config_string,
@@ -923,8 +923,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
                 trusted_ca_pubkey,
                 sftp_server,
                 usepam,
-                s->srv_pidfile,
-                additional_config);
+                additional_config,
+                s->srv_pidfile);
     }
 
     torture_write_file(s->srv_config, sshd_config);
