@@ -1422,12 +1422,14 @@ void ssh_packet_register_socket_callback(ssh_session session, ssh_socket s){
  * @brief sets the callbacks for the packet layer
  */
 void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks){
-  if(session->packet_callbacks == NULL){
-    session->packet_callbacks = ssh_list_new();
-  }
-  if (session->packet_callbacks != NULL) {
+    if (session->packet_callbacks == NULL) {
+        session->packet_callbacks = ssh_list_new();
+        if (session->packet_callbacks == NULL) {
+            ssh_set_error_oom(session);
+            return;
+        }
+    }
     ssh_list_append(session->packet_callbacks, callbacks);
-  }
 }
 
 /** @internal

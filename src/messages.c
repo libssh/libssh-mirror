@@ -513,24 +513,30 @@ static int ssh_message_termination(void *s){
  * @warning This function blocks until a message has been received. Betterset up
  *          a callback if this behavior is unwanted.
  */
-ssh_message ssh_message_get(ssh_session session) {
-  ssh_message msg = NULL;
-  int rc;
+ssh_message ssh_message_get(ssh_session session)
+{
+    ssh_message msg = NULL;
+    int rc;
 
-  msg=ssh_message_pop_head(session);
-  if(msg) {
-      return msg;
-  }
-  if(session->ssh_message_list == NULL) {
-      session->ssh_message_list = ssh_list_new();
-  }
-  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
-      ssh_message_termination, session);
-  if(rc || session->session_state == SSH_SESSION_STATE_ERROR)
-    return NULL;
-  msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
+    msg = ssh_message_pop_head(session);
+    if (msg != NULL) {
+        return msg;
+    }
+    if (session->ssh_message_list == NULL) {
+        session->ssh_message_list = ssh_list_new();
+        if (session->ssh_message_list == NULL) {
+            ssh_set_error_oom(session);
+            return NULL;
+        }
+    }
+    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+                                        ssh_message_termination, session);
+    if (rc || session->session_state == SSH_SESSION_STATE_ERROR) {
+        return NULL;
+    }
+    msg = ssh_list_pop_head(ssh_message, session->ssh_message_list);
 
-  return msg;
+    return msg;
 }
 
 /**

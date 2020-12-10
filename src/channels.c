@@ -117,6 +117,13 @@ ssh_channel ssh_channel_new(ssh_session session)
 
     if (session->channels == NULL) {
         session->channels = ssh_list_new();
+        if (session->channels == NULL) {
+            ssh_set_error_oom(session);
+            SSH_BUFFER_FREE(channel->stdout_buffer);
+            SSH_BUFFER_FREE(channel->stderr_buffer);
+            SAFE_FREE(channel);
+            return NULL;
+        }
     }
 
     ssh_list_prepend(session->channels, channel);
