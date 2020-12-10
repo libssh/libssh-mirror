@@ -688,18 +688,15 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
         /*
          * States required:
          * - session_state == SSH_SESSION_STATE_AUTHENTICATED
-         * - session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING
          *
          * Transitions:
-         * - session->global_req_state == SSH_CHANNEL_REQ_STATE_ACCEPTED
+         * - From channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING
+         * - To   channel->request_state = SSH_CHANNEL_REQ_STATE_ACCEPTED
+         *
+         * If not in a pending state, message is ignored in the callback handler.
          * */
 
         if (session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
-            rc = SSH_PACKET_DENIED;
-            break;
-        }
-
-        if (session->global_req_state != SSH_CHANNEL_REQ_STATE_PENDING) {
             rc = SSH_PACKET_DENIED;
             break;
         }
@@ -710,18 +707,15 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
         /*
          * States required:
          * - session_state == SSH_SESSION_STATE_AUTHENTICATED
-         * - session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING
          *
          * Transitions:
-         * - session->global_req_state == SSH_CHANNEL_REQ_STATE_DENIED
+         * - From channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING
+         * - To   channel->request_state = SSH_CHANNEL_REQ_STATE_ACCEPTED
+         *
+         * If not in a pending state, message is ignored in the callback handler.
          * */
 
         if (session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
-            rc = SSH_PACKET_DENIED;
-            break;
-        }
-
-        if (session->global_req_state != SSH_CHANNEL_REQ_STATE_PENDING) {
             rc = SSH_PACKET_DENIED;
             break;
         }
@@ -878,10 +872,12 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
         /*
          * States required:
          * - session_state == SSH_SESSION_STATE_AUTHENTICATED
-         * - channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING
          *
          * Transitions:
-         * - channel->request_state = SSH_CHANNEL_REQ_STATE_ACCEPTED
+         * - From channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING
+         * - To   channel->request_state = SSH_CHANNEL_REQ_STATE_ACCEPTED
+         *
+         * If not in a pending state, message is ignored in the callback handler.
          * */
 
         if (session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
@@ -895,10 +891,12 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
         /*
          * States required:
          * - session_state == SSH_SESSION_STATE_AUTHENTICATED
-         * - channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING
          *
          * Transitions:
-         * - channel->request_state = SSH_CHANNEL_REQ_STATE_DENIED
+         * - From channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING
+         * - To   channel->request_state = SSH_CHANNEL_REQ_STATE_ACCEPTED
+         *
+         * If not in a pending state, message is ignored in the callback handler.
          * */
 
         if (session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
