@@ -2238,8 +2238,12 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
         return SSH_ERROR;
     }
 
-    ssh_string_fill(str, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
+    rc = ssh_string_fill(str, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
     SSH_BUFFER_FREE(buf);
+    if (rc < 0) {
+        SSH_STRING_FREE(str);
+        return SSH_ERROR;
+    }
 
     *sig_blob = str;
 
@@ -2558,7 +2562,10 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     if (session_id == NULL) {
         return NULL;
     }
-    ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+    rc = ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+    if (rc < 0) {
+        goto end;
+    }
 
     /* Fill the input */
     sign_input = ssh_buffer_new();
@@ -2619,7 +2626,11 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
     if (session_id == NULL) {
         return NULL;
     }
-    ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+    rc = ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+    if (rc < 0) {
+        SSH_STRING_FREE(session_id);
+        return NULL;
+    }
 
     sig_buf = ssh_buffer_new();
     if (sig_buf == NULL) {
