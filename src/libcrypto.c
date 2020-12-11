@@ -1098,7 +1098,7 @@ chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
 #endif /* DEBUG_CRYPTO */
 
     /* Verify the calculated MAC matches the attached MAC */
-    cmp = memcmp(tag, mac, POLY1305_TAGLEN);
+    cmp = CRYPTO_memcmp(tag, mac, POLY1305_TAGLEN);
     if (cmp != 0) {
         /* mac error */
         SSH_LOG(SSH_LOG_PACKET, "poly1305 verify error");
