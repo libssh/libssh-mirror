@@ -272,6 +272,12 @@ endif (GCRYPT_FOUND)
 if (MBEDTLS_FOUND)
     set(HAVE_LIBMBEDCRYPTO 1)
     set(HAVE_ECC 1)
+
+    set(CMAKE_REQUIRED_INCLUDES "${MBEDTLS_INCLUDE_DIR}/mbedtls")
+    check_include_file(chacha20.h HAVE_MBEDTLS_CHACHA20_H)
+    check_include_file(poly1305.h HAVE_MBEDTLS_POLY1305_H)
+    unset(CMAKE_REQUIRED_INCLUDES)
+
 endif (MBEDTLS_FOUND)
 
 if (CMAKE_USE_PTHREADS_INIT)

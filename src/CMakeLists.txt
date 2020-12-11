@@ -211,10 +211,16 @@ elseif (WITH_MBEDTLS)
         external/fe25519.c
         external/ge25519.c
         external/sc25519.c
-        external/chacha.c
-        external/poly1305.c
-        chachapoly.c
        )
+    if (NOT (HAVE_MBEDTLS_CHACHA20_H AND HAVE_MBEDTLS_POLY1305_H))
+        set(libssh_SRCS
+            ${libssh_SRCS}
+            external/chacha.c
+            external/poly1305.c
+            chachapoly.c
+           )
+    endif()
+
 else (WITH_GCRYPT)
     set(libssh_SRCS
         ${libssh_SRCS}

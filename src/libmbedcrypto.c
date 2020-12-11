@@ -994,9 +994,9 @@ chacha20_poly1305_set_iv(struct ssh_cipher_struct *cipher,
         return SSH_ERROR;
     }
 
-    ret = mbedtls_chacha20_starts(&ctx->header_ctx, seqbuf, 0);
+    ret = mbedtls_chacha20_starts(&ctx->main_ctx, seqbuf, 0);
     if (ret != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_chacha20_starts(header_ctx) failed");
+        SSH_LOG(SSH_LOG_WARNING, "mbedtls_chacha20_starts(main_ctx) failed");
         return SSH_ERROR;
     }
 
@@ -1126,7 +1126,7 @@ chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
 #endif /* DEBUG_CRYPTO */
 
     /* Verify the calculated MAC matches the attached MAC */
-    cmp = memcmp(tag, mac, POLY1305_TAGLEN);
+    cmp = secure_memcmp(tag, mac, POLY1305_TAGLEN);
     if (cmp != 0) {
         /* mac error */
         SSH_LOG(SSH_LOG_PACKET, "poly1305 verify error");
@@ -1187,7 +1187,7 @@ chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
     /* We already did encrypt one block so the counter should be in the correct position */
     ret = mbedtls_chacha20_update(&ctx->main_ctx, len - sizeof(uint32_t),
                                   in_packet->payload, out_packet->payload);
-    if (ret != 1) {
+    if (ret != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_chacha20_update failed");
         return;
     }
@@ -1411,7 +1411,7 @@ int ssh_crypto_init(void)
         mbedtls_ctr_drbg_free(&ssh_mbedtls_ctr_drbg);
     }
 
-#if defined(MBEDTLS_CHACHA20_C) && defined(MBEDTLS_POLY1305_C)
+#if !(defined(MBEDTLS_CHACHA20_C) && defined(MBEDTLS_POLY1305_C))
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
         int cmp;
 
