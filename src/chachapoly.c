@@ -164,7 +164,7 @@ static int chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
     ssh_log_hexdump("received tag", mac, POLY1305_TAGLEN);
 #endif
 
-    cmp = memcmp(tag, mac, POLY1305_TAGLEN);
+    cmp = secure_memcmp(tag, mac, POLY1305_TAGLEN);
     if(cmp != 0) {
         /* mac error */
         SSH_LOG(SSH_LOG_PACKET,"poly1305 verify error");
