@@ -112,6 +112,7 @@ set(libssh_SRCS
   config.c
   connect.c
   connector.c
+  crypto_common.c
   curve25519.c
   dh.c
   ecdh.c

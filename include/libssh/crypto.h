@@ -213,4 +213,6 @@ int sshkdf_derive_key(struct ssh_crypto_struct *crypto,
                       int key_type, unsigned char *output,
                       size_t requested_len);
 
+int secure_memcmp(const void *s1, const void *s2, size_t n);
+
 #endif /* _CRYPTO_H_ */
