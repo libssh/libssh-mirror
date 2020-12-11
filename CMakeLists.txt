@@ -73,7 +73,7 @@ else (WITH_GCRYPT)
         message(FATAL_ERROR "Could not find OpenSSL, GCrypt or mbedTLS")
       endif (NOT MBEDTLS_FOUND)
     endif (NOT GCRYPT_FOUND)
-  endif (NOT OPENSSL_FOUND)
+  endif (OPENSSL_FOUND)
 endif(WITH_GCRYPT)
 
 if (UNIT_TESTING)
