@@ -291,25 +291,10 @@ HMAC_CTX *HMAC_CTX_new(void)
     return ctx;
 }
 
-static void hmac_ctx_cleanup(HMAC_CTX *ctx)
-{
-    EVP_MD_CTX_reset(&ctx->i_ctx);
-    EVP_MD_CTX_reset(&ctx->o_ctx);
-    EVP_MD_CTX_reset(&ctx->md_ctx);
-    ctx->md = NULL;
-    ctx->key_length = 0;
-    OPENSSL_cleanse(ctx->key, sizeof(ctx->key));
-}
-
 void HMAC_CTX_free(HMAC_CTX *ctx)
 {
     if (ctx != NULL) {
-        hmac_ctx_cleanup(ctx);
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
-        EVP_MD_CTX_free(&ctx->i_ctx);
-        EVP_MD_CTX_free(&ctx->o_ctx);
-        EVP_MD_CTX_free(&ctx->md_ctx);
-#endif
+        HMAC_CTX_cleanup(ctx);
         OPENSSL_free(ctx);
     }
 }
