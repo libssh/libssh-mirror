@@ -272,8 +272,7 @@ EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *ctx)
 {
-    /* EVP_CIPHER_CTX_reset(ctx); alias */
-    EVP_CIPHER_CTX_init(ctx);
+    EVP_CIPHER_CTX_cleanup(ctx);
     OPENSSL_free(ctx);
 }
 #endif
