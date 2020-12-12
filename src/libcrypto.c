@@ -118,14 +118,13 @@ int ssh_get_random(void *where, int len, int strong)
 SHACTX sha1_init(void)
 {
     int rc;
-    SHACTX c = EVP_MD_CTX_create();
+    SHACTX c = EVP_MD_CTX_new();
     if (c == NULL) {
         return NULL;
     }
-    EVP_MD_CTX_init(c);
     rc = EVP_DigestInit_ex(c, EVP_sha1(), NULL);
     if (rc == 0) {
-        EVP_MD_CTX_destroy(c);
+        EVP_MD_CTX_free(c);
         c = NULL;
     }
     return c;
@@ -141,7 +140,7 @@ void sha1_final(unsigned char *md, SHACTX c)
     unsigned int mdlen = 0;
 
     EVP_DigestFinal(c, md, &mdlen);
-    EVP_MD_CTX_destroy(c);
+    EVP_MD_CTX_free(c);
 }
 
 void sha1(const unsigned char *digest, int len, unsigned char *hash)
@@ -210,14 +209,13 @@ void evp_final(EVPCTX ctx, unsigned char *md, unsigned int *mdlen)
 SHA256CTX sha256_init(void)
 {
     int rc;
-    SHA256CTX c = EVP_MD_CTX_create();
+    SHA256CTX c = EVP_MD_CTX_new();
     if (c == NULL) {
         return NULL;
     }
-    EVP_MD_CTX_init(c);
     rc = EVP_DigestInit_ex(c, EVP_sha256(), NULL);
     if (rc == 0) {
-        EVP_MD_CTX_destroy(c);
+        EVP_MD_CTX_free(c);
         c = NULL;
     }
     return c;
@@ -233,7 +231,7 @@ void sha256_final(unsigned char *md, SHA256CTX c)
     unsigned int mdlen = 0;
 
     EVP_DigestFinal(c, md, &mdlen);
-    EVP_MD_CTX_destroy(c);
+    EVP_MD_CTX_free(c);
 }
 
 void sha256(const unsigned char *digest, int len, unsigned char *hash)
@@ -248,14 +246,13 @@ void sha256(const unsigned char *digest, int len, unsigned char *hash)
 SHA384CTX sha384_init(void)
 {
     int rc;
-    SHA384CTX c = EVP_MD_CTX_create();
+    SHA384CTX c = EVP_MD_CTX_new();
     if (c == NULL) {
         return NULL;
     }
-    EVP_MD_CTX_init(c);
     rc = EVP_DigestInit_ex(c, EVP_sha384(), NULL);
     if (rc == 0) {
-        EVP_MD_CTX_destroy(c);
+        EVP_MD_CTX_free(c);
         c = NULL;
     }
     return c;
@@ -271,7 +268,7 @@ void sha384_final(unsigned char *md, SHA384CTX c)
     unsigned int mdlen = 0;
 
     EVP_DigestFinal(c, md, &mdlen);
-    EVP_MD_CTX_destroy(c);
+    EVP_MD_CTX_free(c);
 }
 
 void sha384(const unsigned char *digest, int len, unsigned char *hash)
@@ -286,14 +283,13 @@ void sha384(const unsigned char *digest, int len, unsigned char *hash)
 SHA512CTX sha512_init(void)
 {
     int rc = 0;
-    SHA512CTX c = EVP_MD_CTX_create();
+    SHA512CTX c = EVP_MD_CTX_new();
     if (c == NULL) {
         return NULL;
     }
-    EVP_MD_CTX_init(c);
     rc = EVP_DigestInit_ex(c, EVP_sha512(), NULL);
     if (rc == 0) {
-        EVP_MD_CTX_destroy(c);
+        EVP_MD_CTX_free(c);
         c = NULL;
     }
     return c;
@@ -309,7 +305,7 @@ void sha512_final(unsigned char *md, SHA512CTX c)
     unsigned int mdlen = 0;
 
     EVP_DigestFinal(c, md, &mdlen);
-    EVP_MD_CTX_destroy(c);
+    EVP_MD_CTX_free(c);
 }
 
 void sha512(const unsigned char *digest, int len, unsigned char *hash)
@@ -324,14 +320,13 @@ void sha512(const unsigned char *digest, int len, unsigned char *hash)
 MD5CTX md5_init(void)
 {
     int rc;
-    MD5CTX c = EVP_MD_CTX_create();
+    MD5CTX c = EVP_MD_CTX_new();
     if (c == NULL) {
         return NULL;
     }
-    EVP_MD_CTX_init(c);
     rc = EVP_DigestInit_ex(c, EVP_md5(), NULL);
     if(rc == 0) {
-        EVP_MD_CTX_destroy(c);
+        EVP_MD_CTX_free(c);
         c = NULL;
     }
     return c;
@@ -347,7 +342,7 @@ void md5_final(unsigned char *md, MD5CTX c)
     unsigned int mdlen = 0;
 
     EVP_DigestFinal(c, md, &mdlen);
-    EVP_MD_CTX_destroy(c);
+    EVP_MD_CTX_free(c);
 }
 
 #ifdef HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID

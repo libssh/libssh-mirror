@@ -236,7 +236,11 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
-    return OPENSSL_zalloc(sizeof(EVP_MD_CTX));
+    EVP_MD_CTX *ctx = OPENSSL_zalloc(sizeof(EVP_MD_CTX));
+    if (ctx != NULL) {
+        EVP_MD_CTX_init(ctx);
+    }
+    return ctx;
 }
 
 static void OPENSSL_clear_free(void *str, size_t num)
