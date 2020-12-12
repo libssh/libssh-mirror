@@ -16,15 +16,6 @@
 #include <openssl/engine.h>
 #endif
 
-static void *OPENSSL_zalloc(size_t num)
-{
-    void *ret = OPENSSL_malloc(num);
-
-    if (ret != NULL)
-        memset(ret, 0, num);
-    return ret;
-}
-
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 {
     /* If the fields n and e in r are NULL, the corresponding input
@@ -236,7 +227,7 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
-    EVP_MD_CTX *ctx = OPENSSL_zalloc(sizeof(EVP_MD_CTX));
+    EVP_MD_CTX *ctx = OPENSSL_malloc(sizeof(EVP_MD_CTX));
     if (ctx != NULL) {
         EVP_MD_CTX_init(ctx);
     }
@@ -292,13 +283,10 @@ int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
 
 HMAC_CTX *HMAC_CTX_new(void)
 {
-    HMAC_CTX *ctx = OPENSSL_zalloc(sizeof(HMAC_CTX));
+    HMAC_CTX *ctx = OPENSSL_malloc(sizeof(HMAC_CTX));
 
     if (ctx != NULL) {
-        if (!HMAC_CTX_reset(ctx)) {
-            HMAC_CTX_free(ctx);
-            return NULL;
-        }
+        HMAC_CTX_init(ctx);
     }
     return ctx;
 }
@@ -335,7 +323,11 @@ int HMAC_CTX_reset(HMAC_CTX *ctx)
 #ifndef HAVE_OPENSSL_EVP_CIPHER_CTX_NEW
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {
-    return OPENSSL_zalloc(sizeof(EVP_CIPHER_CTX));
+    EVP_CIPHER_CTX *ctx = OPENSSL_malloc(sizeof(EVP_CIPHER_CTX));
+    if (ctx != NULL) {
+        EVP_CIPHER_CTX_init(ctx);
+    }
+    return ctx;
 }
 
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *ctx)
