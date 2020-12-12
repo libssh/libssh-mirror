@@ -260,12 +260,6 @@ void HMAC_CTX_free(HMAC_CTX *ctx)
     }
 }
 
-int HMAC_CTX_reset(HMAC_CTX *ctx)
-{
-    HMAC_CTX_init(ctx);
-    return 1;
-}
-
 #ifndef HAVE_OPENSSL_EVP_CIPHER_CTX_NEW
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {
