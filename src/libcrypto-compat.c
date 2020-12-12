@@ -12,10 +12,6 @@
 #include <string.h>
 #include "libcrypto-compat.h"
 
-#ifndef OPENSSL_NO_ENGINE
-#include <openssl/engine.h>
-#endif
-
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 {
     /* If the fields n and e in r are NULL, the corresponding input
@@ -234,44 +230,9 @@ EVP_MD_CTX *EVP_MD_CTX_new(void)
     return ctx;
 }
 
-static void OPENSSL_clear_free(void *str, size_t num)
-{
-    if (str == NULL)
-        return;
-    if (num)
-        OPENSSL_cleanse(str, num);
-    OPENSSL_free(str);
-}
-
-/* This call frees resources associated with the context */
-int EVP_MD_CTX_reset(EVP_MD_CTX *ctx)
-{
-    if (ctx == NULL)
-        return 1;
-
-    /*
-     * Don't assume ctx->md_data was cleaned in EVP_Digest_Final, because
-     * sometimes only copies of the context are ever finalised.
-     */
-    if (ctx->digest && ctx->digest->cleanup
-        && !EVP_MD_CTX_test_flags(ctx, EVP_MD_CTX_FLAG_CLEANED))
-        ctx->digest->cleanup(ctx);
-    if (ctx->digest && ctx->digest->ctx_size && ctx->md_data
-        && !EVP_MD_CTX_test_flags(ctx, EVP_MD_CTX_FLAG_REUSE)) {
-        OPENSSL_clear_free(ctx->md_data, ctx->digest->ctx_size);
-    }
-    EVP_PKEY_CTX_free(ctx->pctx);
-#ifndef OPENSSL_NO_ENGINE
-    ENGINE_finish(ctx->engine);
-#endif
-    OPENSSL_cleanse(ctx, sizeof(*ctx));
-
-    return 1;
-}
-
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 {
-    EVP_MD_CTX_reset(ctx);
+    EVP_MD_CTX_cleanup(ctx);
     OPENSSL_free(ctx);
 }
 
