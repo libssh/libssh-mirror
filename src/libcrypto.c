@@ -454,17 +454,10 @@ void hmac_update(HMACCTX ctx, const void *data, unsigned long len) {
   HMAC_Update(ctx, data, len);
 }
 
-void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
-  HMAC_Final(ctx,hashmacbuf,len);
-
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
-  HMAC_CTX_free(ctx);
-  ctx = NULL;
-#else
-  HMAC_cleanup(ctx);
-  SAFE_FREE(ctx);
-  ctx = NULL;
-#endif
+void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len)
+{
+    HMAC_Final(ctx, hashmacbuf, len);
+    HMAC_CTX_free(ctx);
 }
 
 static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
