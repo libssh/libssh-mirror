@@ -12,6 +12,7 @@ include_directories(${OPENSSL_INCLUDE_DIR}
                     ${libssh_BINARY_DIR}/include
                     ${libssh_BINARY_DIR}
                     ${libssh_SOURCE_DIR}/src
+                    ${CMAKE_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_BINARY_DIR}/tests)
 
@@ -31,6 +32,50 @@ target_link_libraries(${TORTURE_LIBRARY} ${TORTURE_LINK_LIBRARIES})
 target_compile_options(${TORTURE_LIBRARY} PRIVATE
                        -DSSH_PING_EXECUTABLE="${CMAKE_CURRENT_BINARY_DIR}/ssh_ping"
 )
+
+# The shared version of the library is only useful when client testing is
+# enabled
+if (CLIENT_TESTING)
+    # create shared test library
+    set(TORTURE_SHARED_LIBRARY torture_shared)
+
+    if (MINGW)
+        set(USE_ATTRIBUTE_WEAK "-DUSE_ATTRIBUTE_WEAK")
+    endif ()
+
+    # Create a list of symbols that should be wrapped for override test
+    set(WRAP_SYMBOLS "")
+    list(APPEND WRAP_SYMBOLS
+         "-Wl,--wrap=chacha_keysetup"
+         "-Wl,--wrap=chacha_ivsetup"
+         "-Wl,--wrap=chacha_encrypt_bytes")
+    list(APPEND WRAP_SYMBOLS "-Wl,--wrap=poly1305_auth")
+    list(APPEND WRAP_SYMBOLS
+         "-Wl,--wrap=crypto_sign_ed25519_keypair"
+         "-Wl,--wrap=crypto_sign_ed25519"
+         "-Wl,--wrap=crypto_sign_ed25519_open")
+    list(APPEND WRAP_SYMBOLS
+         "-Wl,--wrap=crypto_scalarmult_base"
+         "-Wl,--wrap=crypto_scalarmult")
+
+    add_library(${TORTURE_SHARED_LIBRARY}
+                SHARED
+                    cmdline.c
+                    torture.c
+                    torture_key.c
+                    torture_pki.c
+                    torture_cmocka.c
+               )
+    target_link_libraries(${TORTURE_SHARED_LIBRARY}
+                          ${CMOCKA_LIBRARY}
+                          ssh::static
+                          ${WRAP_SYMBOLS}
+                         )
+    target_compile_options(${TORTURE_SHARED_LIBRARY} PRIVATE
+                           -DSSH_PING_EXECUTABLE="${CMAKE_CURRENT_BINARY_DIR}/ssh_ping"
+                           ${USE_ATTRIBUTE_WEAK}
+    )
+endif ()
 
 if (ARGP_LIBRARY)
     target_link_libraries(${TORTURE_LIBRARY}
@@ -259,6 +304,9 @@ endif ()
 
 if (CLIENT_TESTING)
     add_subdirectory(client)
+
+    # Only add override testing if testing the client
+    add_subdirectory(external_override)
 endif ()
 
 if (WITH_SERVER AND SERVER_TESTING)

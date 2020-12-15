@@ -1606,6 +1606,13 @@ void torture_reset_config(ssh_session session)
     memset(session->opts.options_seen, 0, sizeof(session->opts.options_seen));
 }
 
+#if ((defined _WIN32) || (defined _WIN64)) && (defined USE_ATTRIBUTE_WEAK)
+__attribute__((weak)) int torture_run_tests(void)
+{
+    fail();
+}
+#endif
+
 int main(int argc, char **argv) {
     struct argument_s arguments;
     char *env = getenv("LIBSSH_VERBOSITY");
