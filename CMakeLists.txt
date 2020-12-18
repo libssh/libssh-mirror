@@ -58,7 +58,7 @@ elseif(WITH_MBEDTLS)
       message(FATAL_ERROR "Could not find mbedTLS")
     endif (NOT MBEDTLS_FOUND)
 else (WITH_GCRYPT)
-  find_package(OpenSSL)
+  find_package(OpenSSL 1.0.1)
   if (OPENSSL_FOUND)
     # On CMake < 3.16, OPENSSL_CRYPTO_LIBRARIES is usually a synonym for OPENSSL_CRYPTO_LIBRARY, but is not defined
     # when building on Windows outside of Cygwin. We provide the synonym here, if FindOpenSSL didn't define it already.
