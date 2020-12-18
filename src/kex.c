@@ -80,13 +80,8 @@
 #  else
 #   define GCM ""
 #  endif /* HAVE_OPENSSL_EVP_AES_GCM */
-#  ifdef BROKEN_AES_CTR
-#   define AES GCM
-#   define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
-#  else /* BROKEN_AES_CTR */
-#   define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr,"
-#   define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
-#  endif /* BROKEN_AES_CTR */
+#  define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr,"
+#  define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
 # else /* HAVE_OPENSSL_AES_H */
 #  define AES ""
 #  define AES_CBC ""

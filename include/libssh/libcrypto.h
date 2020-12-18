@@ -60,10 +60,6 @@ typedef void *EVPCTX;
 
 #include <openssl/bn.h>
 #include <openssl/opensslv.h>
-#define OPENSSL_0_9_7b 0x0090702fL
-#if (OPENSSL_VERSION_NUMBER <= OPENSSL_0_9_7b)
-#define BROKEN_AES_CTR
-#endif
 typedef BIGNUM*  bignum;
 typedef const BIGNUM* const_bignum;
 typedef BN_CTX* bignum_CTX;

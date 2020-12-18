@@ -1304,10 +1304,6 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
 #endif
 #ifdef HAS_AES
-#ifndef BROKEN_AES_CTR
-/* OpenSSL until 0.9.7c has a broken AES_ctr128_encrypt implementation which
- * increments the counter from 2^64 instead of 1. It's better not to use it
- */
 #ifdef HAVE_OPENSSL_EVP_AES_CTR
   {
     .name = "aes128-ctr",
@@ -1377,7 +1373,6 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .cleanup = aes_ctr_cleanup
   },
 #endif /* HAVE_OPENSSL_EVP_AES_CTR */
-#endif /* BROKEN_AES_CTR */
   {
     .name = "aes128-cbc",
     .blocksize = AES_BLOCK_SIZE,
