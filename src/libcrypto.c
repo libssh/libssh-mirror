@@ -423,42 +423,59 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
 HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type)
 {
     HMACCTX ctx = NULL;
+    EVP_PKEY *pkey = NULL;
+    int rc = -1;
 
-    ctx = HMAC_CTX_new();
+    ctx = EVP_MD_CTX_new();
     if (ctx == NULL) {
         return NULL;
     }
 
-    switch (type) {
-    case SSH_HMAC_SHA1:
-        HMAC_Init_ex(ctx, key, len, EVP_sha1(), NULL);
-        break;
-    case SSH_HMAC_SHA256:
-        HMAC_Init_ex(ctx, key, len, EVP_sha256(), NULL);
-        break;
-    case SSH_HMAC_SHA512:
-        HMAC_Init_ex(ctx, key, len, EVP_sha512(), NULL);
-        break;
-    case SSH_HMAC_MD5:
-        HMAC_Init_ex(ctx, key, len, EVP_md5(), NULL);
-        break;
-    default:
-        HMAC_CTX_free(ctx);
-        ctx = NULL;
+    pkey = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL, key, len);
+    if (pkey == NULL) {
+        goto error;
     }
 
+    switch (type) {
+    case SSH_HMAC_SHA1:
+        rc = EVP_DigestSignInit(ctx, NULL, EVP_sha1(), NULL, pkey);
+        break;
+    case SSH_HMAC_SHA256:
+        rc = EVP_DigestSignInit(ctx, NULL, EVP_sha256(), NULL, pkey);
+        break;
+    case SSH_HMAC_SHA512:
+        rc = EVP_DigestSignInit(ctx, NULL, EVP_sha512(), NULL, pkey);
+        break;
+    case SSH_HMAC_MD5:
+        rc = EVP_DigestSignInit(ctx, NULL, EVP_md5(), NULL, pkey);
+        break;
+    default:
+        rc = -1;
+        break;
+    }
+
+    EVP_PKEY_free(pkey);
+    if (rc != 1) {
+        goto error;
+    }
     return ctx;
+
+error:
+    EVP_MD_CTX_free(ctx);
+    return NULL;
 }
 
 void hmac_update(HMACCTX ctx, const void *data, unsigned long len)
 {
-    HMAC_Update(ctx, data, len);
+    EVP_DigestSignUpdate(ctx, data, len);
 }
 
 void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len)
 {
-    HMAC_Final(ctx, hashmacbuf, len);
-    HMAC_CTX_free(ctx);
+    size_t res;
+    EVP_DigestSignFinal(ctx, hashmacbuf, &res);
+    EVP_MD_CTX_free(ctx);
+    *len = res;
 }
 
 static void evp_cipher_init(struct ssh_cipher_struct *cipher)

@@ -242,24 +242,6 @@ int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
     return 1;
 }
 
-HMAC_CTX *HMAC_CTX_new(void)
-{
-    HMAC_CTX *ctx = OPENSSL_malloc(sizeof(HMAC_CTX));
-
-    if (ctx != NULL) {
-        HMAC_CTX_init(ctx);
-    }
-    return ctx;
-}
-
-void HMAC_CTX_free(HMAC_CTX *ctx)
-{
-    if (ctx != NULL) {
-        HMAC_CTX_cleanup(ctx);
-        OPENSSL_free(ctx);
-    }
-}
-
 #ifndef HAVE_OPENSSL_EVP_CIPHER_CTX_NEW
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {

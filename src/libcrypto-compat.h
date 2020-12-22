@@ -35,9 +35,6 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
 
 int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx);
 
-HMAC_CTX *HMAC_CTX_new(void);
-void HMAC_CTX_free(HMAC_CTX *ctx);
-
 void DH_get0_pqg(const DH *dh,
                  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
 int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g);

@@ -38,7 +38,7 @@ typedef EVP_MD_CTX* SHA256CTX;
 typedef EVP_MD_CTX* SHA384CTX;
 typedef EVP_MD_CTX* SHA512CTX;
 typedef EVP_MD_CTX* MD5CTX;
-typedef HMAC_CTX* HMACCTX;
+typedef EVP_MD_CTX* HMACCTX;
 #ifdef HAVE_ECC
 typedef EVP_MD_CTX *EVPCTX;
 #else
