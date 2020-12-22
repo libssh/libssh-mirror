@@ -123,9 +123,6 @@
 /* Define to 1 if you have the `EVP_chacha20' function. */
 #cmakedefine HAVE_OPENSSL_EVP_CHACHA20 1
 
-/* Define to 1 if you have the `CRYPTO_THREADID_set_callback' function. */
-#cmakedefine HAVE_OPENSSL_CRYPTO_THREADID_SET_CALLBACK 1
-
 /* Define to 1 if you have the `CRYPTO_ctr128_encrypt' function. */
 #cmakedefine HAVE_OPENSSL_CRYPTO_CTR128_ENCRYPT 1
 
