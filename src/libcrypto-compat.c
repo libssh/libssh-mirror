@@ -236,23 +236,6 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
     OPENSSL_free(ctx);
 }
 
-#ifndef HAVE_OPENSSL_EVP_CIPHER_CTX_NEW
-EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
-{
-    EVP_CIPHER_CTX *ctx = OPENSSL_malloc(sizeof(EVP_CIPHER_CTX));
-    if (ctx != NULL) {
-        EVP_CIPHER_CTX_init(ctx);
-    }
-    return ctx;
-}
-
-void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *ctx)
-{
-    EVP_CIPHER_CTX_cleanup(ctx);
-    OPENSSL_free(ctx);
-}
-#endif
-
 void DH_get0_pqg(const DH *dh,
                  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 {

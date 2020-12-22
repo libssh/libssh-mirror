@@ -129,9 +129,6 @@
 /* Define to 1 if you have the `CRYPTO_ctr128_encrypt' function. */
 #cmakedefine HAVE_OPENSSL_CRYPTO_CTR128_ENCRYPT 1
 
-/* Define to 1 if you have the `EVP_CIPHER_CTX_new' function. */
-#cmakedefine HAVE_OPENSSL_EVP_CIPHER_CTX_NEW 1
-
 /* Define to 1 if you have the `EVP_KDF_CTX_new_id' function. */
 #cmakedefine HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID 1
 
