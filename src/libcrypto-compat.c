@@ -236,12 +236,6 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
     OPENSSL_free(ctx);
 }
 
-int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
-{
-    EVP_CIPHER_CTX_init(ctx);
-    return 1;
-}
-
 #ifndef HAVE_OPENSSL_EVP_CIPHER_CTX_NEW
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {

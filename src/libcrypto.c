@@ -482,6 +482,8 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher)
 {
     if (cipher->ctx == NULL) {
         cipher->ctx = EVP_CIPHER_CTX_new();
+    } else {
+        EVP_CIPHER_CTX_init(cipher->ctx);
     }
 
     switch(cipher->ciphertype){
@@ -548,7 +550,6 @@ static int evp_cipher_set_encrypt_key(struct ssh_cipher_struct *cipher,
     int rc;
 
     evp_cipher_init(cipher);
-    EVP_CIPHER_CTX_reset(cipher->ctx);
 
     rc = EVP_EncryptInit_ex(cipher->ctx, cipher->cipher, NULL, key, IV);
     if (rc != 1){
@@ -581,7 +582,6 @@ static int evp_cipher_set_decrypt_key(struct ssh_cipher_struct *cipher,
     int rc;
 
     evp_cipher_init(cipher);
-    EVP_CIPHER_CTX_reset(cipher->ctx);
 
     rc = EVP_DecryptInit_ex(cipher->ctx, cipher->cipher, NULL, key, IV);
     if (rc != 1){
