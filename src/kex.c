@@ -75,11 +75,7 @@
 
 #elif defined(HAVE_LIBCRYPTO)
 # ifdef HAVE_OPENSSL_AES_H
-#  ifdef HAVE_OPENSSL_EVP_AES_GCM
-#   define GCM "aes256-gcm@openssh.com,aes128-gcm@openssh.com,"
-#  else
-#   define GCM ""
-#  endif /* HAVE_OPENSSL_EVP_AES_GCM */
+#  define GCM "aes256-gcm@openssh.com,aes128-gcm@openssh.com,"
 #  define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr,"
 #  define AES_CBC "aes256-cbc,aes192-cbc,aes128-cbc,"
 # else /* HAVE_OPENSSL_AES_H */
