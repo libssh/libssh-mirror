@@ -648,6 +648,23 @@ SSH_PACKET_CALLBACK(channel_rcv_eof) {
   return SSH_PACKET_USED;
 }
 
+static bool ssh_channel_has_unread_data(ssh_channel channel)
+{
+    if (channel == NULL) {
+        return false;
+    }
+
+    if ((channel->stdout_buffer &&
+         ssh_buffer_get_len(channel->stdout_buffer) > 0) ||
+        (channel->stderr_buffer &&
+         ssh_buffer_get_len(channel->stderr_buffer) > 0))
+    {
+        return true;
+    }
+
+    return false;
+}
+
 SSH_PACKET_CALLBACK(channel_rcv_close) {
 	ssh_channel channel;
 	(void)user;
@@ -665,14 +682,12 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 			channel->local_channel,
 			channel->remote_channel);
 
-	if ((channel->stdout_buffer &&
-			ssh_buffer_get_len(channel->stdout_buffer) > 0) ||
-			(channel->stderr_buffer &&
-					ssh_buffer_get_len(channel->stderr_buffer) > 0)) {
-		channel->delayed_close = 1;
-	} else {
+	if (!ssh_channel_has_unread_data(channel)) {
 		channel->state = SSH_CHANNEL_STATE_CLOSED;
-	}
+  } else {
+    channel->delayed_close = 1;
+  }
+
 	if (channel->remote_eof == 0) {
 		SSH_LOG(SSH_LOG_PACKET,
 				"Remote host not polite enough to send an eof before close");
@@ -1604,11 +1619,8 @@ int ssh_channel_is_eof(ssh_channel channel) {
   if(channel == NULL) {
       return SSH_ERROR;
   }
-  if ((channel->stdout_buffer &&
-        ssh_buffer_get_len(channel->stdout_buffer) > 0) ||
-      (channel->stderr_buffer &&
-       ssh_buffer_get_len(channel->stderr_buffer) > 0)) {
-    return 0;
+  if (ssh_channel_has_unread_data(channel)) {
+      return 0;
   }
 
   return (channel->remote_eof != 0);
@@ -2812,7 +2824,6 @@ static int ssh_channel_read_termination(void *s){
     return 0;
 }
 
-/* TODO FIXME Fix the delayed close thing */
 /* TODO FIXME Fix the blocking behaviours */
 
 /**
@@ -2956,6 +2967,10 @@ int ssh_channel_read_timeout(ssh_channel channel,
   ssh_buffer_pass_bytes(stdbuf,len);
   if (channel->counter != NULL) {
       channel->counter->in_bytes += len;
+  }
+  /* Try completing the delayed_close */
+  if (channel->delayed_close && !ssh_channel_has_unread_data(channel)) {
+      channel->state = SSH_CHANNEL_STATE_CLOSED;
   }
   /* Authorize some buffering while userapp is busy */
   if (channel->local_window < WINDOWLIMIT) {
