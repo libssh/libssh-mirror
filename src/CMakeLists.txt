@@ -354,7 +354,7 @@ target_link_libraries(ssh
                       PRIVATE ${LIBSSH_LINK_LIBRARIES})
 
 if (WIN32 AND NOT BUILD_SHARED_LIBS)
-    set_target_properties(ssh PROPERTIES COMPILE_FLAGS "-DLIBSSH_STATIC")
+    target_compile_definitions(ssh PUBLIC "LIBSSH_STATIC")
 endif ()
 
 add_library(ssh::ssh ALIAS ssh)
@@ -365,9 +365,7 @@ if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
         set(MAP_PATH "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_dev.map")
     endif (ABIMAP_FOUND)
 
-    set_target_properties(ssh
-                          PROPERTIES LINK_FLAGS
-                          "-Wl,--version-script,\"${MAP_PATH}\"")
+    target_link_libraries(ssh PRIVATE "-Wl,--version-script,\"${MAP_PATH}\"")
 endif (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
 
 set_target_properties(ssh
@@ -381,12 +379,12 @@ set_target_properties(ssh
 )
 
 if (WITH_VISIBILITY_HIDDEN)
-  set_target_properties(ssh PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
+    set_target_properties(ssh PROPERTIES C_VISIBILITY_PRESET hidden)
 endif (WITH_VISIBILITY_HIDDEN)
 
 if (MINGW)
-    set_target_properties(ssh PROPERTIES LINK_FLAGS "-Wl,--enable-stdcall-fixup")
-    set_target_properties(ssh PROPERTIES COMPILE_FLAGS "-D_POSIX_SOURCE")
+    target_link_libraries(ssh PRIVATE "-Wl,--enable-stdcall-fixup")
+    target_compile_definitions(ssh PRIVATE "_POSIX_SOURCE")
 endif ()
 
 
@@ -435,12 +433,7 @@ if (BUILD_STATIC_LIB)
   )
 
   if (WIN32)
-    set_target_properties(
-      ssh-static
-        PROPERTIES
-          COMPILE_FLAGS
-            "-DLIBSSH_STATIC"
-    )
+    target_compile_definitions(ssh-static PUBLIC "LIBSSH_STATIC")
   endif (WIN32)
 endif (BUILD_STATIC_LIB)
 
