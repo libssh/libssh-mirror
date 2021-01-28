@@ -168,6 +168,11 @@ extern LIBSSH_THREAD int ssh_log_level;
     "Host time4\n" \
     "\tRekeyLimit default 9600\n"
 
+/* Multiple IdentityFile settings all are aplied */
+#define LIBSSH_TESTCONFIG_STRING13 \
+   "IdentityFile id_rsa_one\n" \
+   "IdentityFile id_ecdsa_two\n"
+
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
 
@@ -1610,6 +1615,28 @@ static void torture_config_match_pattern(void **state)
 
 }
 
+/* Identity file can be specified multiple times in the configuration
+ */
+static void torture_config_identity(void **state)
+{
+    const char *id = NULL;
+    struct ssh_iterator *it = NULL;
+    ssh_session session = *state;
+
+    _parse_config(session, NULL, LIBSSH_TESTCONFIG_STRING13, SSH_OK);
+
+    it = ssh_list_get_iterator(session->opts.identity);
+    assert_non_null(it);
+    id = it->data;
+    /* The identities are prepended to the list so we start with second one */
+    assert_string_equal(id, "id_ecdsa_two");
+
+    it = it->next;
+    assert_non_null(it);
+    id = it->data;
+    assert_string_equal(id, "id_rsa_one");
+}
+
 
 int torture_run_tests(void)
 {
@@ -1668,6 +1695,8 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_config_parser_get_token,
                                         setup, teardown),
         cmocka_unit_test_setup_teardown(torture_config_match_pattern,
+                                        setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_config_identity,
                                         setup, teardown),
     };
 
