@@ -834,6 +834,7 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
 
     rc = ssh_string_fill(blob, buf->data, buf->length);
     if (rc < 0) {
+        ssh_string_free(blob);
         goto err;
     }
 
