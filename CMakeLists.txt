@@ -216,10 +216,10 @@ if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
     endif(UPDATE_ABI)
 endif (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
 
-add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source DEPENDS ${_SYMBOL_TARGET})
+add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source DEPENDS ${_SYMBOL_TARGET} VERBATIM)
 
 # Link compile database for clangd
-execute_process(COMMAND cmake -E create_symlink
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
                 "${CMAKE_BINARY_DIR}/compile_commands.json"
                 "${CMAKE_SOURCE_DIR}/compile_commands.json")
 
