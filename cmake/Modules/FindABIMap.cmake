@@ -469,12 +469,12 @@ function(generate_map_file _TARGET_NAME)
     # a generated source
     add_custom_command(
         OUTPUT ${_MAP_OUTPUT_PATH}
-        DEPENDS ${_TARGET_NAME}
+        DEPENDS ${_TARGET_NAME}_copy
     )
 
     if (DEFINED _generate_map_file_COPY_TO)
         # Copy the generated map back to the COPY_TO
-        add_custom_target(${_TARGET_NAME} ALL
+        add_custom_target(${_TARGET_NAME}_copy ALL
             COMMAND
               ${CMAKE_COMMAND} -E copy_if_different ${_MAP_OUTPUT_PATH}
               ${_generate_map_file_COPY_TO}
@@ -483,7 +483,7 @@ function(generate_map_file _TARGET_NAME)
             VERBATIM
         )
     else()
-        add_custom_target(${_TARGET_NAME} ALL
+        add_custom_target(${_TARGET_NAME}_copy ALL
             DEPENDS ${_TARGET_NAME}_int
         )
     endif()
