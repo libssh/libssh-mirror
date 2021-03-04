@@ -173,32 +173,32 @@ error:
     return NULL;
 }
 
-sftp_session sftp_new_channel(ssh_session session, ssh_channel channel){
-  sftp_session sftp;
+sftp_session
+sftp_new_channel(ssh_session session, ssh_channel channel)
+{
+    sftp_session sftp = NULL;
 
-  if (session == NULL) {
-    return NULL;
-  }
+    if (session == NULL) {
+        return NULL;
+    }
 
-  sftp = calloc(1, sizeof(struct sftp_session_struct));
-  if (sftp == NULL) {
-    ssh_set_error_oom(session);
+    sftp = calloc(1, sizeof(struct sftp_session_struct));
+    if (sftp == NULL) {
+        ssh_set_error_oom(session);
+        return NULL;
+    }
 
-    return NULL;
-  }
+    sftp->ext = sftp_ext_new();
+    if (sftp->ext == NULL) {
+        ssh_set_error_oom(session);
+        SAFE_FREE(sftp);
+        return NULL;
+    }
 
-  sftp->ext = sftp_ext_new();
-  if (sftp->ext == NULL) {
-    ssh_set_error_oom(session);
-    SAFE_FREE(sftp);
+    sftp->session = session;
+    sftp->channel = channel;
 
-    return NULL;
-  }
-
-  sftp->session = session;
-  sftp->channel = channel;
-
-  return sftp;
+    return sftp;
 }
 
 #ifdef WITH_SERVER
