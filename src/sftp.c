@@ -202,40 +202,42 @@ sftp_session sftp_new_channel(ssh_session session, ssh_channel channel){
 }
 
 #ifdef WITH_SERVER
-sftp_session sftp_server_new(ssh_session session, ssh_channel chan){
-  sftp_session sftp = NULL;
+sftp_session
+sftp_server_new(ssh_session session, ssh_channel chan)
+{
+    sftp_session sftp = NULL;
 
-  sftp = calloc(1, sizeof(struct sftp_session_struct));
-  if (sftp == NULL) {
-    ssh_set_error_oom(session);
-    return NULL;
-  }
+    sftp = calloc(1, sizeof(struct sftp_session_struct));
+    if (sftp == NULL) {
+        ssh_set_error_oom(session);
+        return NULL;
+    }
 
-  sftp->read_packet = calloc(1, sizeof(struct sftp_packet_struct));
-  if (sftp->read_packet == NULL) {
-    goto error;
-  }
+    sftp->read_packet = calloc(1, sizeof(struct sftp_packet_struct));
+    if (sftp->read_packet == NULL) {
+        goto error;
+    }
 
-  sftp->read_packet->payload = ssh_buffer_new();
-  if (sftp->read_packet->payload == NULL) {
-    goto error;
-  }
+    sftp->read_packet->payload = ssh_buffer_new();
+    if (sftp->read_packet->payload == NULL) {
+        goto error;
+    }
 
-  sftp->session = session;
-  sftp->channel = chan;
+    sftp->session = session;
+    sftp->channel = chan;
 
-  return sftp;
+    return sftp;
 
 error:
-  ssh_set_error_oom(session);
-  if (sftp->read_packet != NULL) {
-    if (sftp->read_packet->payload != NULL) {
-      SSH_BUFFER_FREE(sftp->read_packet->payload);
+    ssh_set_error_oom(session);
+    if (sftp->read_packet != NULL) {
+        if (sftp->read_packet->payload != NULL) {
+            SSH_BUFFER_FREE(sftp->read_packet->payload);
+        }
+        SAFE_FREE(sftp->read_packet);
     }
-    SAFE_FREE(sftp->read_packet);
-  }
-  SAFE_FREE(sftp);
-  return NULL;
+    SAFE_FREE(sftp);
+    return NULL;
 }
 
 int sftp_server_init(sftp_session sftp){
