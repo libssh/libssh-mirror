@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <time.h>
 #include <stdbool.h>
+#include <string.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
@@ -2135,7 +2136,7 @@ error:
 }
 
 static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
-    int timeout_ms, int *destination_port) {
+    int timeout_ms, int *destination_port, char **originator, int *originator_port) {
 #ifndef _WIN32
   static const struct timespec ts = {
     .tv_sec = 0,
@@ -2169,6 +2170,12 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
           if(destination_port) {
             *destination_port=msg->channel_request_open.destination_port;
           }
+          if(originator) {
+            *originator=strdup(msg->channel_request_open.originator);
+          }
+          if(originator_port) {
+            *originator_port=msg->channel_request_open.originator_port;
+          }
 
           ssh_message_free(msg);
           return channel;
@@ -2200,7 +2207,7 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
  *                      the server.
  */
 ssh_channel ssh_channel_accept_x11(ssh_channel channel, int timeout_ms) {
-  return ssh_channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms, NULL);
+  return ssh_channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms, NULL, NULL, NULL);
 }
 
 /**
@@ -2454,11 +2461,11 @@ int ssh_forward_listen(ssh_session session, const char *address, int port, int *
 
 /* DEPRECATED */
 ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
-  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, NULL);
+  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, NULL, NULL, NULL);
 }
 
 /**
- * @brief Accept an incoming TCP/IP forwarding channel and get information
+ * @brief Accept an incoming TCP/IP forwarding channel and get some information
  * about incomming connection
  * @param[in]  session    The ssh session to use.
  *
@@ -2470,7 +2477,30 @@ ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
  *         the server
  */
 ssh_channel ssh_channel_accept_forward(ssh_session session, int timeout_ms, int* destination_port) {
-  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, destination_port);
+  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, destination_port, NULL, NULL);
+}
+
+/**
+ * @brief Accept an incoming TCP/IP forwarding channel and get information
+ * about incomming connection
+ * @param[in]  session    The ssh session to use.
+ *
+ * @param[in]  timeout_ms A timeout in milliseconds.
+ *
+ * @param[out]  destination_port A pointer to destination port or NULL.
+ *
+ * @param[out]  originator A pointer to a pointer to a string of originator host or NULL.
+ *              That the caller is responsible for to ssh_string_free_char().
+ *
+ * @param[out]  originator_port A pointer to originator port or NULL.
+ *
+ * @return Newly created channel, or NULL if no incoming channel request from
+ *         the server
+ *
+ * @see ssh_string_free_char()
+ */
+ssh_channel ssh_channel_open_forward_port(ssh_session session, int timeout_ms, int *destination_port, char **originator, int *originator_port) {
+  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, destination_port, originator, originator_port);
 }
 
 /**

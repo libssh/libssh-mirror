@@ -510,7 +510,12 @@ LIBSSH_API char *ssh_dirname (const char *path);
 LIBSSH_API int ssh_finalize(void);
 
 /* REVERSE PORT FORWARDING */
-LIBSSH_API ssh_channel ssh_channel_accept_forward(ssh_session session,
+LIBSSH_API ssh_channel ssh_channel_open_forward_port(ssh_session session,
+                                                   int timeout_ms,
+                                                   int *destination_port,
+                                                   char **originator,
+                                                   int *originator_port);
+SSH_DEPRECATED LIBSSH_API ssh_channel ssh_channel_accept_forward(ssh_session session,
                                                   int timeout_ms,
                                                   int *destination_port);
 LIBSSH_API int ssh_channel_cancel_forward(ssh_session session,
