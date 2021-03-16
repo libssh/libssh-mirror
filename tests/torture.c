@@ -426,7 +426,8 @@ ssh_bind torture_ssh_bind(const char *addr,
 
 #ifdef WITH_SFTP
 
-struct torture_sftp *torture_sftp_session(ssh_session session) {
+struct torture_sftp *torture_sftp_session_channel(ssh_session session, ssh_channel channel)
+{
     struct torture_sftp *t;
     char template[] = "/tmp/ssh_torture_XXXXXX";
     char *p;
@@ -442,9 +443,26 @@ struct torture_sftp *torture_sftp_session(ssh_session session) {
     }
 
     t->ssh = session;
-    t->sftp = sftp_new(session);
-    if (t->sftp == NULL) {
-        goto failed;
+    if (channel == NULL) {
+        t->sftp = sftp_new(session);
+        if (t->sftp == NULL) {
+            goto failed;
+        }
+    } else {
+        t->sftp = sftp_new_channel(session, channel);
+        if (t->sftp == NULL) {
+            goto failed;
+        }
+
+        rc = ssh_channel_open_session(channel);
+        if (rc != SSH_OK) {
+            goto failed;
+        }
+
+        rc = ssh_channel_request_sftp(channel);
+        if (rc != SSH_OK) {
+            goto failed;
+        }
     }
 
     rc = sftp_init(t->sftp);
@@ -473,6 +491,11 @@ failed:
     free(t);
 
     return NULL;
+}
+
+struct torture_sftp *torture_sftp_session(ssh_session session)
+{
+    return torture_sftp_session_channel(session, NULL);
 }
 
 void torture_sftp_close(struct torture_sftp *t) {
