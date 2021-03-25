@@ -90,6 +90,12 @@ fedora/docs:
   script:
     - cmake .. && make docs
 
+fedora/ninja:
+  extends: .fedora
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  script:
+    - cmake -G Ninja $CMAKE_OPTIONS ../ && ninja && ninja test
+
 fedora/openssl_1.1.x/x86_64:
   extends: .fedora
 
