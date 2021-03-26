@@ -27,7 +27,7 @@ stages:
     - free -h
     - mkdir -p obj && cd obj
   script:
-    - cmake $CMAKE_OPTIONS $CMAKE_ADDTIONAL_OPTIONS .. &&
+    - cmake $CMAKE_OPTIONS $CMAKE_ADDITIONAL_OPTIONS .. &&
       make -j$(nproc) &&
       make -j$(nproc) install
   # Do not use after_script as it does not make the targets fail
@@ -47,7 +47,7 @@ stages:
   # This is needed to prevent passing artifacts from previous stages
   dependencies: []
   script:
-    - cmake $CMAKE_OPTIONS $CMAKE_ADDTIONAL_OPTIONS .. &&
+    - cmake $CMAKE_OPTIONS $CMAKE_ADDITIONAL_OPTIONS .. &&
       make -j$(nproc) &&
       ctest --output-on-failure
   # Do not use after_script as it does not make the targets fail
@@ -56,7 +56,7 @@ stages:
   extends: .tests
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: -DWITH_PKCS11_URI=ON
+      CMAKE_ADDITIONAL_OPTIONS: -DWITH_PKCS11_URI=ON
 
 .tumbleweed:
   extends: .tests
@@ -184,12 +184,12 @@ fedora/undefined-sanitizer:
 fedora/libgcrypt/x86_64:
   extends: .fedora
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: "-DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON"
+      CMAKE_ADDITIONAL_OPTIONS: "-DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON"
 
 fedora/mbedtls/x86_64:
   extends: .fedora
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DSA=OFF"
+      CMAKE_ADDITIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DSA=OFF"
 
 # Unit testing only, no client and pkd testing, because cwrap is not available
 # for MinGW
@@ -304,7 +304,7 @@ ubuntu/openssl_1.1.x/x86_64:
 tumbleweed/openssl_1.1.x/x86_64/gcc:
   extends: .tumbleweed
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: "-DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
+      CMAKE_ADDITIONAL_OPTIONS: "-DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/openssl_1.1.x/x86/gcc:
   extends: .tumbleweed
@@ -322,7 +322,7 @@ tumbleweed/openssl_1.1.x/x86/gcc:
 tumbleweed/openssl_1.1.x/x86_64/gcc7:
   extends: .tumbleweed
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: "-DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
+      CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/openssl_1.1.x/x86/gcc7:
   extends: .tumbleweed
@@ -339,7 +339,7 @@ tumbleweed/openssl_1.1.x/x86/gcc7:
 tumbleweed/openssl_1.1.x/x86_64/clang:
   extends: .tumbleweed
   variables:
-      CMAKE_ADDTIONAL_OPTIONS: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
+      CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/static-analysis:
   extends: .tests
