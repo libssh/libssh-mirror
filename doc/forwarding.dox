@@ -101,7 +101,7 @@ used to retrieve google's home page from the remote SSH server.
 int direct_forwarding(ssh_session session)
 {
   ssh_channel forwarding_channel;
-  int rc;
+  int rc = SSH_ERROR;
   char *http_get = "GET / HTTP/1.1\nHost: www.google.com\n\n";
   int nbytes, nwritten;
 
