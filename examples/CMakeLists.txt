@@ -47,10 +47,6 @@ if (UNIX AND NOT WIN32)
         endif (HAVE_LIBUTIL)
 
         if (WITH_GSSAPI AND GSSAPI_FOUND)
-            add_executable(samplesshd-cb samplesshd-cb.c)
-            target_compile_options(samplesshd-cb PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
-            target_link_libraries(samplesshd-cb ssh::ssh ${ARGP_LIBRARY})
-
             add_executable(proxy proxy.c)
             target_compile_options(proxy PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
             target_link_libraries(proxy ssh::ssh ${ARGP_LIBRARY})
@@ -70,6 +66,12 @@ if (UNIX AND NOT WIN32)
 
     endif()
 endif (UNIX AND NOT WIN32)
+
+if (WITH_SERVER)
+    add_executable(samplesshd-cb samplesshd-cb.c)
+    target_compile_options(samplesshd-cb PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+    target_link_libraries(samplesshd-cb ssh::ssh ${ARGP_LIBRARY})
+endif()
 
 add_executable(exec exec.c ${examples_SRCS})
 target_compile_options(exec PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
