@@ -1655,6 +1655,10 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        possible algorithms is created from the list of keys
  *                        set and then filtered against this list.
  *                        (const char *, comma-separated list).
+ * 
+ *                      - SSH_BIND_OPTIONS_MODULI
+ *                        Set the path to the moduli file. Defaults to
+ *                        /etc/ssh/moduli if not specified (const char *).
  *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
@@ -2001,6 +2005,19 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         } else {
             bool *x = (bool *)value;
             sshbind->config_processed = !(*x);
+        }
+        break;
+    case SSH_BIND_OPTIONS_MODULI:
+        if (value == NULL) {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            SAFE_FREE(sshbind->moduli_file);
+            sshbind->moduli_file = strdup(value);
+            if (sshbind->moduli_file == NULL) {
+                ssh_set_error_oom(sshbind);
+                return -1;
+            }
         }
         break;
     default:
