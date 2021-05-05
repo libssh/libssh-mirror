@@ -174,22 +174,25 @@ static void do_exit(int i)
     exit(0);
 }
 
-static ssh_channel chan;
 static int signal_delayed = 0;
 
+#ifdef SIGWINCH
 static void sigwindowchanged(int i)
 {
     (void) i;
     signal_delayed = 1;
 }
+#endif
 
 static void setsignal(void)
 {
+#ifdef SIGWINCH
     signal(SIGWINCH, sigwindowchanged);
+#endif
     signal_delayed = 0;
 }
 
-static void sizechanged(void)
+static void sizechanged(ssh_channel chan)
 {
     struct winsize win = {
         .ws_row = 0,
@@ -227,7 +230,7 @@ static void select_loop(ssh_session session,ssh_channel channel)
 
     while (ssh_channel_is_open(channel)) {
         if (signal_delayed) {
-            sizechanged();
+            sizechanged(channel);
         }
         rc = ssh_event_dopoll(event, 60000);
         if (rc == SSH_ERROR) {
@@ -267,10 +270,9 @@ static void shell(ssh_session session)
         ssh_channel_free(channel);
         return;
     }
-    chan = channel;
     if (interactive) {
         ssh_channel_request_pty(channel);
-        sizechanged();
+        sizechanged(channel);
     }
 
     if (ssh_channel_request_shell(channel)) {
