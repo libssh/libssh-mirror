@@ -693,7 +693,7 @@ static void cipher_encrypt(struct ssh_cipher_struct *cipher,
 }
 
 static void cipher_encrypt_cbc(struct ssh_cipher_struct *cipher, void *in, void *out,
-        unsigned long len)
+        size_t len)
 {
     size_t outlen = 0;
     int rc = 0;
@@ -751,7 +751,7 @@ static void cipher_decrypt(struct ssh_cipher_struct *cipher,
 }
 
 static void cipher_decrypt_cbc(struct ssh_cipher_struct *cipher, void *in, void *out,
-        unsigned long len)
+        size_t len)
 {
     size_t outlen = 0;
     int rc = 0;
