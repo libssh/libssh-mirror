@@ -32,6 +32,9 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
