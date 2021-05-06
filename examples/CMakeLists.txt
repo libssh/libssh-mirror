@@ -37,9 +37,13 @@ if (UNIX AND NOT WIN32)
 
     if (WITH_SERVER AND (ARGP_LIBRARY OR HAVE_ARGP_H))
         if (HAVE_LIBUTIL)
-            add_executable(ssh_server_fork ssh_server_fork.c)
-            target_compile_options(ssh_server_fork PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+            add_executable(ssh_server_fork ssh_server.c)
+            target_compile_options(ssh_server_fork PRIVATE ${DEFAULT_C_COMPILE_FLAGS} -DWITH_FORK)
             target_link_libraries(ssh_server_fork ssh::ssh ${ARGP_LIBRARY} util)
+
+            add_executable(ssh_server_pthread ssh_server.c)
+            target_compile_options(ssh_server_pthread PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+            target_link_libraries(ssh_server_pthread ssh::ssh ${ARGP_LIBRARY} pthread util)
         endif (HAVE_LIBUTIL)
 
         if (WITH_GSSAPI AND GSSAPI_FOUND)

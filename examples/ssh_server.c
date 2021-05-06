@@ -24,6 +24,7 @@ The goal is to show the API in action.
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
 #endif
+#include <pthread.h>
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #endif
@@ -783,18 +784,38 @@ static void handle_session(ssh_event event, ssh_session session) {
     }
 }
 
+#ifdef WITH_FORK
 /* SIGCHLD handler for cleaning up dead children. */
 static void sigchld_handler(int signo) {
     (void) signo;
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
+#else
+static void *session_thread(void *arg) {
+    ssh_session session = arg;
+    ssh_event event;
+
+    event = ssh_event_new();
+    if (event != NULL) {
+        /* Blocks until the SSH session ends by either
+         * child thread exiting, or client disconnecting. */
+        handle_session(event, session);
+        ssh_event_free(event);
+    } else {
+        fprintf(stderr, "Could not create polling context\n");
+    }
+    ssh_disconnect(session);
+    ssh_free(session);
+    return NULL;
+}
+#endif
 
 int main(int argc, char **argv) {
     ssh_bind sshbind;
     ssh_session session;
-    ssh_event event;
-    struct sigaction sa;
     int rc;
+#ifdef WITH_FORK
+    struct sigaction sa;
 
     /* Set up SIGCHLD handler. */
     sa.sa_handler = sigchld_handler;
@@ -804,6 +825,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Failed to register SIGCHLD handler\n");
         return 1;
     }
+#endif
 
     rc = ssh_init();
     if (rc < 0) {
@@ -844,6 +866,9 @@ int main(int argc, char **argv) {
 
         /* Blocks until there is a new incoming connection. */
         if(ssh_bind_accept(sshbind, session) != SSH_ERROR) {
+#ifdef WITH_FORK
+            ssh_event event;
+
             switch(fork()) {
                 case 0:
                     /* Remove the SIGCHLD handler inherited from parent. */
@@ -869,6 +894,16 @@ int main(int argc, char **argv) {
                 case -1:
                     fprintf(stderr, "Failed to fork\n");
             }
+#else
+            pthread_t tid;
+
+            rc = pthread_create(&tid, NULL, session_thread, session);
+            if (rc == 0) {
+                pthread_detach(tid);
+                continue;
+            }
+            fprintf(stderr, "Failed to pthread_create\n");
+#endif
         } else {
             fprintf(stderr, "%s\n", ssh_get_error(sshbind));
         }
