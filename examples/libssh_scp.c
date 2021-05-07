@@ -105,10 +105,6 @@ static void location_free(struct location *loc)
                 free(loc->user);
             }
             loc->user = NULL;
-            if (loc->host) {
-                free(loc->host);
-            }
-            loc->host = NULL;
         }
         free(loc);
     }
@@ -451,5 +447,6 @@ close_dest:
     location_free(dest);
 end:
     ssh_finalize();
+    free(sources);
     return r;
 }
