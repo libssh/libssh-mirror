@@ -411,6 +411,7 @@ int main(int argc, char **argv)
 {
     ssh_session session;
 
+    ssh_init();
     session = ssh_new();
 
     ssh_callbacks_init(&cb);
