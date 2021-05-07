@@ -404,9 +404,10 @@ int main(int argc, char **argv) {
     int i;
     int r;
     if (opts(argc, argv) < 0) {
-        r = EXIT_FAILURE;
-        goto end;
+        return EXIT_FAILURE;
     }
+
+    ssh_init();
 
     dest = parse_location(destination);
     if (dest == NULL) {
@@ -449,5 +450,6 @@ close_dest:
     close_location(dest);
     location_free(dest);
 end:
+    ssh_finalize();
     return r;
 }
