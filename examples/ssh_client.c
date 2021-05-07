@@ -82,7 +82,7 @@ static void add_cmd(char *cmd)
         return;
     }
 
-    cmds[n] = strdup(cmd);
+    cmds[n] = cmd;
 }
 
 static void usage(void)
@@ -127,7 +127,7 @@ static int opts(int argc, char **argv)
 #endif
         default:
             fprintf(stderr, "Unknown option %c\n", optopt);
-            usage();
+            return -1;
         }
     }
     if (optind < argc) {
@@ -139,7 +139,7 @@ static int opts(int argc, char **argv)
     }
 
     if (host == NULL) {
-        usage();
+        return -1;
     }
 
     return 0;
@@ -303,8 +303,6 @@ static void batch_shell(ssh_session session)
 
     for (i = 0; i < MAXCMD && cmds[i]; ++i) {
         s += snprintf(buffer + s, sizeof(buffer) - s, "%s ", cmds[i]);
-        free(cmds[i]);
-        cmds[i] = NULL;
     }
 
     channel = ssh_channel_new(session);
@@ -417,13 +415,14 @@ int main(int argc, char **argv)
     ssh_callbacks_init(&cb);
     ssh_set_callbacks(session,&cb);
 
-    if (ssh_options_getopt(session, &argc, argv)) {
+    if (ssh_options_getopt(session, &argc, argv) || opts(argc, argv)) {
         fprintf(stderr,
                 "Error parsing command line: %s\n",
                 ssh_get_error(session));
+        ssh_free(session);
+        ssh_finalize();
         usage();
     }
-    opts(argc, argv);
     signal(SIGTERM, do_exit);
 
     set_pcap(session);
