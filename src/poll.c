@@ -246,19 +246,17 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout)
         }
 #endif
 
-        if (fds[i].events & (POLLIN | POLLRDNORM)) {
-            FD_SET (fds[i].fd, &readfds);
-        }
+        // we use the readfds to get POLLHUP and POLLERR, which are provided even when not requested
+        FD_SET (fds[i].fd, &readfds);
+
         if (fds[i].events & (POLLOUT | POLLWRNORM | POLLWRBAND)) {
             FD_SET (fds[i].fd, &writefds);
         }
         if (fds[i].events & (POLLPRI | POLLRDBAND)) {
             FD_SET (fds[i].fd, &exceptfds);
         }
-        if (fds[i].fd > max_fd &&
-                (fds[i].events & (POLLIN | POLLOUT | POLLPRI |
-                                  POLLRDNORM | POLLRDBAND |
-                                  POLLWRNORM | POLLWRBAND))) {
+
+        if (fds[i].fd > max_fd) {
             max_fd = fds[i].fd;
             rc = 0;
         }
