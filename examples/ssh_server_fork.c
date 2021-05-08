@@ -248,6 +248,89 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 /* Our argp parser. */
 static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
+#else
+static int parse_opt(int argc, char **argv, ssh_bind sshbind) {
+    int no_default_keys = 0;
+    int rsa_already_set = 0;
+    int dsa_already_set = 0;
+    int ecdsa_already_set = 0;
+    int key;
+
+    while((key = getopt(argc, argv, "a:d:e:k:np:P:r:u:v")) != -1) {
+        if (key == 'n') {
+            no_default_keys = 1;
+        } else if (key == 'p') {
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT_STR, optarg);
+        } else if (key == 'd') {
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, optarg);
+            dsa_already_set = 1;
+        } else if (key == 'k') {
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, optarg);
+            /* We can't track the types of keys being added with this
+            option, so let's ensure we keep the keys we're adding
+            by just not setting the default keys */
+            no_default_keys = 1;
+        } else if (key == 'r') {
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, optarg);
+            rsa_already_set = 1;
+        } else if (key == 'e') {
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_ECDSAKEY, optarg);
+            ecdsa_already_set = 1;
+        } else if (key == 'a') {
+            strncpy(authorizedkeys, optarg, DEF_STR_SIZE-1);
+        } else if (key == 'u') {
+            strncpy(username, optarg, sizeof(username) - 1);
+        } else if (key == 'P') {
+            strncpy(password, optarg, sizeof(password) - 1);
+        } else if (key == 'v') {
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR,
+                                 "3");
+        } else {
+            break;
+        }
+    }
+
+    if (key != -1) {
+        printf("Usage: %s [OPTION...] BINDADDR\n"
+               "libssh %s -- a Secure Shell protocol implementation\n"
+               "\n"
+               "  -a, --authorizedkeys=FILE  Set the authorized keys file.\n"
+               "  -d, --dsakey=FILE          Set the dsa key.\n"
+               "  -e, --ecdsakey=FILE        Set the ecdsa key.\n"
+               "  -k, --hostkey=FILE         Set a host key.  Can be used multiple times.\n"
+               "                             Implies no default keys.\n"
+               "  -n, --no-default-keys      Do not set default key locations.\n"
+               "  -p, --port=PORT            Set the port to bind.\n"
+               "  -P, --pass=PASSWORD        Set expected password.\n"
+               "  -r, --rsakey=FILE          Set the rsa key.\n"
+               "  -u, --user=USERNAME        Set expected username.\n"
+               "  -v, --verbose              Get verbose output.\n"
+               "  -?, --help                 Give this help list\n"
+               "\n"
+               "Mandatory or optional arguments to long options are also mandatory or optional\n"
+               "for any corresponding short options.\n"
+               "\n"
+               "Report bugs to <libssh@libssh.org>.\n",
+               argv[0], SSH_STRINGIFY(LIBSSH_VERSION));
+        return -1;
+    }
+
+    if (optind != argc - 1) {
+        printf("Usage: %s [OPTION...] BINDADDR\n", argv[0]);
+        return -1;
+    }
+
+    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, argv[optind]);
+
+    if (!no_default_keys) {
+        set_default_keys(sshbind,
+                         rsa_already_set,
+                         dsa_already_set,
+                         ecdsa_already_set);
+    }
+
+    return 0;
+}
 #endif /* HAVE_ARGP_H */
 
 /* A userdata struct for channel. */
@@ -737,10 +820,11 @@ int main(int argc, char **argv) {
 #ifdef HAVE_ARGP_H
     argp_parse(&argp, argc, argv, 0, 0, sshbind);
 #else
-    (void) argc;
-    (void) argv;
-
-    set_default_keys(sshbind, 0, 0, 0);
+    if (parse_opt(argc, argv, sshbind) < 0) {
+        ssh_bind_free(sshbind);
+        ssh_finalize();
+        return 1;
+    }
 #endif /* HAVE_ARGP_H */
 
     if(ssh_bind_listen(sshbind) < 0) {
