@@ -48,8 +48,6 @@ The goal is to show the API in action.
 #endif
 #endif
 
-#define USER "myuser"
-#define PASS "mypassword"
 #define BUF_SIZE 1048576
 #define SESSION_END (SSH_CLOSED | SSH_CLOSED_ERROR)
 #define SFTP_SERVER_PATH "/usr/lib/sftp-server"
@@ -75,6 +73,8 @@ static void set_default_keys(ssh_bind sshbind,
 }
 #define DEF_STR_SIZE 1024
 char authorizedkeys[DEF_STR_SIZE] = {0};
+char username[128] = "myuser";
+char password[128] = "mypassword";
 #ifdef HAVE_ARGP_H
 const char *argp_program_version = "libssh server example "
 SSH_STRINGIFY(LIBSSH_VERSION);
@@ -138,6 +138,22 @@ static struct argp_option options[] = {
         .group = 0
     },
     {
+        .name  = "user",
+        .key   = 'u',
+        .arg   = "USERNAME",
+        .flags = 0,
+        .doc   = "Set expected username.",
+        .group = 0
+    },
+    {
+        .name  = "pass",
+        .key   = 'P',
+        .arg   = "PASSWORD",
+        .flags = 0,
+        .doc   = "Set expected password.",
+        .group = 0
+    },
+    {
         .name  = "no-default-keys",
         .key   = 'n',
         .arg   = NULL,
@@ -192,6 +208,12 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
             break;
         case 'a':
             strncpy(authorizedkeys, arg, DEF_STR_SIZE-1);
+            break;
+        case 'u':
+            strncpy(username, arg, sizeof(username) - 1);
+            break;
+        case 'P':
+            strncpy(password, arg, sizeof(password) - 1);
             break;
         case 'v':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR,
@@ -440,7 +462,7 @@ static int auth_password(ssh_session session, const char *user,
 
     (void) session;
 
-    if (strcmp(user, USER) == 0 && strcmp(pass, PASS) == 0) {
+    if (strcmp(user, username) == 0 && strcmp(pass, password) == 0) {
         sdata->authenticated = 1;
         return SSH_AUTH_SUCCESS;
     }
