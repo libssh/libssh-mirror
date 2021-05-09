@@ -33,7 +33,9 @@
 #include "libssh/crypto.h"
 #include "libssh/session.h"
 
+#ifndef BLOCKSIZE
 #define BLOCKSIZE 4092
+#endif
 
 static z_stream *initcompress(ssh_session session, int level) {
   z_stream *stream = NULL;

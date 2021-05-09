@@ -35,6 +35,10 @@ clients must be made or how a client should react.
 #include <stdio.h>
 #include <poll.h>
 
+#ifndef BUF_SIZE
+#define BUF_SIZE 16384
+#endif
+
 #define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)
 
 #ifndef __unused__
@@ -349,7 +353,7 @@ my_fd_data_function(UNUSED_PARAM(socket_t fd),
     ssh_channel channel = event_fd_data->channel;
     ssh_session session;
     int len, i, wr;
-    char buf[16384];
+    char buf[BUF_SIZE];
     int blocking;
 
     if (channel == NULL) {

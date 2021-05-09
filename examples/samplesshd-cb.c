@@ -29,6 +29,10 @@ clients must be made or how a client should react.
 #include <io.h>
 #endif
 
+#ifndef BUF_SIZE
+#define BUF_SIZE 2049
+#endif
+
 #ifndef KEYS_FOLDER
 #ifdef _WIN32
 #define KEYS_FOLDER
@@ -245,7 +249,7 @@ int main(int argc, char **argv){
         .channel_open_request_session_function = new_session_channel
     };
 
-    char buf[2049];
+    char buf[BUF_SIZE];
     int i;
     int r;
 

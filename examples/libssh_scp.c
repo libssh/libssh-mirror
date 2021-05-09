@@ -22,6 +22,10 @@ program.
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
+#ifndef BUF_SIZE
+#define BUF_SIZE 16384
+#endif
+
 static char **sources;
 static int nsources;
 static char *destination;
@@ -257,7 +261,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive) {
     socket_t fd;
     struct stat s;
     int w, r;
-    char buffer[16384];
+    char buffer[BUF_SIZE];
     size_t total = 0;
     mode_t mode;
     char *filename = NULL;
