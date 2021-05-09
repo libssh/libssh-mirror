@@ -2031,8 +2031,9 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 
 static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
 {
-    char buf[MAX_BUF_SIZE];
-    char *r, *x = NULL;
+    char *buf = NULL;
+    char *r = NULL;
+    char *x = NULL;
     const char *p;
     size_t i, l;
 
@@ -2048,6 +2049,13 @@ static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
         return NULL;
     }
 
+    buf = malloc(MAX_BUF_SIZE);
+    if (buf == NULL) {
+        ssh_set_error_oom(sshbind);
+        free(r);
+        return NULL;
+    }
+
     p = r;
     buf[0] = '\0';
 
@@ -2056,6 +2064,7 @@ static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
             buf[i] = *p;
             i++;
             if (i >= MAX_BUF_SIZE) {
+                free(buf);
                 free(r);
                 return NULL;
             }
@@ -2075,12 +2084,14 @@ static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
             default:
                 ssh_set_error(sshbind, SSH_FATAL,
                         "Wrong escape sequence detected");
+                free(buf);
                 free(r);
                 return NULL;
         }
 
         if (x == NULL) {
             ssh_set_error_oom(sshbind);
+            free(buf);
             free(r);
             return NULL;
         }
@@ -2089,18 +2100,26 @@ static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
         if (i >= MAX_BUF_SIZE) {
             ssh_set_error(sshbind, SSH_FATAL,
                     "String too long");
+            free(buf);
             free(x);
             free(r);
             return NULL;
         }
         l = strlen(buf);
-        strncpy(buf + l, x, sizeof(buf) - l - 1);
+        strncpy(buf + l, x, MAX_BUF_SIZE - l - 1);
         buf[i] = '\0';
         SAFE_FREE(x);
     }
 
     free(r);
-    return strdup(buf);
+
+    /* strip the unused space by realloc */
+    x = realloc(buf, strlen(buf) + 1);
+    if (x == NULL) {
+        ssh_set_error_oom(sshbind);
+        free(buf);
+    }
+    return x;
 }
 
 /**
