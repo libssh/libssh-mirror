@@ -63,10 +63,6 @@
 #define TORTURE_SSHD_CONFIG "sshd/sshd_config"
 #define TORTURE_PCAP_FILE "socket_trace.pcap"
 
-#ifndef PATH_MAX
-# define PATH_MAX 4096
-#endif
-
 static const char torture_rsa_certauth_pub[]=
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCnA2n5vHzZbs/GvRkGloJNV1CXHI"
         "S5Xnrm05HusUJSWyPq3I1iCMHdYA7oezHa9GCFYbIenaYPy+G6USQRjYQz8SvAZo06"

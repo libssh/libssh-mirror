@@ -1103,7 +1103,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
 
     while (state->it != NULL) {
         const char *privkey_file = state->it->data;
-        char pubkey_file[1024] = {0};
+        char pubkey_file[PATH_MAX] = {0};
 
         if (state->state == SSH_AUTH_AUTO_STATE_PUBKEY) {
             SSH_LOG(SSH_LOG_DEBUG,

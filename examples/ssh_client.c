@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include <sys/select.h>
 #include <sys/time.h>
@@ -297,7 +298,7 @@ static void shell(ssh_session session)
 static void batch_shell(ssh_session session)
 {
     ssh_channel channel;
-    char buffer[1024];
+    char buffer[PATH_MAX];
     size_t i;
     int s = 0;
 
