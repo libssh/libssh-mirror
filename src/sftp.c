@@ -58,7 +58,6 @@
 
 /* Buffer size maximum is 256M */
 #define SFTP_PACKET_SIZE_MAX 0x10000000
-#define SFTP_BUFFER_SIZE_MAX 16384
 
 struct sftp_ext_struct {
   uint32_t count;
@@ -427,7 +426,8 @@ ssize_t sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload)
 
 sftp_packet sftp_packet_read(sftp_session sftp)
 {
-    uint8_t buffer[SFTP_BUFFER_SIZE_MAX];
+    uint8_t tmpbuf[4];
+    uint8_t *buffer = NULL;
     sftp_packet packet = sftp->read_packet;
     uint32_t size;
     int nread;
@@ -461,7 +461,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         int s;
 
         // read from channel until 4 bytes have been read or an error occurs
-        s = ssh_channel_read(sftp->channel, buffer + nread, 4 - nread, 0);
+        s = ssh_channel_read(sftp->channel, tmpbuf + nread, 4 - nread, 0);
         if (s < 0) {
             goto error;
         } else if (s == 0) {
@@ -478,7 +478,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         }
     } while (nread < 4);
 
-    size = PULL_BE_U32(buffer, 0);
+    size = PULL_BE_U32(tmpbuf, 0);
     if (size == 0 || size > SFTP_PACKET_SIZE_MAX) {
         ssh_set_error(sftp->session, SSH_FATAL, "Invalid sftp packet size!");
         sftp_set_error(sftp, SSH_FX_FAILURE);
@@ -486,7 +486,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
     }
 
     do {
-        nread = ssh_channel_read(sftp->channel, buffer, 1, 0);
+        nread = ssh_channel_read(sftp->channel, tmpbuf, 1, 0);
         if (nread < 0) {
             goto error;
         } else if (nread == 0) {
@@ -501,34 +501,28 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         }
     } while (nread < 1);
 
-    packet->type = buffer[0];
+    packet->type = tmpbuf[0];
 
     /* Remove the packet type size */
     size -= sizeof(uint8_t);
 
-    nread = ssh_buffer_allocate_size(packet->payload, size);
-    if (nread < 0) {
+    /* Allocate the receive buffer from payload */
+    buffer = ssh_buffer_allocate(packet->payload, size);
+    if (buffer == NULL) {
         ssh_set_error_oom(sftp->session);
         sftp_set_error(sftp, SSH_FX_FAILURE);
         goto error;
     }
     while (size > 0 && size < SFTP_PACKET_SIZE_MAX) {
-        nread = ssh_channel_read(sftp->channel,
-                             buffer,
-                             sizeof(buffer) > size ? size : sizeof(buffer),
-                             0);
+        nread = ssh_channel_read(sftp->channel, buffer, size, 0);
         if (nread < 0) {
             /* TODO: check if there are cases where an error needs to be set here */
             goto error;
         }
 
         if (nread > 0) {
-            rc = ssh_buffer_add_data(packet->payload, buffer, nread);
-            if (rc != 0) {
-                ssh_set_error_oom(sftp->session);
-                sftp_set_error(sftp, SSH_FX_FAILURE);
-                goto error;
-            }
+            buffer += nread;
+            size -= nread;
         } else { /* nread == 0 */
             /* Retry the reading unless the remote was closed */
             is_eof = ssh_channel_is_eof(sftp->channel);
@@ -540,8 +534,6 @@ sftp_packet sftp_packet_read(sftp_session sftp)
                 goto error;
             }
         }
-
-        size -= nread;
     }
 
     return packet;
