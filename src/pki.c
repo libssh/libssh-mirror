@@ -67,6 +67,10 @@
 #include "libssh/misc.h"
 #include "libssh/agent.h"
 
+#ifndef MAX_LINE_SIZE
+#define MAX_LINE_SIZE 4096
+#endif
+
 #define PKCS11_URI "pkcs11:"
 
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey)
@@ -2094,7 +2098,7 @@ int ssh_pki_export_pubkey_base64(const ssh_key key,
 int ssh_pki_export_pubkey_file(const ssh_key key,
                                const char *filename)
 {
-    char key_buf[4096];
+    char key_buf[MAX_LINE_SIZE];
     char host[256];
     char *b64_key;
     char *user;

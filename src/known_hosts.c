@@ -45,6 +45,10 @@
 # include <arpa/inet.h>
 #endif
 
+#ifndef MAX_LINE_SIZE
+#define MAX_LINE_SIZE 4096
+#endif
+
 /**
  * @addtogroup libssh_session
  *
@@ -74,7 +78,7 @@ static struct ssh_tokens_st *ssh_get_knownhost_line(FILE **file,
                                                     const char *filename,
                                                     const char **found_type)
 {
-    char buffer[4096] = {0};
+    char buffer[MAX_LINE_SIZE] = {0};
     char *ptr;
     struct ssh_tokens_st *tokens;
 
@@ -431,7 +435,6 @@ char * ssh_dump_knownhost(ssh_session session) {
     ssh_key server_pubkey = NULL;
     char *host;
     char *hostport;
-    size_t len = 4096;
     char *buffer;
     char *b64_key;
     int rc;
@@ -467,7 +470,7 @@ char * ssh_dump_knownhost(ssh_session session) {
         return NULL;
     }
 
-    buffer = calloc (1, 4096);
+    buffer = calloc (1, MAX_LINE_SIZE);
     if (!buffer) {
         SAFE_FREE(host);
         return NULL;
@@ -480,7 +483,7 @@ char * ssh_dump_knownhost(ssh_session session) {
         return NULL;
     }
 
-    snprintf(buffer, len,
+    snprintf(buffer, MAX_LINE_SIZE,
             "%s %s %s\n",
             host,
             server_pubkey->type_c,
