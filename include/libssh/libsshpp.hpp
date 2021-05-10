@@ -369,13 +369,11 @@ public:
     return state;
   }
   void log(int priority, const char *format, ...){
-    char buffer[1024];
     va_list va;
 
     va_start(va, format);
-    vsnprintf(buffer, sizeof(buffer), format, va);
+    ssh_vlog(priority, "libsshpp", format, &va);
     va_end(va);
-    _ssh_log(priority, "libsshpp", "%s", buffer);
   }
 
   /** @brief copies options from a session to another

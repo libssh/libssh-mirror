@@ -49,6 +49,8 @@
   #endif
 #endif
 
+#include <stdarg.h>
+
 #ifdef _MSC_VER
   /* Visual Studio hasn't inttypes.h so it doesn't know uint32_t */
   typedef int int32_t;
@@ -587,6 +589,10 @@ LIBSSH_API int ssh_set_log_level(int level);
 LIBSSH_API int ssh_get_log_level(void);
 LIBSSH_API void *ssh_get_log_userdata(void);
 LIBSSH_API int ssh_set_log_userdata(void *data);
+LIBSSH_API void ssh_vlog(int verbosity,
+                         const char *function,
+                         const char *format,
+                         va_list *va) PRINTF_ATTRIBUTE(3, 0);
 LIBSSH_API void _ssh_log(int verbosity,
                          const char *function,
                          const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
