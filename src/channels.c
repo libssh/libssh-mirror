@@ -2753,7 +2753,7 @@ error:
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
   ssh_session session;
-  char buffer_tmp[8192];
+  char *buffer_tmp = NULL;
   int r;
   uint32_t total=0;
 
@@ -2775,14 +2775,19 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
         return r;
       }
       if(r > 0){
+        count = r;
+        buffer_tmp = ssh_buffer_allocate(buffer, count);
+        if (buffer_tmp == NULL) {
+          ssh_set_error_oom(session);
+          return SSH_ERROR;
+        }
         r=ssh_channel_read(channel, buffer_tmp, r, is_stderr);
         if(r < 0){
+          ssh_buffer_pass_bytes_end(buffer, count);
           return r;
         }
-        if(ssh_buffer_add_data(buffer,buffer_tmp,r) < 0){
-          ssh_set_error_oom(session);
-          r = SSH_ERROR;
-        }
+        /* Rollback the unused space */
+        ssh_buffer_pass_bytes_end(buffer, count - r);
 
         return r;
       }
@@ -2792,18 +2797,22 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
       ssh_handle_packets(channel->session, SSH_TIMEOUT_INFINITE);
     } while (r == 0);
   }
+
+  buffer_tmp = ssh_buffer_allocate(buffer, count);
+  if (buffer_tmp == NULL) {
+    ssh_set_error_oom(session);
+    return SSH_ERROR;
+  }
   while(total < count){
-    r=ssh_channel_read(channel, buffer_tmp, sizeof(buffer_tmp), is_stderr);
+    r=ssh_channel_read(channel, buffer_tmp, count - total, is_stderr);
     if(r<0){
+      ssh_buffer_pass_bytes_end(buffer, count);
       return r;
     }
     if(r==0){
+      /* Rollback the unused space */
+      ssh_buffer_pass_bytes_end(buffer, count - total);
       return total;
-    }
-    if (ssh_buffer_add_data(buffer,buffer_tmp,r) < 0) {
-      ssh_set_error_oom(session);
-
-      return SSH_ERROR;
     }
     total += r;
   }
