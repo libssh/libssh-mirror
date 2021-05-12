@@ -29,9 +29,6 @@
 #include <errno.h>
 #include <time.h>
 #include <stdbool.h>
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
 
 #ifndef _WIN32
 #include <netinet/in.h>
