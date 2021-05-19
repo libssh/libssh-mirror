@@ -717,7 +717,7 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 SSH_PACKET_CALLBACK(channel_rcv_request) {
 	ssh_channel channel;
 	char *request=NULL;
-    uint8_t status;
+    uint8_t want_reply;
     int rc;
 	(void)user;
 	(void)type;
@@ -730,7 +730,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 	rc = ssh_buffer_unpack(packet, "sb",
 	        &request,
-	        &status);
+	        &want_reply);
 	if (rc != SSH_OK) {
 		SSH_LOG(SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
 		return SSH_PACKET_USED;
@@ -838,13 +838,34 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	}
 
   if (strcmp(request, "auth-agent-req@openssh.com") == 0) {
+    int status;
+
     SAFE_FREE(request);
     SSH_LOG(SSH_LOG_PROTOCOL, "Received an auth-agent-req request");
-    ssh_callbacks_execute_list(channel->callbacks,
-                               ssh_channel_callbacks,
-                               channel_auth_agent_req_function,
-                               channel->session,
-                               channel);
+
+    status = SSH2_MSG_CHANNEL_FAILURE;
+    ssh_callbacks_iterate(channel->callbacks,
+                          ssh_channel_callbacks,
+                          channel_auth_agent_req_function) {
+        ssh_callbacks_iterate_exec(channel_auth_agent_req_function,
+                                   channel->session,
+                                   channel);
+        /* in lieu of a return value, if the callback exists it's supported */
+        status = SSH2_MSG_CHANNEL_SUCCESS;
+        break;
+    }
+    ssh_callbacks_iterate_end();
+
+    if (want_reply) {
+        rc = ssh_buffer_pack(session->out_buffer,
+                             "bd",
+                             status,
+                             channel->remote_channel);
+        if (rc != SSH_OK) {
+            return SSH_PACKET_USED;
+        }
+        ssh_packet_send(session);
+    }
 
     return SSH_PACKET_USED;
   }
@@ -853,7 +874,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	 * client requests. That means we need to create a ssh message to be passed
 	 * to the user code handling ssh messages
 	 */
-	ssh_message_handle_channel_request(session,channel,packet,request,status);
+	ssh_message_handle_channel_request(session,channel,packet,request,want_reply);
 #else
     SSH_LOG(SSH_LOG_WARNING, "Unhandled channel request %s", request);
 #endif
