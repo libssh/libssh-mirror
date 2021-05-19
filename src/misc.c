@@ -105,7 +105,7 @@
 
 #ifdef _WIN32
 char *ssh_get_user_home_dir(void) {
-  char tmp[MAX_PATH] = {0};
+  char tmp[PATH_MAX] = {0};
   char *szPath = NULL;
 
   if (SHGetSpecialFolderPathA(NULL, tmp, CSIDL_PROFILE, TRUE)) {

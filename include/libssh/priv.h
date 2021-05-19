@@ -169,7 +169,11 @@ int gettimeofday(struct timeval *__p, void *__t);
 
 /* some constants */
 #ifndef PATH_MAX
-# define PATH_MAX 4096
+#ifdef MAX_PATH
+#define PATH_MAX MAX_PATH
+#else
+#define PATH_MAX 4096
+#endif
 #endif
 
 #ifndef MAX_PACKET_LEN
