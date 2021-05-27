@@ -375,7 +375,7 @@ tumbleweed/static-analysis:
 ###############################################################################
 # That is a specific runner that we cannot enable universally.
 # We restrict it to builds under the $BUILD_IMAGES_PROJECT project.
-.freebsd/x86_64:
+freebsd/x86_64:
   image:
   extends: .tests
   before_script:
@@ -394,6 +394,7 @@ tumbleweed/static-analysis:
       make &&
       ctest --output-on-failure
   tags:
+  - private
   - freebsd
   only:
   - branches@libssh/libssh-mirror
