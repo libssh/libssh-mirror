@@ -446,6 +446,9 @@ static int ssh_connector_channel_data_cb(ssh_session session,
     } else if (!is_stderr && !(connector->in_flags & SSH_CONNECTOR_STDOUT)) {
         /* ignore stdout */
         return 0;
+    } else if (len == 0) {
+        /* ignore empty data */
+        return 0;
     }
 
     if (connector->out_wontblock) {
