@@ -48,8 +48,9 @@ struct ssh_cipher_struct fake_out_cipher = {
 };
 
 struct ssh_crypto_struct test_crypto = {
-    .digest_len = 32,
+    .session_id_len = 32,
     .session_id = secret,
+    .digest_len = 32,
     .secret_hash = secret,
     .in_cipher = &fake_in_cipher,
     .out_cipher = &fake_out_cipher,

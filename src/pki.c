@@ -2562,11 +2562,11 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     }
 
     /* Get the session ID */
-    session_id = ssh_string_new(crypto->digest_len);
+    session_id = ssh_string_new(crypto->session_id_len);
     if (session_id == NULL) {
         return NULL;
     }
-    rc = ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+    rc = ssh_string_fill(session_id, crypto->session_id, crypto->session_id_len);
     if (rc < 0) {
         goto end;
     }
@@ -2626,11 +2626,11 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
     }
 
     /* prepend session identifier */
-    session_id = ssh_string_new(crypto->digest_len);
+    session_id = ssh_string_new(crypto->session_id_len);
     if (session_id == NULL) {
         return NULL;
     }
-    rc = ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+    rc = ssh_string_fill(session_id, crypto->session_id, crypto->session_id_len);
     if (rc < 0) {
         SSH_STRING_FREE(session_id);
         return NULL;

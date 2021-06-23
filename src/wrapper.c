@@ -187,7 +187,7 @@ void crypto_free(struct ssh_crypto_struct *crypto)
 #endif
     SAFE_FREE(crypto->dh_server_signature);
     if (crypto->session_id != NULL) {
-        explicit_bzero(crypto->session_id, crypto->digest_len);
+        explicit_bzero(crypto->session_id, crypto->session_id_len);
         SAFE_FREE(crypto->session_id);
     }
     if (crypto->secret_hash != NULL) {

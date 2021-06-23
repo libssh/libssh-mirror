@@ -1903,7 +1903,7 @@ ssh_packet_set_newkeys(ssh_session session,
 
     /* Both sides switched: do the actual switch now */
     if (session->next_crypto->used == SSH_DIRECTION_BOTH) {
-        size_t digest_len;
+        size_t session_id_len;
 
         if (session->current_crypto != NULL) {
             crypto_free(session->current_crypto);
@@ -1920,8 +1920,8 @@ ssh_packet_set_newkeys(ssh_session session,
             return SSH_ERROR;
         }
 
-        digest_len = session->current_crypto->digest_len;
-        session->next_crypto->session_id = malloc(digest_len);
+        session_id_len = session->current_crypto->session_id_len;
+        session->next_crypto->session_id = malloc(session_id_len);
         if (session->next_crypto->session_id == NULL) {
             ssh_set_error_oom(session);
             return SSH_ERROR;
@@ -1929,7 +1929,8 @@ ssh_packet_set_newkeys(ssh_session session,
 
         memcpy(session->next_crypto->session_id,
                session->current_crypto->session_id,
-               digest_len);
+               session_id_len);
+	session->next_crypto->session_id_len = session_id_len;
 
         return SSH_OK;
     }
