@@ -891,7 +891,7 @@ static ssh_signature pki_signature_from_rsa_blob(const ssh_key pubkey, const
         goto errout;
     }
 #ifdef DEBUG_CRYPTO
-    SSH_LOG(SSH_LOG_WARN, "RSA signature len: %lu", (unsigned long)len);
+    SSH_LOG(SSH_LOG_DEBUG, "RSA signature len: %lu", (unsigned long)len);
     ssh_log_hexdump("RSA signature", ssh_string_data(sig_blob), len);
 #endif
 

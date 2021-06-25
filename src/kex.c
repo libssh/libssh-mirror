@@ -1235,7 +1235,7 @@ int ssh_make_sessionid(ssh_session session)
                 session->next_crypto->digest_len);
     }
 #ifdef DEBUG_CRYPTO
-    printf("Session hash: \n");
+    SSH_LOG(SSH_LOG_DEBUG, "Session hash: \n");
     ssh_log_hexdump("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
     ssh_log_hexdump("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
 #endif
