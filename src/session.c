@@ -97,12 +97,10 @@ ssh_session ssh_new(void)
     ssh_set_blocking(session, 1);
     session->maxchannel = FIRST_CHANNEL;
 
-#ifndef _WIN32
     session->agent = ssh_agent_new(session);
     if (session->agent == NULL) {
         goto err;
     }
-#endif /* _WIN32 */
 
     /* OPTIONS */
     session->opts.StrictHostKeyChecking = 1;

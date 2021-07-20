@@ -33,8 +33,6 @@
  *    the agent returns the signed data
  */
 
-#ifndef _WIN32
-
 #include "config.h"
 
 #include <stdlib.h>
@@ -46,8 +44,14 @@
 #include <unistd.h>
 #endif
 
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include "libssh/agent.h"
 #include "libssh/priv.h"
@@ -79,9 +83,9 @@ static uint32_t atomicio(struct ssh_agent_struct *agent, void *buf, uint32_t n, 
 
     while (n > pos) {
       if (do_read) {
-        res = read(fd, b + pos, n - pos);
+        res = recv(fd, b + pos, n - pos, 0);
       } else {
-        res = write(fd, b + pos, n - pos);
+        res = send(fd, b + pos, n - pos, 0);
       }
       switch (res) {
       case -1:
@@ -588,5 +592,3 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 
     return sig_blob;
 }
-
-#endif /* _WIN32 */

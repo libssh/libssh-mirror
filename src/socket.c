@@ -28,6 +28,15 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#ifndef UNIX_PATH_MAX
+ /* Inlining the key portions of afunix.h in Windows 10 SDK;
+  * that header isn't available in the mingw environment. */
+#define UNIX_PATH_MAX 108
+typedef struct sockaddr_un {
+  ADDRESS_FAMILY sun_family;
+  char sun_path[UNIX_PATH_MAX];
+};
+#endif
 #if _MSC_VER >= 1400
 #include <io.h>
 #undef open
@@ -410,7 +419,6 @@ void ssh_socket_free(ssh_socket s)
     SAFE_FREE(s);
 }
 
-#ifndef _WIN32
 int ssh_socket_unix(ssh_socket s, const char *path)
 {
     struct sockaddr_un sunaddr;
@@ -426,24 +434,25 @@ int ssh_socket_unix(ssh_socket s, const char *path)
         return -1;
     }
 
+#ifndef _WIN32
     if (fcntl(fd, F_SETFD, 1) == -1) {
         ssh_set_error(s->session, SSH_FATAL,
                       "Error from fcntl(fd, F_SETFD, 1): %s",
                       strerror(errno));
-        close(fd);
+        CLOSE_SOCKET(fd);
         return -1;
     }
+#endif
 
     if (connect(fd, (struct sockaddr *) &sunaddr, sizeof(sunaddr)) < 0) {
         ssh_set_error(s->session, SSH_FATAL, "Error from connect(): %s",
                       strerror(errno));
-        close(fd);
+        CLOSE_SOCKET(fd);
         return -1;
     }
     ssh_socket_set_fd(s,fd);
     return 0;
 }
-#endif
 
 /** \internal
  * \brief closes a socket
