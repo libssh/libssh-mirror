@@ -104,7 +104,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "hostbasedacceptedalgorithms", SOC_UNSUPPORTED},
   { "hostkeyalias", SOC_UNSUPPORTED},
   { "identitiesonly", SOC_UNSUPPORTED},
-  { "identityagent", SOC_UNSUPPORTED},
+  { "identityagent", SOC_IDENTITYAGENT},
   { "ipqos", SOC_UNSUPPORTED},
   { "kbdinteractivedevices", SOC_UNSUPPORTED},
   { "nohostauthenticationforlocalhost", SOC_UNSUPPORTED},
@@ -1160,6 +1160,12 @@ ssh_config_parse_line(ssh_session session,
     case SOC_UNKNOWN:
       SSH_LOG(SSH_LOG_INFO, "Unknown option: %s, line: %d",
               keyword, count);
+      break;
+    case SOC_IDENTITYAGENT:
+      p = ssh_config_get_str_tok(&s, NULL);
+      if (p && *parsing) {
+          ssh_options_set(session, SSH_OPTIONS_IDENTITY_AGENT, p);
+      }
       break;
     default:
       ssh_set_error(session, SSH_FATAL, "ERROR - unimplemented opcode: %d",

@@ -219,6 +219,7 @@ struct ssh_session_struct {
         char *ProxyCommand;
         char *custombanner;
         char *moduli_file;
+        char *agent_socket;
         unsigned long timeout; /* seconds */
         unsigned long timeout_usec;
         unsigned int port;

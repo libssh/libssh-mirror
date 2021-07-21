@@ -476,6 +476,11 @@ int ssh_options_set_algo(ssh_session session,
  *                Setting 0 will revert the value to defaults.
  *                Default is 1024 bits or 2048 bits in FIPS mode.
  *                (int *)
+
+ *              - SSH_OPTIONS_IDENTITY_AGENT
+ *                Set the path to the SSH agent socket. If unset, the
+ *                SSH_AUTH_SOCK environment is consulted.
+ *                (const char *)
  *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
@@ -1054,6 +1059,22 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
                 session->opts.rsa_min_size = *x;
+            }
+            break;
+        case SSH_OPTIONS_IDENTITY_AGENT:
+            v = value;
+            SAFE_FREE(session->opts.agent_socket);
+            if (v == NULL) {
+                /* The default value will be set by the ssh_options_apply() */
+            } else if (v[0] == '\0') {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                session->opts.agent_socket = ssh_path_expand_tilde(v);
+                if (session->opts.agent_socket == NULL) {
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
             }
             break;
         default:

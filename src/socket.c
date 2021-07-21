@@ -445,7 +445,8 @@ int ssh_socket_unix(ssh_socket s, const char *path)
 #endif
 
     if (connect(fd, (struct sockaddr *) &sunaddr, sizeof(sunaddr)) < 0) {
-        ssh_set_error(s->session, SSH_FATAL, "Error from connect(): %s",
+        ssh_set_error(s->session, SSH_FATAL, "Error from connect(%s): %s",
+                      path,
                       strerror(errno));
         CLOSE_SOCKET(fd);
         return -1;

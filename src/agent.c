@@ -220,7 +220,8 @@ static int agent_connect(ssh_session session) {
   if (session->agent->channel != NULL)
     return 0;
 
-  auth_sock = getenv("SSH_AUTH_SOCK");
+  auth_sock = session->opts.agent_socket ?
+    session->opts.agent_socket : getenv("SSH_AUTH_SOCK");
 
   if (auth_sock && *auth_sock) {
     if (ssh_socket_unix(session->agent->sock, auth_sock) < 0) {
