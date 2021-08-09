@@ -129,6 +129,8 @@ enum ssh_digest_e ssh_key_hash_from_name(const char *name);
 #define is_cert_type(kt)\
       ((kt) == SSH_KEYTYPE_DSS_CERT01 ||\
        (kt) == SSH_KEYTYPE_RSA_CERT01 ||\
+       (kt) == SSH_KEYTYPE_SK_ECDSA_CERT01 ||\
+       (kt) == SSH_KEYTYPE_SK_ED25519_CERT01 ||\
       ((kt) >= SSH_KEYTYPE_ECDSA_P256_CERT01 &&\
        (kt) <= SSH_KEYTYPE_ED25519_CERT01))
 
