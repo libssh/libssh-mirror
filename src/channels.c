@@ -878,7 +878,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 #else
     SSH_LOG(SSH_LOG_WARNING, "Unhandled channel request %s", request);
 #endif
-	
+
 	SAFE_FREE(request);
 
 	return SSH_PACKET_USED;
@@ -3086,6 +3086,8 @@ int ssh_channel_read_nonblocking(ssh_channel channel,
  *
  * @return              The number of bytes available for reading, 0 if nothing
  *                      is available or SSH_ERROR on error.
+ *                      When a channel is freed the function returns
+ *                      SSH_ERROR immediately.
  *
  * @warning When the channel is in EOF state, the function returns SSH_EOF.
  *
@@ -3094,7 +3096,7 @@ int ssh_channel_read_nonblocking(ssh_channel channel,
 int ssh_channel_poll(ssh_channel channel, int is_stderr){
   ssh_buffer stdbuf;
 
-  if(channel == NULL) {
+  if ((channel == NULL) || (channel->flags & SSH_CHANNEL_FLAG_FREED_LOCAL)) {
       return SSH_ERROR;
   }
 
@@ -3140,6 +3142,7 @@ int ssh_channel_poll(ssh_channel channel, int is_stderr){
  *                      SSH_ERROR on error.
  *
  * @warning When the channel is in EOF state, the function returns SSH_EOF.
+ *          When a channel is freed the function returns SSH_ERROR immediately.
  *
  * @see ssh_channel_is_eof()
  */
@@ -3151,7 +3154,7 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
     size_t len;
     int rc;
 
-    if (channel == NULL) {
+    if ((channel == NULL) || (channel->flags & SSH_CHANNEL_FLAG_FREED_LOCAL)) {
         return SSH_ERROR;
     }
 
@@ -3233,6 +3236,8 @@ static int ssh_channel_exit_status_termination(void *c){
  *                      (yet), or SSH_ERROR on error.
  * @warning             This function may block until a timeout (or never)
  *                      if the other side is not willing to close the channel.
+ *                      When a channel is freed the function returns
+ *                      SSH_ERROR immediately.
  *
  * If you're looking for an async handling of this register a callback for the
  * exit status.
@@ -3241,7 +3246,7 @@ static int ssh_channel_exit_status_termination(void *c){
  */
 int ssh_channel_get_exit_status(ssh_channel channel) {
   int rc;
-  if(channel == NULL) {
+  if ((channel == NULL) || (channel->flags & SSH_CHANNEL_FLAG_FREED_LOCAL)) {
       return SSH_ERROR;
   }
   rc = ssh_handle_packets_termination(channel->session,
@@ -3590,7 +3595,7 @@ error:
  *          forward the content of a socket to the channel. You still have to
  *          use channel_read and channel_write for this.
  */
-int ssh_channel_open_x11(ssh_channel channel, 
+int ssh_channel_open_x11(ssh_channel channel,
         const char *orig_addr, int orig_port) {
   ssh_session session;
   ssh_buffer payload = NULL;
