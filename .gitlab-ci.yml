@@ -1,3 +1,4 @@
+---
 variables:
   BUILD_IMAGES_PROJECT: libssh/build-images
   FEDORA_BUILD: buildenv-fedora
@@ -14,10 +15,10 @@ stages:
 .build:
   stage: build
   variables:
-      CMAKE_DEFAULT_OPTIONS: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DPICKY_DEVELOPER=ON"
-      CMAKE_BUILD_OPTIONS: "-DWITH_BLOWFISH_CIPHER=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON -DWITH_DSA=ON"
-      CMAKE_TEST_OPTIONS: "-DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON"
-      CMAKE_OPTIONS: $CMAKE_DEFAULT_OPTIONS $CMAKE_BUILD_OPTIONS $CMAKE_TEST_OPTIONS
+    CMAKE_DEFAULT_OPTIONS: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DPICKY_DEVELOPER=ON"
+    CMAKE_BUILD_OPTIONS: "-DWITH_BLOWFISH_CIPHER=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON -DWITH_DSA=ON"
+    CMAKE_TEST_OPTIONS: "-DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON"
+    CMAKE_OPTIONS: $CMAKE_DEFAULT_OPTIONS $CMAKE_BUILD_OPTIONS $CMAKE_TEST_OPTIONS
   before_script:
     - uname -a
     - cat /etc/os-release
@@ -50,18 +51,17 @@ stages:
     - cmake $CMAKE_OPTIONS $CMAKE_ADDITIONAL_OPTIONS .. &&
       make -j$(nproc) &&
       ctest --output-on-failure
-  # Do not use after_script as it does not make the targets fail
+    # Do not use after_script as it does not make the targets fail
 
 .fedora:
   extends: .tests
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   variables:
-      CMAKE_ADDITIONAL_OPTIONS: -DWITH_PKCS11_URI=ON
+    CMAKE_ADDITIONAL_OPTIONS: -DWITH_PKCS11_URI=ON
 
 .tumbleweed:
   extends: .tests
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
-
 
 
 ###############################################################################
@@ -102,21 +102,23 @@ fedora/openssl_1.1.x/x86_64:
 fedora/openssl_1.1.x/x86_64/fips:
   extends: .fedora
   before_script:
-  - echo "# userspace fips" > /etc/system-fips
+    - echo "# userspace fips" > /etc/system-fips
     # We do not need the kernel part, but in case we ever do:
     # mkdir -p /var/tmp/userspace-fips
     # echo 1 > /var/tmp/userspace-fips/fips_enabled
-    # mount --bind /var/tmp/userspace-fips/fips_enabled /proc/sys/crypto/fips_enabled
-  - update-crypto-policies --show
-  - update-crypto-policies --set FIPS
-  - update-crypto-policies --show
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_BLOWFISH_CIPHER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON -DWITH_DSA=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
+    # mount --bind /var/tmp/userspace-fips/fips_enabled \
+    # /proc/sys/crypto/fips_enabled
+    - update-crypto-policies --show
+    - update-crypto-policies --set FIPS
+    - update-crypto-policies --show
+    - mkdir -p obj && cd obj && cmake
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      -DPICKY_DEVELOPER=ON
+      -DWITH_BLOWFISH_CIPHER=ON
+      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+      -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
+      -DWITH_DSA=ON
+      -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
   script:
     - cmake $CMAKE_OPTIONS .. &&
       make -j$(nproc) &&
@@ -190,12 +192,12 @@ fedora/undefined-sanitizer:
 fedora/libgcrypt/x86_64:
   extends: .fedora
   variables:
-      CMAKE_ADDITIONAL_OPTIONS: "-DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON"
+    CMAKE_ADDITIONAL_OPTIONS: "-DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON"
 
 fedora/mbedtls/x86_64:
   extends: .fedora
   variables:
-      CMAKE_ADDITIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DSA=OFF"
+    CMAKE_ADDITIONAL_OPTIONS: "-DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON -DWITH_DSA=OFF"
 
 # Unit testing only, no client and pkd testing, because cwrap is not available
 # for MinGW
@@ -232,30 +234,29 @@ fedora/mingw32:
       ctest --output-on-failure
 
 
-
 ###############################################################################
 #                               Fedora csbuild                                #
 ###############################################################################
 .csbuild:
   stage: analysis
   variables:
-      GIT_DEPTH: "100"
+    GIT_DEPTH: "100"
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   before_script:
-  - |
-    if [[ -z "$CI_COMMIT_BEFORE_SHA" ]]; then
-        export CI_COMMIT_BEFORE_SHA=$(git rev-parse "${CI_COMMIT_SHA}~20")
-    fi
+    - |
+      if [[ -z "$CI_COMMIT_BEFORE_SHA" ]]; then
+          export CI_COMMIT_BEFORE_SHA=$(git rev-parse "${CI_COMMIT_SHA}~20")
+      fi
 
-    # Check if the commit exists in this branch
-    # This is not the case for a force push
-    git branch --contains $CI_COMMIT_BEFORE_SHA 2>/dev/null || export CI_COMMIT_BEFORE_SHA=$(git rev-parse "${CI_COMMIT_SHA}~20")
+      # Check if the commit exists in this branch
+      # This is not the case for a force push
+      git branch --contains $CI_COMMIT_BEFORE_SHA 2>/dev/null || export CI_COMMIT_BEFORE_SHA=$(git rev-parse "${CI_COMMIT_SHA}~20")
 
-    export CI_COMMIT_RANGE="$CI_COMMIT_BEFORE_SHA..$CI_COMMIT_SHA"
+      export CI_COMMIT_RANGE="$CI_COMMIT_BEFORE_SHA..$CI_COMMIT_SHA"
   tags:
-  - shared
+    - shared
   except:
-  - tags
+    - tags
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -265,34 +266,32 @@ fedora/mingw32:
 fedora/csbuild/openssl_1.1.x:
   extends: .csbuild
   script:
-  - csbuild
-    --build-dir=obj-csbuild
-    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
-    --git-commit-range $CI_COMMIT_RANGE
-    --color
-    --print-current --print-fixed
+    - csbuild
+      --build-dir=obj-csbuild
+      --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
+      --git-commit-range $CI_COMMIT_RANGE
+      --color
+      --print-current --print-fixed
 
 fedora/csbuild/libgcrypt:
   extends: .csbuild
   script:
-  - csbuild
-    --build-dir=obj-csbuild
-    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_GCRYPT=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
-    --git-commit-range $CI_COMMIT_RANGE
-    --color
-    --print-current --print-fixed
+    - csbuild
+      --build-dir=obj-csbuild
+      --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_GCRYPT=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
+      --git-commit-range $CI_COMMIT_RANGE
+      --color
+      --print-current --print-fixed
 
 fedora/csbuild/mbedtls:
   extends: .csbuild
   script:
-  - csbuild
-    --build-dir=obj-csbuild
-    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_MBEDTLS=ON @SRCDIR@ && make clean && make -j$(nproc)"
-    --git-commit-range $CI_COMMIT_RANGE
-    --color
-    --print-current --print-fixed
-
-
+    - csbuild
+      --build-dir=obj-csbuild
+      --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_MBEDTLS=ON @SRCDIR@ && make clean && make -j$(nproc)"
+      --git-commit-range $CI_COMMIT_RANGE
+      --color
+      --print-current --print-fixed
 
 
 ###############################################################################
@@ -303,14 +302,13 @@ ubuntu/openssl_1.1.x/x86_64:
   extends: .tests
 
 
-
 ###############################################################################
 #                             Tumbleweed builds                               #
 ###############################################################################
 tumbleweed/openssl_1.1.x/x86_64/gcc:
   extends: .tumbleweed
   variables:
-      CMAKE_ADDITIONAL_OPTIONS: "-DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
+    CMAKE_ADDITIONAL_OPTIONS: "-DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/openssl_1.1.x/x86/gcc:
   extends: .tumbleweed
@@ -328,7 +326,7 @@ tumbleweed/openssl_1.1.x/x86/gcc:
 tumbleweed/openssl_1.1.x/x86_64/gcc7:
   extends: .tumbleweed
   variables:
-      CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
+    CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/openssl_1.1.x/x86/gcc7:
   extends: .tumbleweed
@@ -337,7 +335,8 @@ tumbleweed/openssl_1.1.x/x86/gcc7:
       -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
       -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
       $CMAKE_DEFAULT_OPTIONS
-      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_DSA=ON
+      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+      -DWITH_DSA=ON
       -DUNIT_TESTING=ON .. &&
       make -j$(nproc) &&
       ctest --output-on-failure
@@ -345,7 +344,7 @@ tumbleweed/openssl_1.1.x/x86/gcc7:
 tumbleweed/openssl_1.1.x/x86_64/clang:
   extends: .tumbleweed
   variables:
-      CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
+    CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config"
 
 tumbleweed/static-analysis:
   extends: .tests
@@ -369,7 +368,6 @@ tumbleweed/static-analysis:
       - obj/scan
 
 
-
 ###############################################################################
 #                               FreeBSD builds                                #
 ###############################################################################
@@ -379,11 +377,11 @@ freebsd/x86_64:
   image:
   extends: .tests
   before_script:
-  - mkdir -p obj && cd obj && cmake
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON ..
+    - mkdir -p obj && cd obj && cmake
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      -DPICKY_DEVELOPER=ON
+      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+      -DUNIT_TESTING=ON ..
   script:
     - cmake $CMAKE_DEFAULT_OPTIONS
       -DWITH_SFTP=ON
@@ -394,12 +392,12 @@ freebsd/x86_64:
       make &&
       ctest --output-on-failure
   tags:
-  - private
-  - freebsd
+    - private
+    - freebsd
   only:
-  - branches@libssh/libssh-mirror
-  - branches@cryptomilk/libssh-mirror
-  - branches@jjelen/libssh-mirror
+    - branches@libssh/libssh-mirror
+    - branches@cryptomilk/libssh-mirror
+    - branches@jjelen/libssh-mirror
 
 
 ###############################################################################
@@ -414,38 +412,38 @@ freebsd/x86_64:
   variables:
     ErrorActionPreference: STOP
   script:
-  - cmake --build .
-  - ctest --output-on-failure
+    - cmake --build .
+    - ctest --output-on-failure
   tags:
-  - windows
-  - shared-windows
+    - windows
+    - shared-windows
   except:
-  - tags
+    - tags
   artifacts:
     expire_in: 1 week
     when: on_failure
     paths:
       - obj/
   before_script:
-  - choco install --no-progress -y cmake
-  - $env:Path += ';C:\Program Files\CMake\bin'
-  - If (!(test-path .vcpkg\archives)) { mkdir -p .vcpkg\archives }
-  - $env:VCPKG_DEFAULT_BINARY_CACHE="$PWD\.vcpkg\archives"
-  - echo $env:VCPKG_DEFAULT_BINARY_CACHE
-  - $env:VCPKG_DEFAULT_TRIPLET="$TRIPLET-windows"
-  - vcpkg install cmocka
-  - vcpkg install openssl
-  - vcpkg install zlib
-  - vcpkg integrate install
-  - mkdir -p obj; if ($?) {cd obj}; if (! $?) {exit 1}
-  - cmake
-      -A $PLATFORM
-      -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-      -DPICKY_DEVELOPER=ON
-      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-      -DUNIT_TESTING=ON ..
-  # The Windows runners are broken for last month
-  # https://gitlab.com/gitlab-org/ci-cd/shared-runners/images/gcp/windows-containers/-/issues/40
+    - choco install --no-progress -y cmake
+    - $env:Path += ';C:\Program Files\CMake\bin'
+    - If (!(test-path .vcpkg\archives)) { mkdir -p .vcpkg\archives }
+    - $env:VCPKG_DEFAULT_BINARY_CACHE="$PWD\.vcpkg\archives"
+    - echo $env:VCPKG_DEFAULT_BINARY_CACHE
+    - $env:VCPKG_DEFAULT_TRIPLET="$TRIPLET-windows"
+    - vcpkg install cmocka
+    - vcpkg install openssl
+    - vcpkg install zlib
+    - vcpkg integrate install
+    - mkdir -p obj; if ($?) {cd obj}; if (! $?) {exit 1}
+    - cmake
+        -A $PLATFORM
+        -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        -DPICKY_DEVELOPER=ON
+        -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+        -DUNIT_TESTING=ON ..
+    # The Windows runners are broken for last month
+    # https://gitlab.com/gitlab-org/ci-cd/shared-runners/images/gcp/windows-containers/-/issues/40
   allow_failure: true
 
 visualstudio/x86_64:
