@@ -5,6 +5,7 @@
 *~$
 cscope.*
 compile_commands.json
+/.cache
 /.clangd
 tags
 /build
