@@ -124,7 +124,7 @@ add_subdirectory(include)
 add_subdirectory(src)
 
 # pkg-config file
-if (UNIX)
+if (UNIX OR MINGW)
 configure_file(libssh.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc)
 install(
   FILES
@@ -134,7 +134,7 @@ install(
   COMPONENT
     pkgconfig
 )
-endif (UNIX)
+endif (UNIX OR MINGW)
 
 # CMake config files
 include(CMakePackageConfigHelpers)
