@@ -1156,7 +1156,15 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
             case '%':
                 goto escape;
             case 'd':
-                x = strdup(session->opts.sshdir);
+                if (session->opts.sshdir) {
+                    x = strdup(session->opts.sshdir);
+                } else {
+                    ssh_set_error(session, SSH_FATAL,
+                            "Cannot expand sshdir");
+                    free(buf);
+                    free(r);
+                    return NULL;
+                }
                 break;
             case 'u':
                 x = ssh_get_local_username();
@@ -1167,10 +1175,26 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
                 }
                 break;
             case 'h':
-                x = strdup(session->opts.host);
+                if (session->opts.host) {
+                    x = strdup(session->opts.host);
+                } else {
+                    ssh_set_error(session, SSH_FATAL,
+                            "Cannot expand host");
+                    free(buf);
+                    free(r);
+                    return NULL;
+                }
                 break;
             case 'r':
-                x = strdup(session->opts.username);
+                if (session->opts.username) {
+                    x = strdup(session->opts.username);
+                } else {
+                    ssh_set_error(session, SSH_FATAL,
+                            "Cannot expand username");
+                    free(buf);
+                    free(r);
+                    return NULL;
+                }
                 break;
             case 'p':
                 if (session->opts.port < 65536) {
