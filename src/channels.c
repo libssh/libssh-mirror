@@ -245,6 +245,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
               "SSH2_MSG_CHANNEL_OPEN_FAILURE received in incorrect channel "
               "state %d",
               channel->state);
+      SAFE_FREE(error);
       goto error;
   }
 
