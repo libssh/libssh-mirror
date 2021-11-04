@@ -526,6 +526,7 @@ message_callback(UNUSED_PARAM(ssh_session session),
                     SAFE_FREE(pFd);
                     SAFE_FREE(cb_chan);
                     SAFE_FREE(event_fd_data);
+                    close(socket_fd);
                     return 1;
                 }
 
