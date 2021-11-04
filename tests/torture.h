@@ -124,17 +124,20 @@ void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests);
 const char *torture_server_address(int domain);
 int torture_server_port(void);
 
+#ifdef SSHD_EXECUTABLE
 void torture_setup_socket_dir(void **state);
 void torture_setup_sshd_server(void **state, bool pam);
-void torture_setup_tokens(const char *temp_dir,
-                          const char *filename,
-                          const char object_name[],
-                          const char *load_public);
 
 void torture_teardown_socket_dir(void **state);
 void torture_teardown_sshd_server(void **state);
 
 int torture_update_sshd_config(void **state, const char *config);
+#endif /* SSHD_EXECUTABLE */
+
+void torture_setup_tokens(const char *temp_dir,
+                          const char *filename,
+                          const char object_name[],
+                          const char *load_public);
 
 void torture_reset_config(ssh_session session);
 

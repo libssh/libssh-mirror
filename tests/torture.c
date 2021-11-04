@@ -722,6 +722,7 @@ void torture_setup_create_libssh_config(void **state)
     torture_write_file(s->srv_config, sshd_config);
 }
 
+#ifdef SSHD_EXECUTABLE
 static void torture_setup_create_sshd_config(void **state, bool pam)
 {
     struct torture_state *s = *state;
@@ -1145,25 +1146,6 @@ void torture_setup_sshd_server(void **state, bool pam)
     assert_int_equal(rc, 0);
 }
 
-void torture_setup_tokens(const char *temp_dir,
-                          const char *filename,
-                          const char object_name[],
-                          const char *load_public)
-{
-    char token_setup_start_cmd[1024] = {0};
-    int rc;
-
-    snprintf(token_setup_start_cmd, sizeof(token_setup_start_cmd),
-             "%s/tests/pkcs11/setup-softhsm-tokens.sh %s %s %s %s",
-             BINARYDIR,
-             temp_dir,
-             filename,
-             object_name, load_public);
-
-    rc = system(token_setup_start_cmd);
-    assert_return_code(rc, errno);
-}
-
 void torture_teardown_socket_dir(void **state)
 {
     struct torture_state *s = *state;
@@ -1244,6 +1226,26 @@ void torture_teardown_sshd_server(void **state)
     assert_return_code(rc, errno);
 
     torture_teardown_socket_dir(state);
+}
+#endif /* SSHD_EXECUTABLE */
+
+void torture_setup_tokens(const char *temp_dir,
+                          const char *filename,
+                          const char object_name[],
+                          const char *load_public)
+{
+    char token_setup_start_cmd[1024] = {0};
+    int rc;
+
+    snprintf(token_setup_start_cmd, sizeof(token_setup_start_cmd),
+             "%s/tests/pkcs11/setup-softhsm-tokens.sh %s %s %s %s",
+             BINARYDIR,
+             temp_dir,
+             filename,
+             object_name, load_public);
+
+    rc = system(token_setup_start_cmd);
+    assert_return_code(rc, errno);
 }
 
 char *torture_make_temp_dir(const char *template)
