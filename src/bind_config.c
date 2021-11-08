@@ -189,17 +189,28 @@ ssh_bind_config_parse_line(ssh_bind bind,
                            const char *line,
                            unsigned int count,
                            uint32_t *parser_flags,
-                           uint8_t *seen);
+                           uint8_t *seen,
+                           unsigned int depth);
 
-static void local_parse_file(ssh_bind bind,
-                             const char *filename,
-                             uint32_t *parser_flags,
-                             uint8_t *seen)
+#define LIBSSH_BIND_CONF_MAX_DEPTH 16
+static void
+local_parse_file(ssh_bind bind,
+                 const char *filename,
+                 uint32_t *parser_flags,
+                 uint8_t *seen,
+                 unsigned int depth)
 {
     FILE *f;
     char line[MAX_LINE_SIZE] = {0};
     unsigned int count = 0;
     int rv;
+
+    if (depth > LIBSSH_BIND_CONF_MAX_DEPTH) {
+        ssh_set_error(bind, SSH_FATAL,
+                      "ERROR - Too many levels of configuration includes "
+                      "when processing file '%s'", filename);
+        return;
+    }
 
     f = fopen(filename, "r");
     if (f == NULL) {
@@ -213,7 +224,7 @@ static void local_parse_file(ssh_bind bind,
 
     while (fgets(line, sizeof(line), f)) {
         count++;
-        rv = ssh_bind_config_parse_line(bind, line, count, parser_flags, seen);
+        rv = ssh_bind_config_parse_line(bind, line, count, parser_flags, seen, depth);
         if (rv < 0) {
             fclose(f);
             return;
@@ -228,7 +239,8 @@ static void local_parse_file(ssh_bind bind,
 static void local_parse_glob(ssh_bind bind,
                              const char *fileglob,
                              uint32_t *parser_flags,
-                             uint8_t *seen)
+                             uint8_t *seen,
+                             unsigned int depth)
 {
     glob_t globbuf = {
         .gl_flags = 0,
@@ -248,7 +260,7 @@ static void local_parse_glob(ssh_bind bind,
     }
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
-        local_parse_file(bind, globbuf.gl_pathv[i], parser_flags, seen);
+        local_parse_file(bind, globbuf.gl_pathv[i], parser_flags, seen, depth);
     }
 
     globfree(&globbuf);
@@ -274,7 +286,8 @@ ssh_bind_config_parse_line(ssh_bind bind,
                            const char *line,
                            unsigned int count,
                            uint32_t *parser_flags,
-                           uint8_t *seen)
+                           uint8_t *seen,
+                           unsigned int depth)
 {
     enum ssh_bind_config_opcode_e opcode;
     const char *p = NULL;
@@ -333,9 +346,9 @@ ssh_bind_config_parse_line(ssh_bind bind,
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
 #if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
-            local_parse_glob(bind, p, parser_flags, seen);
+            local_parse_glob(bind, p, parser_flags, seen, depth + 1);
 #else
-            local_parse_file(bind, p, parser_flags, seen);
+            local_parse_file(bind, p, parser_flags, seen, depth + 1);
 #endif /* HAVE_GLOB */
         }
         break;
@@ -628,7 +641,7 @@ int ssh_bind_config_parse_file(ssh_bind bind, const char *filename)
     parser_flags = PARSING;
     while (fgets(line, sizeof(line), f)) {
         count++;
-        rv = ssh_bind_config_parse_line(bind, line, count, &parser_flags, seen);
+        rv = ssh_bind_config_parse_line(bind, line, count, &parser_flags, seen, 0);
         if (rv) {
             fclose(f);
             return -1;
