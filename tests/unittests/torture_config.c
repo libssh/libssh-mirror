@@ -38,6 +38,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TEST_PUBKEYTYPES "libssh_test_PubkeyAcceptedKeyTypes.tmp"
 #define LIBSSH_TEST_NONEWLINEEND "libssh_test_NoNewLineEnd.tmp"
 #define LIBSSH_TEST_NONEWLINEONELINE "libssh_test_NoNewLineOneline.tmp"
+#define LIBSSH_TEST_RECURSIVE_INCLUDE "libssh_test_recursive_include.tmp"
 
 #define LIBSSH_TESTCONFIG_STRING1 \
     "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n"
@@ -182,6 +183,9 @@ extern LIBSSH_THREAD int ssh_log_level;
 
 #define LIBSSH_TEST_NONEWLINEONELINE_STRING \
     "ConnectTimeout 30"
+
+#define LIBSSH_TEST_RECURSIVE_INCLUDE_STRING \
+    "Include " LIBSSH_TEST_RECURSIVE_INCLUDE
 
 /**
  * @brief helper function loading configuration from either file or string
@@ -415,6 +419,22 @@ static void torture_config_include_file(void **state)
 static void torture_config_include_string(void **state)
 {
     torture_config_include(state, NULL, LIBSSH_TESTCONFIG_STRING1);
+}
+
+/**
+ * @brief tests ssh_config_parse_file with recursive Include directives from file
+ */
+static void torture_config_include_recursive_file(void **state)
+{
+    _parse_config(*state, LIBSSH_TEST_RECURSIVE_INCLUDE, NULL, SSH_OK);
+}
+
+/**
+ * @brief tests ssh_config_parse_string with Include directives from string
+ */
+static void torture_config_include_recursive_string(void **state)
+{
+    _parse_config(*state, NULL, LIBSSH_TEST_RECURSIVE_INCLUDE_STRING, SSH_OK);
 }
 
 /**
@@ -1645,6 +1665,10 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_config_include_file,
                                         setup, teardown),
         cmocka_unit_test_setup_teardown(torture_config_include_string,
+                                        setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_config_include_recursive_file,
+                                        setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_config_include_recursive_string,
                                         setup, teardown),
         cmocka_unit_test_setup_teardown(torture_config_double_ports_file,
                                         setup, teardown),

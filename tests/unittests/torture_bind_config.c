@@ -95,6 +95,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TEST_BIND_CONFIG_FULL "libssh_test_bind_config_full"
 #define LIBSSH_TEST_BIND_CONFIG_INCLUDE "libssh_test_bind_config_include"
 #define LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE "libssh_test_bind_config_include_recursive"
+#define LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE_LOOP "libssh_test_bind_config_include_recursive_loop"
 #define LIBSSH_TEST_BIND_CONFIG_CORNER_CASES "libssh_test_bind_config_corner_cases"
 
 #define LIBSSH_TEST_BIND_CONFIG_MATCH_ALL "libssh_test_bind_config_match_all"
@@ -264,6 +265,9 @@ static int setup_config_files(void **state)
 
     torture_write_file(LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE,
                        "Include "LIBSSH_TEST_BIND_CONFIG_INCLUDE"\n");
+
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE_LOOP,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE_LOOP"\n");
 
     /* Unsupported options and corner cases */
     torture_write_file(LIBSSH_TEST_BIND_CONFIG_CORNER_CASES,
@@ -1076,6 +1080,23 @@ static void torture_bind_config_include_recursive(void **state)
     assert_int_equal(rc, SSH_OK);
 }
 
+static void torture_bind_config_include_recursive_loop(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE_LOOP);
+    assert_int_equal(rc, 0);
+}
+
 /**
  * @brief Verify the configuration parser does not choke on unknown
  * or unsupported configuration options
@@ -1286,6 +1307,8 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_bind_config_include,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_config_include_recursive,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_include_recursive_loop,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_config_corner_cases,
                 sshbind_setup, sshbind_teardown),
