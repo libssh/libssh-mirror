@@ -651,3 +651,64 @@ int ssh_bind_config_parse_file(ssh_bind bind, const char *filename)
     fclose(f);
     return 0;
 }
+
+/* @brief Parse configuration string and set the options to the given bind session
+ *
+ * @params[in] bind      The ssh bind session
+ * @params[in] input     Null terminated string containing the configuration
+ *
+ * @returns    SSH_OK on successful parsing the configuration string,
+ *             SSH_ERROR on error
+ */
+int ssh_bind_config_parse_string(ssh_bind bind, const char *input)
+{
+    char line[MAX_LINE_SIZE] = {0};
+    const char *c = input, *line_start = input;
+    unsigned int line_num = 0, line_len;
+    uint32_t parser_flags;
+    int rv;
+
+    /* This local table is used during the parsing of the current file (and
+     * files included recursively in this file) to prevent an option to be
+     * redefined, i.e. the first value set is kept. But this DO NOT prevent the
+     * option to be redefined later by another file. */
+    uint8_t seen[BIND_CFG_MAX] = {0};
+
+    SSH_LOG(SSH_LOG_DEBUG, "Reading bind configuration data from string:");
+    SSH_LOG(SSH_LOG_DEBUG, "START\n%s\nEND", input);
+
+    parser_flags = PARSING;
+    while (1) {
+        line_num++;
+        line_start = c;
+        c = strchr(line_start, '\n');
+        if (c == NULL) {
+            /* if there is no newline in the end of the string */
+            c = strchr(line_start, '\0');
+        }
+        if (c == NULL) {
+            /* should not happen, would mean a string without trailing '\0' */
+            SSH_LOG(SSH_LOG_WARN, "No trailing '\\0' in config string");
+            return SSH_ERROR;
+        }
+        line_len = c - line_start;
+        if (line_len > MAX_LINE_SIZE - 1) {
+            SSH_LOG(SSH_LOG_WARN, "Line %u too long: %u characters",
+                    line_num, line_len);
+            return SSH_ERROR;
+        }
+        memcpy(line, line_start, line_len);
+        line[line_len] = '\0';
+        SSH_LOG(SSH_LOG_DEBUG, "Line %u: %s", line_num, line);
+        rv = ssh_bind_config_parse_line(bind, line, line_num, &parser_flags, seen, 0);
+        if (rv < 0) {
+            return SSH_ERROR;
+        }
+        if (*c == '\0') {
+            break;
+        }
+        c++;
+    }
+
+    return SSH_OK;
+}
