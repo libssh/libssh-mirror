@@ -301,7 +301,12 @@ ssh_bind_config_parse_line(ssh_bind bind,
         return -1;
     }
 
-    if ((line == NULL) || (parser_flags == NULL)) {
+    /* Ignore empty lines */
+    if (line == NULL || *line == '\0') {
+        return 0;
+    }
+
+    if (parser_flags == NULL) {
         ssh_set_error_invalid(bind);
         return -1;
     }
