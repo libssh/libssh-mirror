@@ -1025,7 +1025,7 @@ int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
     ssh_string pubkey_blob = NULL;
     int ret;
 
-    algo = ssh_string_from_char(msg->auth_request.pubkey->type_c);
+    algo = ssh_string_from_char(msg->auth_request.sigtype);
     if (algo == NULL) {
         return SSH_ERROR;
     }

@@ -593,6 +593,7 @@ void ssh_message_free(ssh_message msg){
   switch(msg->type) {
     case SSH_REQUEST_AUTH:
       SAFE_FREE(msg->auth_request.username);
+      SAFE_FREE(msg->auth_request.sigtype);
       if (msg->auth_request.password) {
         explicit_bzero(msg->auth_request.password,
                        strlen(msg->auth_request.password));
@@ -852,6 +853,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         goto error;
     }
     msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_NONE;
+    msg->auth_request.sigtype = strdup(ssh_string_get_char(algo));
+    if (msg->auth_request.sigtype == NULL) {
+        msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
+        SSH_STRING_FREE(algo);
+        algo = NULL;
+        goto error;
+    }
+
     // has a valid signature ?
     if(has_sign) {
         ssh_string sig_blob = NULL;
