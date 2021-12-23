@@ -950,10 +950,17 @@ static void torture_options_getopt(void **state)
     assert_string_equal(session->opts.wanted_methods[SSH_CRYPT_S_C],
                         "aes128-ctr");
     assert_string_equal(session->opts.identity->root->data, "id_rsa");
+#ifdef WITH_ZLIB
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
-                        "zlib@openssh.com,zlib");
+                        "zlib@openssh.com,zlib,none");
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
-                        "zlib@openssh.com,zlib");
+                        "zlib@openssh.com,zlib,none");
+#else
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
+                        "none");
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
+                        "none");
+#endif
     /* -1 and -2 are noop */
 
 
@@ -1024,19 +1031,33 @@ static void torture_options_getopt(void **state)
     argc = 2;
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION, "no");
     assert_ssh_return_code(session, rc);
+#ifdef WITH_ZLIB
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
+                        "none,zlib@openssh.com,zlib");
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
+                        "none,zlib@openssh.com,zlib");
+#else
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
                         "none");
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
                         "none");
+#endif
 
     rc = ssh_options_getopt(session, &argc, (char **)argv);
     assert_ssh_return_code(session, rc);
     assert_int_equal(argc, 1);
     assert_string_equal(argv[0], EXECUTABLE_NAME);
+#ifdef WITH_ZLIB
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
-                        "zlib@openssh.com,zlib");
+                        "zlib@openssh.com,zlib,none");
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
-                        "zlib@openssh.com,zlib");
+                        "zlib@openssh.com,zlib,none");
+#else
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
+                        "none");
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
+                        "none");
+#endif
 
     /* Corner case: only hostname is not parsed */
     argv[1] = "example.com";

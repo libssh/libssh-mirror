@@ -507,12 +507,14 @@ static void torture_config_new(void ** state,
     assert_string_equal(session->opts.bindaddr, BIND_ADDRESS);
 #ifdef WITH_ZLIB
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
-                        "zlib@openssh.com,zlib");
+                        "zlib@openssh.com,zlib,none");
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
-                        "zlib@openssh.com,zlib");
+                        "zlib@openssh.com,zlib,none");
 #else
-    assert_null(session->opts.wanted_methods[SSH_COMP_C_S]);
-    assert_null(session->opts.wanted_methods[SSH_COMP_S_C]);
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
+                        "none");
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
+                        "none");
 #endif /* WITH_ZLIB */
     assert_int_equal(session->opts.StrictHostKeyChecking, 0);
     assert_int_equal(session->opts.gss_delegate_creds, 1);

@@ -844,10 +844,10 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 return -1;
             } else {
                 if (strcasecmp(value,"yes")==0){
-                    if(ssh_options_set_algo(session,SSH_COMP_C_S,"zlib@openssh.com,zlib") < 0)
+                    if(ssh_options_set_algo(session,SSH_COMP_C_S,"zlib@openssh.com,zlib,none") < 0)
                         return -1;
                 } else if (strcasecmp(value,"no")==0){
-                    if(ssh_options_set_algo(session,SSH_COMP_C_S,"none") < 0)
+                    if(ssh_options_set_algo(session,SSH_COMP_C_S,"none,zlib@openssh.com,zlib") < 0)
                         return -1;
                 } else {
                     if (ssh_options_set_algo(session, SSH_COMP_C_S, v) < 0)
@@ -862,10 +862,10 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 return -1;
             } else {
                 if (strcasecmp(value,"yes")==0){
-                    if(ssh_options_set_algo(session,SSH_COMP_S_C,"zlib@openssh.com,zlib") < 0)
+                    if(ssh_options_set_algo(session,SSH_COMP_S_C,"zlib@openssh.com,zlib,none") < 0)
                         return -1;
                 } else if (strcasecmp(value,"no")==0){
-                    if(ssh_options_set_algo(session,SSH_COMP_S_C,"none") < 0)
+                    if(ssh_options_set_algo(session,SSH_COMP_S_C,"none,zlib@openssh.com,zlib") < 0)
                         return -1;
                 } else {
                     if (ssh_options_set_algo(session, SSH_COMP_S_C, v) < 0)

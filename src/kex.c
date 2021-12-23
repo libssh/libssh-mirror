@@ -88,7 +88,7 @@
 #endif /* HAVE_LIBCRYPTO */
 
 #ifdef WITH_ZLIB
-#define ZLIB "none,zlib,zlib@openssh.com"
+#define ZLIB "none,zlib@openssh.com,zlib"
 #else
 #define ZLIB "none"
 #endif
@@ -229,8 +229,8 @@ static const char *default_methods[] = {
     CHACHA20 AES,
     "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512",
     "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512",
-    "none",
-    "none",
+    ZLIB,
+    ZLIB,
     "",
     "",
     NULL
