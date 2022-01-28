@@ -1,11 +1,11 @@
 ---
 variables:
   BUILD_IMAGES_PROJECT: libssh/build-images
-  FEDORA_BUILD: buildenv-fedora
-  UBUNTU_BUILD: buildenv-ubuntu
   CENTOS7_BUILD: buildenv-centos7
-  TUMBLEWEED_BUILD: buildenv-tumbleweed
+  FEDORA_BUILD: buildenv-fedora
   MINGW_BUILD: buildenv-mingw
+  TUMBLEWEED_BUILD: buildenv-tumbleweed
+  UBUNTU_BUILD: buildenv-ubuntu
 
 stages:
   - build
