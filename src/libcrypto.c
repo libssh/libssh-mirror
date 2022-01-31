@@ -468,7 +468,7 @@ void hmac_update(HMACCTX ctx, const void *data, unsigned long len)
 
 void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len)
 {
-    size_t res;
+    size_t res = 0;
     EVP_DigestSignFinal(ctx, hashmacbuf, &res);
     EVP_MD_CTX_free(ctx);
     *len = res;
