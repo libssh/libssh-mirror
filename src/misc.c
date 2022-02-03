@@ -1104,7 +1104,7 @@ char *ssh_path_expand_tilde(const char *d) {
  * @returns Expanded string.
  */
 char *ssh_path_expand_escape(ssh_session session, const char *s) {
-    char host[NI_MAXHOST];
+    char host[NI_MAXHOST] = {0};
     char *buf = NULL;
     char *r = NULL;
     char *x = NULL;
