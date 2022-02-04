@@ -1375,7 +1375,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
  * @param  session      SSH session handle
  *
  * @param  filename     The options file to use, if NULL the default
- *                      ~/.ssh/config will be used.
+ *                      ~/.ssh/config and /etc/ssh/ssh_config will be used.
  *
  * @return 0 on success, < 0 on error.
  *
