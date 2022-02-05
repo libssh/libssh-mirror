@@ -66,7 +66,7 @@ if (UNIX AND NOT WIN32)
 
         add_executable(keygen2 keygen2.c ${examples_SRCS})
         target_compile_options(keygen2 PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
-        target_link_libraries(keygen2 ssh::ssh)
+        target_link_libraries(keygen2 ssh::ssh ${ARGP_LIBRARY})
 
     endif()
 endif (UNIX AND NOT WIN32)
