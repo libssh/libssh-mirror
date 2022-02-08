@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #define LIBSSH_STATIC 1
 #include <libssh/libssh.h>
@@ -117,7 +118,7 @@ static int write_rsa_hostkey(const char *rsakey_path)
     return 0;
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     int socket_fds[2] = {-1, -1};
     ssize_t nwritten;

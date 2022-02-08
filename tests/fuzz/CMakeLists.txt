@@ -1,7 +1,7 @@
 project(fuzzing CXX)
 
 macro(fuzzer name)
-    add_executable(${name} ${name}.cpp)
+    add_executable(${name} ${name}.c)
     target_link_libraries(${name}
                           PRIVATE
                               ssh::static)

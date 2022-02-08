@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <stdbool.h>
 
 #define LIBSSH_STATIC 1
 #include <libssh/libssh.h>
@@ -83,7 +84,7 @@ static void select_loop(ssh_session session, ssh_channel channel)
     ssh_event_free(event);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     ssh_session session = NULL;
     ssh_channel channel = NULL;

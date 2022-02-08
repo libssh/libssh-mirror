@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-extern "C" {
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +48,4 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     free(input);
 
     return 0;
-}
-
 }
