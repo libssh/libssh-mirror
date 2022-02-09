@@ -63,9 +63,11 @@ static int match_pattern(const char *s, const char *pattern, size_t limit)
             return (*s == '\0');
         }
 
-        while (*pattern == '*') {
-            /* Skip all the asterisks. */
-            had_asterisk = true;
+        /* Skip all the asterisks and adjacent question marks */
+        while (*pattern == '*' || (had_asterisk && *pattern == '?')) {
+            if (*pattern == '*') {
+                had_asterisk = true;
+            }
             pattern++;
         }
 
