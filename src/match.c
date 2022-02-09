@@ -43,7 +43,7 @@
 
 #include "libssh/priv.h"
 
-#define MAX_MATCH_RECURSION 32
+#define MAX_MATCH_RECURSION 16
 
 /*
  * Returns true if the given string matches the pattern (which may contain ?
