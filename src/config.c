@@ -553,6 +553,10 @@ ssh_config_make_absolute(ssh_session session,
     }
 
     /* Parsing user config relative to home directory (generally ~/.ssh) */
+    if (session->opts.sshdir == NULL) {
+        ssh_set_error_invalid(session);
+        return NULL;
+    }
     outlen = strlen(path) + strlen(session->opts.sshdir) + 1 + 1;
     out = malloc(outlen);
     if (out == NULL) {
