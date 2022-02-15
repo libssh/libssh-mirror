@@ -327,6 +327,21 @@ static int setup(void **state)
     return 0;
 }
 
+static int setup_no_sshdir(void **state)
+{
+    ssh_session session = NULL;
+    int verbosity;
+
+    session = ssh_new();
+
+    verbosity = torture_libssh_verbosity();
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
+    *state = session;
+
+    return 0;
+}
+
 static int teardown(void **state)
 {
     ssh_free(*state);
@@ -1666,7 +1681,7 @@ static void torture_config_identity(void **state)
 
 /* Make absolute path for config include
  */
-static void torture_config_make_absolute(void **state)
+static void torture_config_make_absolute_int(void **state, bool no_sshdir_fails)
 {
     ssh_session session = *state;
     char *result = NULL;
@@ -1688,12 +1703,31 @@ static void torture_config_make_absolute(void **state)
     free(result);
 
     /* User config is relative to sshdir -- here faked to /tmp/ssh/ */
+    result = ssh_config_make_absolute(session, "my_config", 0);
+    if (no_sshdir_fails) {
+        assert_null(result);
+    } else {
+        /* The path depends on the PWD so lets skip checking the actual path here */
+        assert_non_null(result);
+    }
+    free(result);
+
+    /* User config is relative to sshdir -- here faked to /tmp/ssh/ */
     ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "/tmp/ssh");
     result = ssh_config_make_absolute(session, "my_config", 0);
     assert_string_equal(result, "/tmp/ssh/my_config");
     free(result);
 }
 
+static void torture_config_make_absolute(void **state)
+{
+    torture_config_make_absolute_int(state, 0);
+}
+
+static void torture_config_make_absolute_no_sshdir(void **state)
+{
+    torture_config_make_absolute_int(state, 1);
+}
 
 int torture_run_tests(void)
 {
@@ -1761,6 +1795,8 @@ int torture_run_tests(void)
                                         setup, teardown),
         cmocka_unit_test_setup_teardown(torture_config_make_absolute,
                                         setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_config_make_absolute_no_sshdir,
+                                        setup_no_sshdir, teardown),
     };
 
 
