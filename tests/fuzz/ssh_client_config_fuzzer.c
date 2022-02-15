@@ -40,6 +40,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     session = ssh_new();
     assert(session != NULL);
 
+    /* Make sure we have default options set */
+    ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "example.com");
+
     ssh_config_parse_string(session, input);
 
     ssh_free(session);
