@@ -890,7 +890,7 @@ ssh_config_parse_line(ssh_session session,
     case SOC_PROTOCOL:
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
-        char *a, *b;
+        char *a, *b, *save = NULL;
         b = strdup(p);
         if (b == NULL) {
           SAFE_FREE(x);
@@ -900,7 +900,7 @@ ssh_config_parse_line(ssh_session session,
         i = 0;
         ssh_options_set(session, SSH_OPTIONS_SSH2, &i);
 
-        for (a = strtok(b, ","); a; a = strtok(NULL, ",")) {
+        for (a = strtok_r(b, ",", &save); a; a = strtok_r(NULL, ",", &save)) {
           switch (atoi(a)) {
             case 1:
               break;
