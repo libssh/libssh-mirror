@@ -136,6 +136,7 @@ struct ssh_session_struct {
                        the server */
     char *discon_msg; /* disconnect message from
                          the remote host */
+    char *disconnect_message; /* disconnect message to be set */
     ssh_buffer in_buffer;
     PACKET in_packet;
     ssh_buffer out_buffer;

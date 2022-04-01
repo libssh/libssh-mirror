@@ -690,6 +690,39 @@ int ssh_get_openssh_version(ssh_session session)
 
     return session->openssh;
 }
+/**
+ * @brief Add disconnect message when ssh_session is disconnected
+ * To add a disconnect message to give peer a better hint.
+ * @param  session      The SSH session to use.
+ * @param  message      The message to send after the session is disconnected.
+ *                      If no message is passed then a default message i.e
+ *                      "Bye Bye" will be sent.
+ */
+int
+ssh_session_set_disconnect_message(ssh_session session, const char *message)
+{
+    if (session == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (message == NULL || strlen(message) == 0) {
+        SAFE_FREE(session->disconnect_message);  //To free any message set earlier.
+        session->disconnect_message = strdup("Bye Bye") ;
+        if (session->disconnect_message == NULL) {
+            ssh_set_error_oom(session);
+            return SSH_ERROR;
+        }
+        return SSH_OK;
+    }
+    SAFE_FREE(session->disconnect_message);  //To free any message set earlier.
+    session->disconnect_message = strdup(message);
+    if (session->disconnect_message == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+    return SSH_OK;
+}
+
 
 /**
  * @brief Disconnect from a session (client or server).
@@ -712,12 +745,20 @@ ssh_disconnect(ssh_session session)
         return;
     }
 
+    if (session->disconnect_message == NULL) {
+        session->disconnect_message = strdup("Bye Bye") ;
+        if (session->disconnect_message == NULL) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+    }
+
     if (session->socket != NULL && ssh_socket_is_open(session->socket)) {
         rc = ssh_buffer_pack(session->out_buffer,
                              "bdss",
                              SSH2_MSG_DISCONNECT,
                              SSH2_DISCONNECT_BY_APPLICATION,
-                             "Bye Bye",
+                             session->disconnect_message,
                              ""); /* language tag */
         if (rc != SSH_OK) {
             ssh_set_error_oom(session);
@@ -772,6 +813,7 @@ error:
     session->auth.supported_methods = 0;
     SAFE_FREE(session->serverbanner);
     SAFE_FREE(session->clientbanner);
+    SAFE_FREE(session->disconnect_message);
 
     if (session->ssh_message_list) {
         ssh_message msg = NULL;
