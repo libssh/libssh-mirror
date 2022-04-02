@@ -68,7 +68,6 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "macs", SOC_MACS },
   { "compression", SOC_COMPRESSION },
   { "connecttimeout", SOC_TIMEOUT },
-  { "protocol", SOC_PROTOCOL },
   { "stricthostkeychecking", SOC_STRICTHOSTKEYCHECK },
   { "userknownhostsfile", SOC_KNOWNHOSTS },
   { "proxycommand", SOC_PROXYCOMMAND },
@@ -81,7 +80,6 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "loglevel", SOC_LOGLEVEL},
   { "hostkeyalgorithms", SOC_HOSTKEYALGORITHMS},
   { "kexalgorithms", SOC_KEXALGORITHMS},
-  { "mac", SOC_UNSUPPORTED}, /* SSHv1 */
   { "gssapiauthentication", SOC_GSSAPIAUTHENTICATION},
   { "kbdinteractiveauthentication", SOC_KBDINTERACTIVEAUTHENTICATION},
   { "passwordauthentication", SOC_PASSWORDAUTHENTICATION},
@@ -95,20 +93,15 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "canonicalizemaxdots", SOC_UNSUPPORTED},
   { "canonicalizepermittedcnames", SOC_UNSUPPORTED},
   { "certificatefile", SOC_UNSUPPORTED},
-  { "challengeresponseauthentication", SOC_UNSUPPORTED},
+  { "kbdinteractiveauthentication", SOC_UNSUPPORTED},
   { "checkhostip", SOC_UNSUPPORTED},
-  { "cipher", SOC_UNSUPPORTED}, /* SSHv1 */
-  { "compressionlevel", SOC_UNSUPPORTED}, /* SSHv1 */
   { "connectionattempts", SOC_UNSUPPORTED},
   { "enablesshkeysign", SOC_UNSUPPORTED},
   { "fingerprinthash", SOC_UNSUPPORTED},
   { "forwardagent", SOC_UNSUPPORTED},
-  { "gssapikeyexchange", SOC_UNSUPPORTED},
-  { "gssapirenewalforcesrekey", SOC_UNSUPPORTED},
-  { "gssapitrustdns", SOC_UNSUPPORTED},
   { "hashknownhosts", SOC_UNSUPPORTED},
   { "hostbasedauthentication", SOC_UNSUPPORTED},
-  { "hostbasedkeytypes", SOC_UNSUPPORTED},
+  { "hostbasedacceptedalgorithms", SOC_UNSUPPORTED},
   { "hostkeyalias", SOC_UNSUPPORTED},
   { "identitiesonly", SOC_UNSUPPORTED},
   { "identityagent", SOC_UNSUPPORTED},
@@ -120,12 +113,10 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "preferredauthentications", SOC_UNSUPPORTED},
   { "proxyjump", SOC_PROXYJUMP},
   { "proxyusefdpass", SOC_UNSUPPORTED},
-  { "pubkeyacceptedtypes", SOC_PUBKEYACCEPTEDTYPES},
+  { "pubkeyacceptedalgorithms", SOC_PUBKEYACCEPTEDKEYTYPES},
   { "rekeylimit", SOC_REKEYLIMIT},
   { "remotecommand", SOC_UNSUPPORTED},
   { "revokedhostkeys", SOC_UNSUPPORTED},
-  { "rhostsrsaauthentication", SOC_UNSUPPORTED},
-  { "rsaauthentication", SOC_UNSUPPORTED}, /* SSHv1 */
   { "serveralivecountmax", SOC_UNSUPPORTED},
   { "serveraliveinterval", SOC_UNSUPPORTED},
   { "streamlocalbindmask", SOC_UNSUPPORTED},
@@ -133,7 +124,6 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "syslogfacility", SOC_UNSUPPORTED},
   { "tcpkeepalive", SOC_UNSUPPORTED},
   { "updatehostkeys", SOC_UNSUPPORTED},
-  { "useprivilegedport", SOC_UNSUPPORTED},
   { "verifyhostkeydns", SOC_UNSUPPORTED},
   { "visualhostkey", SOC_UNSUPPORTED},
   { "clearallforwardings", SOC_NA},
@@ -157,7 +147,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "tunnel", SOC_NA},
   { "tunneldevice", SOC_NA},
   { "xauthlocation", SOC_NA},
-  { "pubkeyacceptedkeytypes", SOC_PUBKEYACCEPTEDTYPES},
+  { "pubkeyacceptedkeytypes", SOC_PUBKEYACCEPTEDKEYTYPES},
   { NULL, SOC_UNKNOWN }
 };
 
@@ -887,34 +877,6 @@ ssh_config_parse_line(ssh_session session,
         }
       }
       break;
-    case SOC_PROTOCOL:
-      p = ssh_config_get_str_tok(&s, NULL);
-      if (p && *parsing) {
-        char *a, *b, *save = NULL;
-        b = strdup(p);
-        if (b == NULL) {
-          SAFE_FREE(x);
-          ssh_set_error_oom(session);
-          return -1;
-        }
-        i = 0;
-        ssh_options_set(session, SSH_OPTIONS_SSH2, &i);
-
-        for (a = strtok_r(b, ",", &save); a; a = strtok_r(NULL, ",", &save)) {
-          switch (atoi(a)) {
-            case 1:
-              break;
-            case 2:
-              i = 1;
-              ssh_options_set(session, SSH_OPTIONS_SSH2, &i);
-              break;
-            default:
-              break;
-          }
-        }
-        SAFE_FREE(b);
-      }
-      break;
     case SOC_TIMEOUT:
       l = ssh_config_get_long(&s, -1);
       if (l >= 0 && *parsing) {
@@ -1015,7 +977,7 @@ ssh_config_parse_line(ssh_session session,
             ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, p);
         }
         break;
-    case SOC_PUBKEYACCEPTEDTYPES:
+    case SOC_PUBKEYACCEPTEDKEYTYPES:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES, p);

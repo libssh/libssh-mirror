@@ -837,7 +837,7 @@ static void torture_options_copy(void **state)
           "MACs hmac-sha2-256\n"
           "HostKeyAlgorithms ssh-ed25519,ecdsa-sha2-nistp521\n"
           "Compression yes\n"
-          "PubkeyAcceptedTypes ssh-ed25519,ecdsa-sha2-nistp521\n"
+          "PubkeyAcceptedAlgorithms ssh-ed25519,ecdsa-sha2-nistp521\n"
           "ProxyCommand nc 127.0.0.10 22\n"
           /* ops.custombanner */
           "ConnectTimeout 42\n"
