@@ -35,6 +35,10 @@ if (UNIX AND NOT WIN32)
     target_compile_options(ssh-client PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
     target_link_libraries(ssh-client ssh::ssh)
 
+    add_executable(ssh-X11-client ssh_X11_client.c ${examples_SRCS})
+    target_compile_options(ssh-X11-client PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+    target_link_libraries(ssh-X11-client ssh::ssh)
+
     if (WITH_SERVER AND (ARGP_LIBRARY OR HAVE_ARGP_H))
         if (HAVE_LIBUTIL)
             add_executable(ssh_server_fork ssh_server.c)
