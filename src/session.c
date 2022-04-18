@@ -1106,7 +1106,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  *
  * @param[in]  hlen     The length of the hash.
  *
- * @return 0 on success, -1 if an error occured.
+ * @return 0 on success, -1 if an error occurred.
  *
  * @warning It is very important that you verify at some moment that the hash
  *          matches a known server. If you don't do it, cryptography wont help

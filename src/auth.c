@@ -364,7 +364,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok) {
  *
  * @param[in] username  Deprecated, set to NULL.
  *
- * @returns             A bitfield of the fllowing values:
+ * @returns             A bitfield of the following values:
  *                      - SSH_AUTH_METHOD_PASSWORD
  *                      - SSH_AUTH_METHOD_PUBLICKEY
  *                      - SSH_AUTH_METHOD_HOSTBASED
@@ -976,7 +976,7 @@ struct ssh_auth_auto_state_struct {
 };
 
 /**
- * @brief Get the identity that is currenly being processed by
+ * @brief Get the identity that is currently being processed by
  * ssh_userauth_publickey_auto()
  *
  * This is meant to be used by a callback that happens as part of the

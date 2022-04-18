@@ -868,7 +868,7 @@ static int ssh_buffer_pack_allocate_va(struct ssh_buffer_struct *buffer,
             va_arg(ap, bignum);
             /*
              * Use a fixed size for a bignum
-             * (they should normaly be around 32)
+             * (they should normally be around 32)
              */
             needed_size += 64;
             break;

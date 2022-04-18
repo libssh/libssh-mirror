@@ -6,7 +6,7 @@ For contributions we prefer Merge Requests on Gitlab:
 
 https://gitlab.com/libssh/libssh-mirror/
 
-This way you get contintious integration which runs the complete libssh
+This way you get continuous integration which runs the complete libssh
 testsuite for you.
 
 For larger code changes, breaking the changes up into a set of simple
