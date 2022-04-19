@@ -265,9 +265,10 @@ int ssh_options_set_algo(ssh_session session,
  *                The file descriptor to use (socket_t).\n
  *                \n
  *                If you wish to open the socket yourself for a reason
- *                or another, set the file descriptor. Don't forget to
- *                set the hostname as the hostname is used as a key in
- *                the known_host mechanism.
+ *                or another, set the file descriptor and take care of closing
+ *                it (this is new behavior in libssh 0.10).
+ *                Don't forget to set the hostname as the hostname is used
+ *                as a key in the known_host mechanism.
  *
  *              - SSH_OPTIONS_BINDADDR:
  *                The address to bind the client to (const char *).

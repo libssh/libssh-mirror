@@ -693,7 +693,12 @@ int ssh_get_openssh_version(ssh_session session)
 
 /**
  * @brief Disconnect from a session (client or server).
+ *
  * The session can then be reused to open a new session.
+ *
+ * @note Note that this function wont close the socket if it was set with
+ * @ssh_options_set and SSH_OPTIONS_FD. You're responsible for closing the
+ * socket. This is new behavior in libssh 0.10.
  *
  * @param[in]  session  The SSH session to use.
  */
