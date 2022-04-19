@@ -720,7 +720,10 @@ ssh_disconnect(ssh_session session)
         }
 
         ssh_packet_send(session);
-        ssh_socket_close(session->socket);
+        /* Do not close the socket, if the fd was set via options. */
+        if (session->opts.fd == SSH_INVALID_SOCKET) {
+            ssh_socket_close(session->socket);
+        }
     }
 
 error:
