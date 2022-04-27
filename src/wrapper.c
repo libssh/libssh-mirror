@@ -25,7 +25,7 @@
  * Why a wrapper?
  *
  * Let's say you want to port libssh from libcrypto of openssl to libfoo
- * you are going to spend hours to remove every references to SHA1_Update()
+ * you are going to spend hours removing every reference to SHA1_Update()
  * to libfoo_sha1_update after the work is finished, you're going to have
  * only this file to modify it's not needed to say that your modifications
  * are welcome.

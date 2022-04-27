@@ -1238,7 +1238,7 @@ int ssh_config_parse_string(ssh_session session, const char *input)
         line_start = c;
         c = strchr(line_start, '\n');
         if (c == NULL) {
-            /* if there is no newline in the end of the string */
+            /* if there is no newline at the end of the string */
             c = strchr(line_start, '\0');
         }
         if (c == NULL) {

@@ -65,7 +65,7 @@
  * @param[out] file     A pointer to the known host file. Could be pointing to
  *                      NULL at start.
  *
- * @param[in]  filename The file name of the known host file.
+ * @param[in]  filename The filename of the known host file.
  *
  * @param[out] found_type A pointer to a string to be set with the found key
  *                        type.

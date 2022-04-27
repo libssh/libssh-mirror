@@ -680,7 +680,7 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  * @param[in] timeout   Set an upper limit on the time for which this function
  *                      will block, in milliseconds. Specifying
  *                      SSH_TIMEOUT_INFINITE (-1) means an infinite timeout.
- *                      Specifying SSH_TIMEOUT_USER means to use the timeout
+ *                      Specifying SSH_TIMEOUT_USER means using the timeout
  *                      specified in options. 0 means poll will return
  *                      immediately.
  *                      SSH_TIMEOUT_DEFAULT uses the session timeout if set or
@@ -934,7 +934,7 @@ error:
  /**
  * @brief Set the session data counters.
  *
- * This functions sets the counter structures to be used to calculate data
+ * This function sets the counter structures to be used to calculate data
  * which comes in and goes out through the session at different levels.
  *
  * @code
@@ -1040,7 +1040,7 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash)
 /**
  * @brief Deallocate the hash obtained by ssh_get_pubkey_hash.
  *
- * This is required under Microsoft platform as this library might use a 
+ * This is required under Microsoft platform as this library might use a
  * different C library than your software, hence a different heap.
  *
  * @param[in] hash      The buffer to deallocate.
@@ -1109,7 +1109,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  * @return 0 on success, -1 if an error occurred.
  *
  * @warning It is very important that you verify at some moment that the hash
- *          matches a known server. If you don't do it, cryptography wont help
+ *          matches a known server. If you don't do it, cryptography won't help
  *          you at making things secure.
  *          OpenSSH uses SHA256 to print public key digests.
  *

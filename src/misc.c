@@ -455,7 +455,7 @@ void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
  * "  00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  ................"
  *
  * The value for each byte as corresponding ASCII character is printed at the
- * end if the value is printable. Otherwise it is replace with '.'.
+ * end if the value is printable. Otherwise, it is replaced with '.'.
  *
  * @param[in] descr A description for the content to be logged
  * @param[in] what  The buffer to be logged
@@ -840,7 +840,7 @@ const void *_ssh_list_pop_head(struct ssh_list *list){
  *
  * @return              The dirname of path or NULL if we can't allocate memory.
  *                      If path does not contain a slash, c_dirname() returns
- *                      the string ".".  If path is the string "/", it returns
+ *                      the string ".".  If path is a string "/", it returns
  *                      the string "/". If path is NULL or an empty string,
  *                      "." is returned.
  */
@@ -895,7 +895,7 @@ char *ssh_dirname (const char *path) {
  * @param[in]  path     The path to parse.
  *
  * @return              The filename of path or NULL if we can't allocate
- *                      memory. If path is a the string "/", basename returns
+ *                      memory. If path is the string "/", basename returns
  *                      the string "/". If path is NULL or an empty string,
  *                      "." is returned.
  */
@@ -1653,13 +1653,13 @@ int ssh_quote_file_name(const char *file_name, char *buf, size_t buf_len)
                 *dst++ = '\\';
                 break;
             case SINGLE_QUOTE:
-                /* Close the current quoted string and replace '!' for unquoted
+                /* Close the currently quoted string and replace '!' for unquoted
                  * "\!" */
                 *dst++ = '\'';
                 *dst++ = '\\';
                 break;
             case DOUBLE_QUOTE:
-                /* Close current quoted string and replace  "!" for unquoted
+                /* Close currently quoted string and replace  "!" for unquoted
                  * "\!" */
                 *dst++ = '"';
                 *dst++ = '\\';
@@ -1835,11 +1835,12 @@ err:
 /**
  * @internal
  *
- * @brief Finds the first occurence of a patterm in a string and replaces it.
+ * @brief Finds the first occurrence of a pattern in a string and replaces it.
  *
- * @param[in]  src          Source string containing the patern to be replaced.
+ * @param[in]  src          Source string containing the pattern to be replaced.
  * @param[in]  pattern      Pattern to be replaced in the source string.
- *                          Note: this function replaces the first occurence of pattern only.
+ *                          Note: this function replaces the first occurrence of
+ *                          pattern only.
  * @param[in]  replace      String to be replaced is stored in replace.
  *
  * @returns  src_replaced a pointer that points to the replaced string.

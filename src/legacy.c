@@ -20,7 +20,7 @@
  */
 
 /** functions in that file are wrappers to the newly named functions. All
- * of them are depreciated, but these wrapper will avoid breaking backward
+ * of them are depreciated, but these wrappers will avoid breaking backward
  * compatibility
  */
 

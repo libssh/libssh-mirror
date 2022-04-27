@@ -54,7 +54,7 @@
  * This file contains the message parsing utilities for client and server
  * programs using libssh.
  *
- * On the server the the main loop of the program will call
+ * On the server the main loop of the program will call
  * ssh_message_get(session) to get messages as they come. They are not 1-1 with
  * the protocol messages. Then, the user will know what kind of a message it is
  * and use the appropriate functions to handle it (or use the default handlers
@@ -79,7 +79,7 @@ static ssh_message ssh_message_new(ssh_session session)
 
 #ifndef WITH_SERVER
 
-/* Reduced version of the reply default that only reply with
+/* Reduced version of the reply default that only replies with
  * SSH_MSG_UNIMPLEMENTED
  */
 static int ssh_message_reply_default(ssh_message msg) {
@@ -1169,7 +1169,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error(session,SSH_FATAL, "Invalid state when receiving channel open request (must be authenticated)");
     goto error;
   }
-  
+
   if (strcmp(type_c,"session") == 0) {
     msg->channel_request_open.type = SSH_CHANNEL_SESSION;
     SAFE_FREE(type_c);
@@ -1248,7 +1248,7 @@ end:
  *
  * @param[in]  chan     The channel the request is made on.
  *
- * @returns             SSH_OK on success, SSH_ERROR if an error occured.
+ * @returns             SSH_OK on success, SSH_ERROR if an error occurred.
  */
 int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_channel chan) {
     ssh_session session;
@@ -1339,7 +1339,7 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
  *
  * @param[in]  want_reply The want_reply field from the request.
  *
- * @returns             SSH_OK on success, SSH_ERROR if an error occured.
+ * @returns             SSH_OK on success, SSH_ERROR if an error occurred.
  */
 int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply) {

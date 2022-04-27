@@ -829,7 +829,7 @@ int ssh_socket_set_blocking(socket_t fd)
 /**
  * @internal
  * @brief Launches a socket connection
- * If a the socket connected callback has been defined and
+ * If the socket connected callback has been defined and
  * a poll object exists, this call will be non blocking.
  * @param s    socket to connect.
  * @param host hostname or ip address to connect to.
@@ -846,7 +846,7 @@ int ssh_socket_connect(ssh_socket s,
                        const char *bind_addr)
 {
     socket_t fd;
-    
+
     if (s->state != SSH_SOCKET_NONE) {
         ssh_set_error(s->session, SSH_FATAL,
                       "ssh_socket_connect called on socket not unconnected");
@@ -858,7 +858,7 @@ int ssh_socket_connect(ssh_socket s,
         return SSH_ERROR;
     }
     ssh_socket_set_fd(s,fd);
-    
+
     return SSH_OK;
 }
 

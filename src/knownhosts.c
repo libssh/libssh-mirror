@@ -600,7 +600,7 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
 /**
  * @brief Parse a line from a known_hosts entry into a structure
  *
- * This parses an known_hosts entry into a structure with the key in a libssh
+ * This parses a known_hosts entry into a structure with the key in a libssh
  * consumeable form. You can use the PKI key function to further work with it.
  *
  * @param[in]  hostname     The hostname to match the line to
@@ -608,7 +608,7 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
  * @param[in]  line         The line to compare and parse if we have a hostname
  *                          match.
  *
- * @param[in]  entry        A pointer to store the the allocated known_hosts
+ * @param[in]  entry        A pointer to store the allocated known_hosts
  *                          entry structure. The user needs to free the memory
  *                          using SSH_KNOWNHOSTS_ENTRY_FREE().
  *
@@ -662,7 +662,7 @@ int ssh_known_hosts_parse_line(const char *hostname,
 
             if (q[0] == '[' && hostname[0] != '[') {
                 /* Corner case: We have standard port so we do not have
-                 * hostname in square braces. But the patern is enclosed
+                 * hostname in square braces. But the pattern is enclosed
                  * in braces with, possibly standard or wildcard, port.
                  * We need to test against [host]:port pair here.
                  */
@@ -775,12 +775,12 @@ out:
 }
 
 /**
- * @brief Check if the set hostname and port matches an entry in known_hosts.
+ * @brief Check if the set hostname and port match an entry in known_hosts.
  *
- * This check if the set hostname and port has an entry in the known_hosts file.
+ * This check if the set hostname and port have an entry in the known_hosts file.
  * You need to set at least the hostname using ssh_options_set().
  *
- * @param[in]  session  The session with with the values set to check.
+ * @param[in]  session  The session with the values set to check.
  *
  * @return A ssh_known_hosts_e return value.
  */
@@ -893,11 +893,11 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
  *
  * @param[in]  session  The session with information to export.
  *
- * @param[in]  pentry_string A pointer to a string to store the alloocated
+ * @param[in]  pentry_string A pointer to a string to store the allocated
  *                           line of the entry. The user must free it using
  *                           ssh_string_free_char().
  *
- * @return SSH_OK on succcess, SSH_ERROR otherwise.
+ * @return SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_session_export_known_hosts_entry(ssh_session session,
                                          char **pentry_string)
@@ -962,7 +962,7 @@ int ssh_session_export_known_hosts_entry(ssh_session session,
 }
 
 /**
- * @brief Add the current connected server to the user known_hosts file.
+ * @brief Adds the currently connected server to the user known_hosts file.
  *
  * This adds the currently connected server to the known_hosts file by
  * appending a new line at the end. The global known_hosts file is considered
@@ -1113,7 +1113,7 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
 }
 
 /**
- * @brief Get the known_hosts entry for the current connected session.
+ * @brief Get the known_hosts entry for the currently connected session.
  *
  * @param[in]  session  The session to validate.
  *
@@ -1132,7 +1132,7 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
  *          SSH_KNOWN_HOSTS_NOT_FOUND: The known host file does not exist. The
  *                                     host is thus unknown. File will be
  *                                     created if host key is accepted.\n
- *          SSH_KNOWN_HOSTS_ERROR:     There had been an eror checking the host.
+ *          SSH_KNOWN_HOSTS_ERROR:     There had been an error checking the host.
  *
  * @see ssh_knownhosts_entry_free()
  */

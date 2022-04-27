@@ -370,7 +370,7 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply){
   if (rc != 0) {
       goto error;
   }
-  
+
   rc = ssh_dh_compute_shared_secret(session->next_crypto->dh_ctx,
                                     DH_CLIENT_KEYPAIR, DH_SERVER_KEYPAIR,
                                     &session->next_crypto->shared_secret);
@@ -640,7 +640,7 @@ ssh_key ssh_dh_get_current_server_publickey(ssh_session session)
     return session->current_crypto->server_pubkey;
 }
 
-/* Caller need to free the blob */
+/* Caller needs to free the blob */
 int ssh_dh_get_current_server_publickey_blob(ssh_session session,
                                      ssh_string *pubkey_blob)
 {
@@ -654,7 +654,7 @@ ssh_key ssh_dh_get_next_server_publickey(ssh_session session)
     return session->next_crypto->server_pubkey;
 }
 
-/* Caller need to free the blob */
+/* Caller needs to free the blob */
 int ssh_dh_get_next_server_publickey_blob(ssh_session session,
                                           ssh_string *pubkey_blob)
 {
@@ -699,7 +699,7 @@ static char *ssh_get_b64_unpadded(const unsigned char *hash, size_t len)
  * @brief Get a hash as a human-readable hex- or base64-string.
  *
  * This gets an allocated fingerprint hash.  If it is a SHA sum, it will
- * return an unpadded base64 strings.  If it is a MD5 sum, it will return hex
+ * return an unpadded base64 string.  If it is a MD5 sum, it will return a hex
  * string. Either way, the output is prepended by the hash-type.
  *
  * @warning Do NOT use MD5 or SHA1! Those hash functions are being deprecated.

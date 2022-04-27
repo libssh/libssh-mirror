@@ -51,7 +51,7 @@
  *
  * It's based on poll objects, each of which store a socket, its events and a
  * callback, which gets called whenever an event is set. The poll objects are
- * attached to a poll context, which should be allocated on per thread basis.
+ * attached to a poll context, which should be allocated on a per thread basis.
  *
  * Polling the poll context will poll all the attached poll objects and call
  * their callbacks (handlers) if any of the socket events are set. This should
@@ -210,8 +210,8 @@ static short bsd_socket_compute_revents(int fd, short events)
  * poll implementation.
  *
  * Keep in mind that select is terribly inefficient. The interface is simply not
- * meant to be used with maximum descriptor value greater, say, 32 or so.  With
- * a value as high as 1024 on Linux you'll pay dearly in every single call.
+ * meant to be used with maximum descriptor value greater than, say, 32 or so.
+ * With a value as high as 1024 on Linux you'll pay dearly in every single call.
  * poll() will be orders of magnitude faster.
  */
 static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout)
@@ -646,7 +646,7 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
  * @brief  Poll all the sockets associated through a poll object with a
  *         poll context. If any of the events are set after the poll, the
  *         call back function of the socket will be called.
- *         This function should be called once within the programs main loop.
+ *         This function should be called once within the program's main loop.
  *
  * @param  ctx          Pointer to an already allocated poll context.
  * @param  timeout      An upper limit on the time for which ssh_poll_ctx() will
@@ -655,7 +655,7 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
  *                      the poll() function.
  * @returns SSH_OK      No error.
  *          SSH_ERROR   Error happened during the poll.
- *          SSH_AGAIN   Timeout occured
+ *          SSH_AGAIN   Timeout occurred
  */
 
 int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout)
@@ -752,7 +752,7 @@ struct ssh_event_struct {
  *         ssh_session objects and socket fd which are going to be polled at the
  *         same time as the event context. You would need a single event context
  *         per thread.
- * 
+ *
  * @return  The ssh_event object on success, NULL on failure.
  */
 ssh_event ssh_event_new(void) {
@@ -814,7 +814,7 @@ int ssh_event_add_fd(ssh_event event, socket_t fd, short events,
                                     ssh_event_callback cb, void *userdata) {
     ssh_poll_handle p;
     struct ssh_event_fd_wrapper *pw;
-    
+
     if(event == NULL || event->ctx == NULL || cb == NULL
                                            || fd == SSH_INVALID_SOCKET) {
         return SSH_ERROR;
@@ -870,7 +870,7 @@ void ssh_event_remove_poll(ssh_event event, ssh_poll_handle p)
 }
 
 /**
- * @brief remove the poll handle from session and assign them to a event,
+ * @brief remove the poll handle from session and assign them to an event,
  * when used in blocking mode.
  *
  * @param event     The ssh_event object

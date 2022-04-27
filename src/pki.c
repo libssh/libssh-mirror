@@ -764,7 +764,7 @@ void ssh_signature_free(ssh_signature sig)
 }
 
 /**
- * @brief import a base64 formated key from a memory c-string
+ * @brief import a base64 formatted key from a memory c-string
  *
  * @param[in]  b64_key  The c-string holding the base64 encoded key
  *
@@ -1557,7 +1557,7 @@ fail:
 }
 
 /**
- * @brief Import a base64 formated public key from a memory c-string.
+ * @brief Import a base64 formatted public key from a memory c-string.
  *
  * @param[in]  b64_key  The base64 key to format.
  *
@@ -1835,7 +1835,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 }
 
 /**
- * @brief Import a base64 formated certificate from a memory c-string.
+ * @brief Import a base64 formatted certificate from a memory c-string.
  *
  * @param[in]  b64_cert  The base64 cert to format.
  *

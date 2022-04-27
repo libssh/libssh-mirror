@@ -216,7 +216,7 @@ static void ssh_connector_except_channel(ssh_connector connector,
 /**
  * @internal
  *
- * @brief Reset the poll events to be followed for each file descriptors.
+ * @brief Reset the poll events to be followed for each file descriptor.
  */
 static void ssh_connector_reset_pollevents(ssh_connector connector)
 {

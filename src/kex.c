@@ -965,13 +965,13 @@ char *ssh_keep_known_algos(enum ssh_kex_types_e algo, const char *list)
 /**
  * @internal
  *
- * @brief Return a new allocated string containing only the FIPS allowed
+ * @brief Return a newly allocated string containing only the FIPS allowed
  * algorithms from the list.
  *
  * @param[in] algo  The type of the methods to filter
  * @param[in] list  The list to be filtered
  *
- * @return A new allocated list containing only the FIPS allowed algorithms from
+ * @return A newly allocated list containing only the FIPS allowed algorithms from
  * the list; NULL in case of error.
  */
 char *ssh_keep_fips_algos(enum ssh_kex_types_e algo, const char *list)

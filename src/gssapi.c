@@ -581,7 +581,7 @@ ssh_gssapi_creds ssh_gssapi_get_creds(ssh_session session){
 #endif /* SERVER */
 
 /**
- * @brief Set the forwadable ticket to be given to the server for authentication.
+ * @brief Set the forwardable ticket to be given to the server for authentication.
  * Unlike ssh_gssapi_get_creds() this is called on the client side of an ssh
  * connection.
  *

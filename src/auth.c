@@ -58,7 +58,7 @@
 /**
  * @internal
  *
- * @brief Ask access to the ssh-userauth service.
+ * @brief Ask for access to the ssh-userauth service.
  *
  * @param[in] session   The SSH session handle.
  *
@@ -1873,7 +1873,7 @@ int ssh_userauth_kbdint_getnanswers(ssh_session session) {
 }
 
 /**
- * @brief Get the answer for a question from a message block.
+ * @brief Get the answer to a question from a message block.
  *
  * @param[in]  session  The ssh session to use.
  *

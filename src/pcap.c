@@ -103,7 +103,7 @@ struct ssh_pcap_context_struct {
 	ssh_session session;
 	ssh_pcap_file file;
 	int connected;
-	/* All of these information are useful to generate
+	/* All of this information is useful to generate
 	 * the dummy IP and TCP packets
 	 */
 	uint32_t ipsource;
@@ -198,7 +198,7 @@ error:
 }
 
 /**
- * @brief opens a new pcap file and create header
+ * @brief opens a new pcap file and creates header
  */
 int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
 	ssh_buffer header;
@@ -506,7 +506,7 @@ error:
 
 /** @brief sets the pcap file used to trace the session
  * @param current session
- * @param pcap an handler to a pcap file. A pcap file may be used in several
+ * @param pcap a handler to a pcap file. A pcap file may be used in several
  * sessions.
  * @returns SSH_ERROR in case of error, SSH_OK otherwise.
  */

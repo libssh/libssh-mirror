@@ -65,7 +65,7 @@ static int chacha20_set_encrypt_key(struct ssh_cipher_struct *cipher,
 /**
  * @internal
  *
- * @brief encrypts an outgoing packet with chacha20 and authenticate it
+ * @brief encrypts an outgoing packet with chacha20 and authenticates it
  * with poly1305.
  */
 static void chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,

@@ -866,7 +866,7 @@ static int sftp_enqueue(sftp_session sftp, sftp_message msg) {
 }
 
 /*
- * Pulls of a message from the queue based on the ID.
+ * Pulls a message from the queue based on the ID.
  * Returns NULL if no message has been found.
  */
 static sftp_message sftp_dequeue(sftp_session sftp, uint32_t id){
@@ -1102,7 +1102,7 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path)
 /*
  * Parse the attributes from a payload from some messages. It is coded on
  * baselines from the protocol version 4.
- * This code is more or less dead but maybe we need it in future.
+ * This code is more or less dead but maybe we will need it in the future.
  */
 static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
     int expectnames) {

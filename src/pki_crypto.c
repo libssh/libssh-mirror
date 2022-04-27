@@ -2148,7 +2148,7 @@ error:
 /**
  * @internal
  *
- * @brief Sign the given input data. The digest of to be signed is calculated
+ * @brief Sign the given input data. The digest to be signed is calculated
  * internally as necessary.
  *
  * @param[in]   privkey     The private key to be used for signing.

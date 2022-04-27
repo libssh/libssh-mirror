@@ -370,7 +370,7 @@ end:
     if (channel->state == SSH_CHANNEL_STATE_OPEN) {
         err = SSH_OK;
     } else if (err != SSH_AGAIN) {
-        /* Messages were handled correctly, but he channel state is invalid */
+        /* Messages were handled correctly, but the channel state is invalid */
         err = SSH_ERROR;
     }
 
@@ -397,7 +397,7 @@ ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
 
 /**
  * @internal
- * @brief grows the local window and send a packet to the other party
+ * @brief grows the local window and sends a packet to the other party
  * @param session SSH session
  * @param channel SSH channel
  * @param minimumsize The minimum acceptable size for the new window.
@@ -1203,7 +1203,7 @@ void ssh_channel_free(ssh_channel channel)
     channel->flags |= SSH_CHANNEL_FLAG_FREED_LOCAL;
 
     /* The idea behind the flags is the following : it is well possible
-     * that a client closes a channel that stills exists on the server side.
+     * that a client closes a channel that still exists on the server side.
      * We definitively close the channel when we receive a close message *and*
      * the user closed it.
      */
@@ -1566,7 +1566,7 @@ error:
 /**
  * @brief Get the remote window size.
  *
- * This is the maximum amounts of bytes the remote side expects us to send
+ * This is the maximum amount of bytes the remote side expects us to send
  * before growing the window again.
  *
  * @param[in] channel The channel to query.
@@ -1826,7 +1826,7 @@ error:
 /**
  * @brief Request a pty with a specific type and size.
  *
- * @param[in]  channel  The channel to sent the request.
+ * @param[in]  channel  The channel to send the request.
  *
  * @param[in]  terminal The terminal type ("vt100, xterm,...").
  *
@@ -1918,8 +1918,8 @@ int ssh_channel_request_pty(ssh_channel channel) {
  * @return              SSH_OK on success, SSH_ERROR if an error occurred.
  *
  * @warning Do not call it from a signal handler if you are not sure any other
- *          libssh function using the same channel/session is running at same
- *          time (not 100% threadsafe).
+ *          libssh function using the same channel/session is running at the
+ *          same time (not 100% threadsafe).
  */
 int ssh_channel_change_pty_size(ssh_channel channel, int cols, int rows) {
   ssh_session session = channel->session;
@@ -2062,7 +2062,7 @@ static char *generate_cookie(void) {
  * @brief Sends the "x11-req" channel request over an existing session channel.
  *
  * This will enable redirecting the display of the remote X11 applications to
- * local X server over an secure tunnel.
+ * local X server over a secure tunnel.
  *
  * @param[in]  channel  An existing session channel where the remote X11
  *                      applications are going to be executed.
@@ -2858,7 +2858,7 @@ static int ssh_channel_read_termination(void *s){
     return 0;
 }
 
-/* TODO FIXME Fix the blocking behaviours */
+/* TODO: FIXME Fix the blocking behaviours */
 
 /**
  * @brief Reads data from a channel.

@@ -129,7 +129,7 @@ struct ssh_buffer_struct *ssh_buffer_new(void)
     /*
      * Always preallocate 64 bytes.
      *
-     * -1 for ralloc_buffer magic.
+     * -1 for realloc_buffer magic.
      */
     rc = ssh_buffer_allocate_size(buf, 64 - 1);
     if (rc != 0) {
@@ -693,7 +693,7 @@ uint32_t ssh_buffer_get_data(struct ssh_buffer_struct *buffer, void *data, uint3
 /**
  * @internal
  *
- * @brief Get a 8 bits unsigned int out of the buffer and adjusts the read
+ * @brief Get a 8 bits unsigned int out of the buffer and adjust the read
  * pointer.
  *
  * @param[in]  buffer   The buffer to read.
@@ -757,7 +757,7 @@ int ssh_buffer_validate_length(struct ssh_buffer_struct *buffer, size_t len)
 /**
  * @internal
  *
- * @brief Get a SSH String out of the buffer and adjusts the read pointer.
+ * @brief Get an SSH String out of the buffer and adjust the read pointer.
  *
  * @param[in]  buffer   The buffer to read.
  *

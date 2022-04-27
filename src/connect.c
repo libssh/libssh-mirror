@@ -289,14 +289,14 @@ static int ssh_select_cb (socket_t fd, int revents, void *userdata)
 /**
  * @brief A wrapper for the select syscall
  *
- * This functions acts more or less like the select(2) syscall.\n
+ * This function acts more or less like the select(2) syscall.\n
  * There is no support for writing or exceptions.\n
  *
  * @param[in]  channels Arrays of channels pointers terminated by a NULL.
  *                      It is never rewritten.
  *
- * @param[out] outchannels Arrays of same size that "channels", there is no need
- *                         to initialize it.
+ * @param[out] outchannels Arrays of the same size as "channels", there is no
+ *                         need to initialize it.
  *
  * @param[in]  maxfd    Maximum +1 file descriptor from readfds.
  *

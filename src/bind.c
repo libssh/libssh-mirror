@@ -339,7 +339,7 @@ static int ssh_bind_poll_callback(ssh_poll_handle sshpoll,
 }
 
 /** @internal
- * @brief returns the current poll handle, or create it
+ * @brief returns the current poll handle, or creates it
  * @param sshbind the ssh_bind object
  * @returns a ssh_poll handle suitable for operation
  */

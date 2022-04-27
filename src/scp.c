@@ -325,7 +325,7 @@ void ssh_scp_free(ssh_scp scp)
  * @param[in]  mode     The UNIX permissions for the new directory, e.g. 0755.
  *
  * @returns             SSH_OK if the directory has been created, SSH_ERROR if
- *                      an error occured.
+ *                      an error occurred.
  *
  * @see ssh_scp_leave_directory()
  */
@@ -416,7 +416,7 @@ error:
  * @brief Leave a directory.
  *
  * @returns             SSH_OK if the directory has been left, SSH_ERROR if an
- *                      error occured.
+ *                      error occurred.
  *
  * @see ssh_scp_push_directory()
  */
@@ -465,7 +465,7 @@ int ssh_scp_leave_directory(ssh_scp scp)
  * @param[in]  mode     The UNIX permissions for the new file, e.g. 0644.
  *
  * @returns             SSH_OK if the file is ready to be sent, SSH_ERROR if an
- *                      error occured.
+ *                      error occurred.
  *
  * @see ssh_scp_push_file()
  */
@@ -570,7 +570,7 @@ error:
  * @param[in]  mode     The UNIX permissions for the new file, e.g. 0644.
  *
  * @returns             SSH_OK if the file is ready to be sent, SSH_ERROR if an
- *                      error occured.
+ *                      error occurred.
  */
 int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode)
 {
@@ -589,7 +589,7 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode)
  * @param[out] response A pointer where the response message must be copied if
  *                      any. This pointer must then be free'd.
  *
- * @returns             The return code, SSH_ERROR a error occured.
+ * @returns             The return code, SSH_ERROR a error occurred.
  */
 int ssh_scp_response(ssh_scp scp, char **response)
 {
@@ -659,7 +659,7 @@ int ssh_scp_response(ssh_scp scp, char **response)
  * @param[in]  len      The number of bytes to write.
  *
  * @returns             SSH_OK if the write was successful, SSH_ERROR an error
- *                      occured while writing.
+ *                      occurred while writing.
  */
 int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len)
 {
@@ -737,7 +737,7 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len)
  *                      null-terminated.
  *
  * @returns             SSH_OK if the string was read, SSH_ERROR if an error
- *                      occured while reading.
+ *                      occurred while reading.
  */
 int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len)
 {
@@ -885,7 +885,7 @@ int ssh_scp_pull_request(ssh_scp scp)
         return SSH_ERROR;
     }
 
-    /* a parsing error occured */
+    /* a parsing error occurred */
 error:
     SAFE_FREE(name);
     SAFE_FREE(mode);
@@ -992,7 +992,7 @@ int ssh_scp_accept_request(ssh_scp scp)
  *
  * @param[in]  size     The size of the buffer.
  *
- * @returns             The nNumber of bytes read, SSH_ERROR if an error occured
+ * @returns             The nNumber of bytes read, SSH_ERROR if an error occurred
  *                      while reading.
  */
 int ssh_scp_read(ssh_scp scp, void *buffer, size_t size)

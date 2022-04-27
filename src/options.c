@@ -58,7 +58,7 @@
  * @param dest          A pointer to store the allocated session with duplicated
  *                      options. You have to free the memory.
  *
- * @returns             0 on sucess, -1 on error with errno set.
+ * @returns             0 on success, -1 on error with errno set.
  *
  * @see ssh_session_connect()
  */
@@ -340,7 +340,7 @@ int ssh_options_set_algo(ssh_session session,
  *                - SSH_LOG_NOLOG: No logging
  *                - SSH_LOG_WARNING: Only warnings
  *                - SSH_LOG_PROTOCOL: High level protocol information
- *                - SSH_LOG_PACKET: Lower level protocol infomations, packet level
+ *                - SSH_LOG_PACKET: Lower level protocol information, packet level
  *                - SSH_LOG_FUNCTIONS: Every function path
  *
  *              - SSH_OPTIONS_LOG_VERBOSITY_STR:
@@ -1070,7 +1070,7 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
 /**
  * @brief This function can get ssh options, it does not support all options provided for
  *        ssh options set, but mostly those which a user-space program may care about having
- *        trusted the ssh driver to infer these values from underlaying configuration files.
+ *        trusted the ssh driver to infer these values from underlying configuration files.
  *        It operates only on those SSH_OPTIONS_* which return char*. If you wish to receive
  *        the port then please use ssh_options_get_port() which returns an unsigned int.
  *
@@ -1175,10 +1175,10 @@ int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
  * This is a helper for your application to generate the appropriate
  * options from the command line arguments.\n
  * The argv array and argc value are changed so that the parsed
- * arguments wont appear anymore in them.\n
+ * arguments won't appear anymore in them.\n
  * The single arguments (without switches) are not parsed. thus,
  * myssh -l user localhost\n
- * The command wont set the hostname value of options to localhost.
+ * The command won't set the hostname value of options to localhost.
  *
  * @param session       The session to configure.
  *
@@ -1555,7 +1555,7 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *
  *                      - SSH_BIND_OPTIONS_HOSTKEY:
  *                        Set the path to an ssh host key, regardless
- *                        of type.  Only one key from per key type
+ *                        of type.  Only one key from each key type
  *                        (RSA, DSA, ECDSA) is allowed in an ssh_bind
  *                        at a time, and later calls to this function
  *                        with this option for the same key type will
@@ -1580,7 +1580,7 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        - SSH_LOG_NOLOG: No logging
  *                        - SSH_LOG_WARNING: Only warnings
  *                        - SSH_LOG_PROTOCOL: High level protocol information
- *                        - SSH_LOG_PACKET: Lower level protocol infomations, packet level
+ *                        - SSH_LOG_PACKET: Lower level protocol information, packet level
  *                        - SSH_LOG_FUNCTIONS: Every function path
  *
  *                      - SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
@@ -1655,7 +1655,7 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        possible algorithms is created from the list of keys
  *                        set and then filtered against this list.
  *                        (const char *, comma-separated list).
- * 
+ *
  *                      - SSH_BIND_OPTIONS_MODULI
  *                        Set the path to the moduli file. Defaults to
  *                        /etc/ssh/moduli if not specified (const char *).
@@ -2132,7 +2132,7 @@ static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
  * @param  sshbind      SSH bind handle
  *
  * @param  filename     The options file to use; if NULL only the global
- *                      configuration is parsed and applied (if it haven't been
+ *                      configuration is parsed and applied (if it hasn't been
  *                      processed before).
  *
  * @return 0 on success, < 0 on error.

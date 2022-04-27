@@ -39,7 +39,7 @@
 
 
 /* The following implements the SSHKDF for crypto backend that
- * do not have a native implementations */
+ * do not have a native implementation */
 struct ssh_mac_ctx_struct {
     enum ssh_kdf_digest digest_type;
     union {
