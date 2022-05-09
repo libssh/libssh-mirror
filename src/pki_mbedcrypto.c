@@ -1622,6 +1622,38 @@ int pki_key_generate_dss(ssh_key key, int parameter)
     return SSH_ERROR;
 }
 
+int ssh_key_size(ssh_key key)
+{
+    switch (key->type) {
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA_CERT01:
+    case SSH_KEYTYPE_RSA1:
+        return mbedtls_pk_get_bitlen(key->rsa);
+    case SSH_KEYTYPE_ECDSA_P256:
+    case SSH_KEYTYPE_ECDSA_P256_CERT01:
+    case SSH_KEYTYPE_SK_ECDSA:
+    case SSH_KEYTYPE_SK_ECDSA_CERT01:
+        return 256;
+    case SSH_KEYTYPE_ECDSA_P384:
+    case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        return 384;
+    case SSH_KEYTYPE_ECDSA_P521:
+    case SSH_KEYTYPE_ECDSA_P521_CERT01:
+        return 521;
+    case SSH_KEYTYPE_ED25519:
+    case SSH_KEYTYPE_ED25519_CERT01:
+    case SSH_KEYTYPE_SK_ED25519:
+    case SSH_KEYTYPE_SK_ED25519_CERT01:
+        /* ed25519 keys have fixed size */
+        return 255;
+    case SSH_KEYTYPE_DSS:
+    case SSH_KEYTYPE_DSS_CERT01:
+    case SSH_KEYTYPE_UNKNOWN:
+    default:
+        return SSH_ERROR;
+    }
+}
+
 int pki_uri_import(const char *uri_name, ssh_key *key, enum ssh_key_e key_type)
 {
     (void) uri_name;

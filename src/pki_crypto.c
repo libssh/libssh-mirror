@@ -2428,6 +2428,44 @@ out:
     return rc;
 }
 
+int ssh_key_size(ssh_key key)
+{
+    int bits = 0;
+    EVP_PKEY *pkey;
+
+    switch (key->type) {
+    case SSH_KEYTYPE_DSS:
+    case SSH_KEYTYPE_DSS_CERT01:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA_CERT01:
+    case SSH_KEYTYPE_RSA1:
+    case SSH_KEYTYPE_ECDSA_P256:
+    case SSH_KEYTYPE_ECDSA_P256_CERT01:
+    case SSH_KEYTYPE_ECDSA_P384:
+    case SSH_KEYTYPE_ECDSA_P384_CERT01:
+    case SSH_KEYTYPE_ECDSA_P521:
+    case SSH_KEYTYPE_ECDSA_P521_CERT01:
+    case SSH_KEYTYPE_SK_ECDSA:
+    case SSH_KEYTYPE_SK_ECDSA_CERT01:
+        pkey = pki_key_to_pkey(key);
+        if (pkey == NULL) {
+            return SSH_ERROR;
+        }
+        bits = EVP_PKEY_bits(pkey);
+        EVP_PKEY_free(pkey);
+        return bits;
+    case SSH_KEYTYPE_ED25519:
+    case SSH_KEYTYPE_ED25519_CERT01:
+    case SSH_KEYTYPE_SK_ED25519:
+    case SSH_KEYTYPE_SK_ED25519_CERT01:
+        /* ed25519 keys have fixed size */
+        return 255;
+    case SSH_KEYTYPE_UNKNOWN:
+    default:
+        return SSH_ERROR;
+    }
+}
+
 #ifdef HAVE_OPENSSL_ED25519
 int pki_key_generate_ed25519(ssh_key key)
 {
