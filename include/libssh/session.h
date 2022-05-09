@@ -233,6 +233,7 @@ struct ssh_session_struct {
         uint8_t options_seen[SOC_MAX];
         uint64_t rekey_data;
         uint32_t rekey_time;
+        unsigned int rsa_min_size;
     } opts;
     /* counters */
     ssh_counter socket_counter;

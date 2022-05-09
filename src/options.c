@@ -465,6 +465,15 @@ int ssh_options_set_algo(ssh_session session,
  *                in seconds. RFC 4253 Section 9 recommends one hour.
  *                (uint32_t, 0=off)
  *
+ *              - SSH_OPTIONS_RSA_MIN_SIZE
+ *                Set the minimum RSA key size in bits to be accepted by the
+ *                client for both authentication and hostkey verification.
+ *                The values under 768 bits are not accepted even with this
+ *                configuration option as they are considered completely broken.
+ *                Setting 0 will revert the value to defaults.
+ *                Default is 1024 bits or 2048 bits in FIPS mode.
+ *                (unsigned int *)
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -1026,6 +1035,21 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
                 session->opts.rekey_time = (*x) * 1000;
+            }
+            break;
+        case SSH_OPTIONS_RSA_MIN_SIZE:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                unsigned int *x = (unsigned int *)value;
+                if (*x > 0 && *x < 768) {
+                    ssh_set_error(session, SSH_REQUEST_DENIED,
+                                  "The provided value (%u) for minimal RSA key "
+                                  "size is too small. Use at least 768 bits.", *x);
+                    return -1;
+                }
+                session->opts.rsa_min_size = *x;
             }
             break;
         default:

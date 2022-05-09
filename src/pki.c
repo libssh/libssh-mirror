@@ -405,6 +405,39 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
 }
 
 /**
+ * @brief Check the given key is acceptable in regards to the key size policy
+ * specified by the configuration
+ *
+ * @param[in] session The SSH session
+ * @param[in] key     The SSH key
+ * @returns           true if the key is allowed, false otherwise
+ */
+bool ssh_key_size_allowed(ssh_session session, ssh_key key)
+{
+    int key_size = ssh_key_size(key);
+    int min_size = 0;
+
+    switch (key->type) {
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA_CERT01:
+        min_size = session->opts.rsa_min_size;
+        if (min_size < 768) {
+            if (ssh_fips_mode()) {
+                min_size = 2048;
+            } else {
+                min_size = 1024;
+            }
+        }
+        if (key_size < min_size) {
+            return false;
+        }
+        /* fall through */
+    default:
+        return true;
+    }
+}
+
+/**
  * @brief Convert a key type to a hash type. This is usually unambiguous
  * for all the key types, unless the SHA2 extension (RFC 8332) is
  * negotiated during key exchange.

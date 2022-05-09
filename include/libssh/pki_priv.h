@@ -165,4 +165,5 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
 /* URI Function */
 int pki_uri_import(const char *uri_name, ssh_key *key, enum ssh_key_e key_type);
 
+bool ssh_key_size_allowed_rsa(int min_size, ssh_key key);
 #endif /* PKI_PRIV_H_ */
