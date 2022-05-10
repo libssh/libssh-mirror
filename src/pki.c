@@ -2460,6 +2460,7 @@ int ssh_pki_signature_verify(ssh_session session,
                              size_t input_len)
 {
     int rc;
+    bool allowed;
     enum ssh_keytypes_e key_type;
 
     if (session == NULL || sig == NULL || key == NULL || input == NULL) {
@@ -2477,6 +2478,13 @@ int ssh_pki_signature_verify(ssh_session session,
         SSH_LOG(SSH_LOG_WARN,
                 "Can not verify %s signature with %s key",
                 sig->type_c, key->type_c);
+        return SSH_ERROR;
+    }
+
+    allowed = ssh_key_size_allowed(session, key);
+    if (!allowed) {
+        ssh_set_error(session, SSH_FATAL, "The '%s' key of size %d is not "
+                      "allowd by RSA_MIN_SIZE", key->type_c, ssh_key_size(key));
         return SSH_ERROR;
     }
 
