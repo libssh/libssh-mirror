@@ -523,7 +523,8 @@ int ssh_userauth_try_publickey(ssh_session session,
                       "Invalid key type (unknown)");
         return SSH_AUTH_DENIED;
     }
-    if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
+    rc = ssh_key_algorithm_allowed(session, sig_type_c);
+    if (!rc) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "The key algorithm '%s' is not allowed to be used by"
                       " PUBLICKEY_ACCEPTED_TYPES configuration option",
@@ -647,7 +648,8 @@ int ssh_userauth_publickey(ssh_session session,
                       "Invalid key type (unknown)");
         return SSH_AUTH_DENIED;
     }
-    if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
+    rc = ssh_key_algorithm_allowed(session, sig_type_c);
+    if (!rc) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "The key algorithm '%s' is not allowed to be used by"
                       " PUBLICKEY_ACCEPTED_TYPES configuration option",
@@ -765,7 +767,8 @@ static int ssh_userauth_agent_publickey(ssh_session session,
         SSH_STRING_FREE(pubkey_s);
         return SSH_AUTH_DENIED;
     }
-    if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
+    rc = ssh_key_algorithm_allowed(session, sig_type_c);
+    if (!rc) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "The key algorithm '%s' is not allowed to be used by"
                       " PUBLICKEY_ACCEPTED_TYPES configuration option",

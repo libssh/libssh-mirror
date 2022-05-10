@@ -2687,7 +2687,7 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                     session->current_crypto;
 
     if (crypto->secret_hash == NULL){
-        ssh_set_error(session,SSH_FATAL,"Missing secret_hash");
+        ssh_set_error(session, SSH_FATAL, "Missing secret_hash");
         return NULL;
     }
 
@@ -2708,9 +2708,9 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
 
     /* Generate the signature */
     sig = pki_do_sign(privkey,
-            ssh_buffer_get(sign_input),
-            ssh_buffer_get_len(sign_input),
-            digest);
+                      ssh_buffer_get(sign_input),
+                      ssh_buffer_get_len(sign_input),
+                      digest);
     if (sig == NULL) {
         goto end;
     }

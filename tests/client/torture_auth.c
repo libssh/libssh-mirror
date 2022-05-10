@@ -558,7 +558,7 @@ static void torture_auth_agent(void **state) {
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
     rc = ssh_userauth_agent(session, NULL);
-    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+    assert_ssh_return_code(session, rc);
 }
 
 static void torture_auth_agent_nonblocking(void **state) {
@@ -589,7 +589,7 @@ static void torture_auth_agent_nonblocking(void **state) {
     do {
       rc = ssh_userauth_agent(session, NULL);
     } while (rc == SSH_AUTH_AGAIN);
-    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+    assert_ssh_return_code(session, rc);
 }
 
 static void torture_auth_cert(void **state) {
@@ -631,7 +631,7 @@ static void torture_auth_cert(void **state) {
     assert_int_equal(rc, SSH_OK);
 
     rc = ssh_userauth_try_publickey(session, NULL, cert);
-    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_userauth_publickey(session, NULL, privkey);
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
