@@ -57,6 +57,7 @@ enum ssh_bind_options_e {
   SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS,
   SSH_BIND_OPTIONS_PROCESS_CONFIG,
   SSH_BIND_OPTIONS_MODULI,
+  SSH_BIND_OPTIONS_RSA_MIN_SIZE,
 };
 
 typedef struct ssh_bind_struct* ssh_bind;

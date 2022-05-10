@@ -32,6 +32,7 @@
 #include <winsock2.h>
 #endif
 #include <sys/types.h>
+#include "libssh/pki_priv.h"
 #include "libssh/priv.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
@@ -1524,6 +1525,20 @@ int ssh_options_apply(ssh_session session) {
 /** @} */
 
 #ifdef WITH_SERVER
+static bool ssh_bind_key_size_allowed(ssh_bind sshbind, ssh_key key)
+{
+    int min_size = 0;
+
+    switch (ssh_key_type(key)) {
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA_CERT01:
+        min_size = sshbind->rsa_min_size;
+        return ssh_key_size_allowed_rsa(min_size, key);
+    default:
+        return true;
+    }
+}
+
 /**
  * @addtogroup libssh_server
  * @{
@@ -1683,6 +1698,17 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        Set the path to the moduli file. Defaults to
  *                        /etc/ssh/moduli if not specified (const char *).
  *
+ *                      - SSH_BIND_OPTIONS_RSA_MIN_SIZE
+ *                        Set the minimum RSA key size in bits to be accepted by
+ *                        the server for both authentication and hostkey
+ *                        operations. The values under 768 bits are not accepted
+ *                        even with this configuration option as they are
+ *                        considered completely broken. Setting 0 will revert
+ *                        the value to defaults.
+ *                        Default is 1024 bits or 2048 bits in FIPS mode.
+ *                        (unsigned int)
+ *
+ *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
  *                      corresponding value of type above.
@@ -1692,6 +1718,7 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
 int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
     const void *value)
 {
+  bool allowed;
   char *p, *q;
   const char *v;
   int i, rc;
@@ -1715,6 +1742,16 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
           if (rc != SSH_OK) {
               return -1;
           }
+          allowed = ssh_bind_key_size_allowed(sshbind, key);
+          if (!allowed) {
+              ssh_set_error(sshbind,
+                            SSH_FATAL,
+                            "The host key size %d is too small.",
+                            ssh_key_size(key));
+              ssh_key_free(key);
+              return -1;
+          }
+
           key_type = ssh_key_type(key);
           switch (key_type) {
           case SSH_KEYTYPE_DSS:
@@ -1779,6 +1816,15 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
             int key_type;
             ssh_key *bind_key_loc = NULL;
             ssh_key key = (ssh_key)value;
+
+            allowed = ssh_bind_key_size_allowed(sshbind, key);
+            if (!allowed) {
+                ssh_set_error(sshbind,
+                              SSH_FATAL,
+                              "The host key size %d is too small.",
+                              ssh_key_size(key));
+                return -1;
+            }
 
             key_type = ssh_key_type(key);
             switch (key_type) {
@@ -2041,6 +2087,21 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
                 ssh_set_error_oom(sshbind);
                 return -1;
             }
+        }
+        break;
+    case SSH_BIND_OPTIONS_RSA_MIN_SIZE:
+        if (value == NULL) {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            unsigned int *x = (unsigned int *)value;
+            if (*x > 0 && *x < 768) {
+                ssh_set_error(sshbind, SSH_REQUEST_DENIED,
+                              "The provided value (%u) for minimal RSA key "
+                              "size is too small. Use at least 768 bits.", *x);
+                return -1;
+            }
+            sshbind->rsa_min_size = *x;
         }
         break;
     default:

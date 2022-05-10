@@ -404,6 +404,20 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
     return ssh_match_group(allowed_list, type);
 }
 
+bool ssh_key_size_allowed_rsa(int min_size, ssh_key key)
+{
+    int key_size = ssh_key_size(key);
+
+    if (min_size < 768) {
+        if (ssh_fips_mode()) {
+            min_size = 2048;
+        } else {
+            min_size = 1024;
+        }
+    }
+    return (key_size >= min_size);
+}
+
 /**
  * @brief Check the given key is acceptable in regards to the key size policy
  * specified by the configuration
@@ -414,24 +428,13 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
  */
 bool ssh_key_size_allowed(ssh_session session, ssh_key key)
 {
-    int key_size = ssh_key_size(key);
     int min_size = 0;
 
-    switch (key->type) {
+    switch (ssh_key_type(key)) {
     case SSH_KEYTYPE_RSA:
     case SSH_KEYTYPE_RSA_CERT01:
         min_size = session->opts.rsa_min_size;
-        if (min_size < 768) {
-            if (ssh_fips_mode()) {
-                min_size = 2048;
-            } else {
-                min_size = 1024;
-            }
-        }
-        if (key_size < min_size) {
-            return false;
-        }
-        /* fall through */
+        return ssh_key_size_allowed_rsa(min_size, key);
     default:
         return true;
     }
@@ -2704,7 +2707,7 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                          const enum ssh_digest_e digest)
 {
     struct ssh_crypto_struct *crypto = NULL;
-
+    bool allowed;
     ssh_signature sig = NULL;
     ssh_string sig_blob = NULL;
 
@@ -2713,6 +2716,12 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     int rc;
 
     if (session == NULL || privkey == NULL || !ssh_key_is_private(privkey)) {
+        return NULL;
+    }
+
+    allowed = ssh_key_size_allowed(session, privkey);
+    if (!allowed) {
+        ssh_set_error(session, SSH_FATAL, "The hostkey size too small");
         return NULL;
     }
 
