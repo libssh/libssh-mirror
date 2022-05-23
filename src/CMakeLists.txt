@@ -9,13 +9,6 @@ set(LIBSSH_LINK_LIBRARIES
   ${LIBSSH_REQUIRED_LIBRARIES}
 )
 
-if (WIN32)
-  set(LIBSSH_LINK_LIBRARIES
-    ${LIBSSH_LINK_LIBRARIES}
-    ws2_32
-  )
-endif (WIN32)
-
 if (OPENSSL_CRYPTO_LIBRARIES)
   set(LIBSSH_PRIVATE_INCLUDE_DIRS
     ${LIBSSH_PRIVATE_INCLUDE_DIRS}
@@ -92,6 +85,15 @@ if (MINGW AND Threads_FOUND)
     Threads::Threads
   )
 endif()
+
+# This needs to be last for mingw to build
+# https://gitlab.com/libssh/libssh-mirror/-/issues/84
+if (WIN32)
+  set(LIBSSH_LINK_LIBRARIES
+    ${LIBSSH_LINK_LIBRARIES}
+    ws2_32
+  )
+endif (WIN32)
 
 if (BUILD_STATIC_LIB)
   set(LIBSSH_STATIC_LIBRARY
