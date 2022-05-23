@@ -586,9 +586,15 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session)
 
     fd = accept(sshbind->bindfd, NULL, NULL);
     if (fd == SSH_INVALID_SOCKET) {
-        ssh_set_error(sshbind, SSH_FATAL,
-                      "Accepting a new connection: %s",
-                      strerror(errno));
+        if (errno == EINTR) {
+            ssh_set_error(sshbind, SSH_EINTR,
+                          "Accepting a new connection (child signal error): %s",
+                          strerror(errno));
+        } else {
+            ssh_set_error(sshbind, SSH_FATAL,
+                          "Accepting a new connection: %s",
+                          strerror(errno));
+        }
         return SSH_ERROR;
     }
     rc = ssh_bind_accept_fd(sshbind, session, fd);
