@@ -979,7 +979,8 @@ int ssh_event_add_connector(ssh_event event, ssh_connector connector)
  *                      means an infinite timeout. This parameter is passed to
  *                      the poll() function.
  * @returns SSH_OK      on success.
- *          SSH_ERROR   Error happened during the poll.
+ *          SSH_ERROR   Error happened during the poll. Check errno to get more
+ *                      details about why it failed.
  *          SSH_AGAIN   Timeout occured
  */
 int ssh_event_dopoll(ssh_event event, int timeout)
