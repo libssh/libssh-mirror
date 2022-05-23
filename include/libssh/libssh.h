@@ -687,6 +687,7 @@ LIBSSH_API int ssh_key_is_private(const ssh_key k);
 LIBSSH_API int ssh_key_cmp(const ssh_key k1,
                            const ssh_key k2,
                            enum ssh_keycmp_e what);
+LIBSSH_API ssh_key ssh_key_dup(const ssh_key key);
 
 LIBSSH_API int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         ssh_key *pkey);

@@ -111,7 +111,6 @@ struct ssh_signature_struct {
 typedef struct ssh_signature_struct *ssh_signature;
 
 /* SSH Key Functions */
-ssh_key ssh_key_dup(const ssh_key key);
 void ssh_key_clean (ssh_key key);
 
 const char *
