@@ -425,12 +425,16 @@ connect_local_xsocket_path(const char *pathname)
 	struct sockaddr_un addr;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock == -1)
+	if (sock == -1) {
 		_ssh_log(SSH_LOG_FUNCTIONS, __func__, "socket: %.100s", strerror(errno));
+		return -1;
+	}
+
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	addr.sun_path[0] = '\0';
-	memcpy(addr.sun_path + 1, pathname, strlen(pathname));
+	/* pathname is guaranteed to be initialized and larger than addr.sun_path[108] */
+	memcpy(addr.sun_path + 1, pathname, sizeof(addr.sun_path) - 1);
 	if (connect(sock, (struct sockaddr *)&addr, offsetof(struct sockaddr_un, sun_path) + 1 + strlen(pathname)) == 0)
 		return sock;
 	close(sock);
@@ -442,7 +446,7 @@ connect_local_xsocket_path(const char *pathname)
 static int
 connect_local_xsocket(int display_number)
 {
-	char buf[1024];
+	char buf[1024] = {0};
 	snprintf(buf, sizeof(buf), _PATH_UNIX_X, display_number);
 	return connect_local_xsocket_path(buf);
 }
@@ -697,7 +701,10 @@ main_loop(ssh_channel channel)
 	}
 
 	do {
-		ssh_event_dopoll(event, 1000);
+		if (ssh_event_dopoll(event, 1000) == SSH_ERROR) {
+			printf("Error : %s\n", ssh_get_error(session));
+			/* fall through */
+		}
 	} while (!ssh_channel_is_closed(channel));
 
 	delete_item(channel);
