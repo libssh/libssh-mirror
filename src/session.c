@@ -1057,7 +1057,7 @@ void ssh_clean_pubkey_hash(unsigned char **hash) {
  * @param[in]  session  The session to get the key from.
  *
  * @param[out] key      A pointer to store the allocated key. You need to free
- *                      the key.
+ *                      the key using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on errror.
  *
@@ -1101,7 +1101,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  *
  * @param[in]  type     The type of the hash you want.
  *
- * @param[in]  hash     A pointer to store the allocated buffer. It can be
+ * @param[out]  hash    A pointer to store the allocated buffer. It can be
  *                      freed using ssh_clean_pubkey_hash().
  *
  * @param[in]  hlen     The length of the hash.

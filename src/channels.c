@@ -80,6 +80,9 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet);
  * @param[in]  session  The ssh session to use.
  *
  * @return              A pointer to a newly allocated channel, NULL on error.
+ *                      The channel needs to be freed with ssh_channel_free().
+ *
+ * @see ssh_channel_free()
  */
 ssh_channel ssh_channel_new(ssh_session session)
 {

@@ -811,7 +811,7 @@ void ssh_signature_free(ssh_signature sig)
  * @param[in]  auth_data Private data passed to the auth function.
  *
  * @param[out] pkey     A pointer where the allocated key can be stored. You
- *                      need to free the memory.
+ *                      need to free the memory using ssh_key_free()
  *
  * @return  SSH_ERROR in case of error, SSH_OK otherwise.
  *
@@ -874,9 +874,11 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
  * @param[in]  auth_data Private data passed to the auth function.
  *
  * @param[out] b64_key  A pointer to store the allocated base64 encoded key. You
- *                      need to free the buffer.
+ *                      need to free the buffer using ssh_string_from_char().
  *
  * @return     SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_string_free_char()
  */
 int ssh_pki_export_privkey_base64(const ssh_key privkey,
                                   const char *passphrase,
@@ -931,7 +933,7 @@ int ssh_pki_export_privkey_base64(const ssh_key privkey,
  * @param[in]  auth_data Private data passed to the auth function.
  *
  * @param[out] pkey     A pointer to store the allocated ssh_key. You need to
- *                      free the key.
+ *                      free the key using ssh_key_free().
  *
  * @returns SSH_OK on success, SSH_EOF if the file doesn't exist or permission
  *          denied, SSH_ERROR otherwise.
@@ -1600,7 +1602,7 @@ fail:
  * @param[in]  type     The type of the key to format.
  *
  * @param[out] pkey     A pointer where the allocated key can be stored. You
- *                      need to free the memory.
+ *                      need to free the memory using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
@@ -1648,7 +1650,7 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
  *                      6.6 "Public Key Algorithms".
  *
  * @param[out] pkey     A pointer where the allocated key can be stored. You
- *                      need to free the memory.
+ *                      need to free the memory using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
@@ -1735,7 +1737,10 @@ bool ssh_pki_is_uri(const char *cmp)
  *
  * @param[in] priv_uri Private PKCS #11 URI.
  *
- * @returns pointer to the public PKCS #11 URI
+ * @returns pointer to the public PKCS #11 URI. You need to free
+ *          the memory using ssh_string_free_char().
+ *
+ * @see ssh_string_free_char().
  */
 char *ssh_pki_export_pub_uri_from_priv_uri(const char *priv_uri)
 {
@@ -1755,7 +1760,7 @@ char *ssh_pki_export_pub_uri_from_priv_uri(const char *priv_uri)
  *                      PKCS #11 URI corresponding to the public key.
  *
  * @param[out] pkey     A pointer to store the allocated public key. You need to
- *                      free the memory.
+ *                      free the memory using ssh_key_free().
  *
  * @returns SSH_OK on success, SSH_EOF if the file doesn't exist or permission
  *          denied, SSH_ERROR otherwise.
@@ -1878,7 +1883,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
  * @param[in]  type     The type of the cert to format.
  *
  * @param[out] pkey     A pointer where the allocated key can be stored. You
- *                      need to free the memory.
+ *                      need to free the memory using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
@@ -1899,7 +1904,7 @@ int ssh_pki_import_cert_base64(const char *b64_cert,
  *                      6.6 "Public Key Algorithms".
  *
  * @param[out] pkey     A pointer where the allocated key can be stored. You
- *                      need to free the memory.
+ *                      need to free the memory using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
@@ -1916,7 +1921,7 @@ int ssh_pki_import_cert_blob(const ssh_string cert_blob,
  * @param[in]  filename The path to the certificate.
  *
  * @param[out] pkey     A pointer to store the allocated certificate. You need to
- *                      free the memory.
+ *                      free the memory using ssh_key_free().
  *
  * @returns SSH_OK on success, SSH_EOF if the file doesn't exist or permission
  *          denied, SSH_ERROR otherwise.
@@ -1937,11 +1942,13 @@ int ssh_pki_import_cert_file(const char *filename, ssh_key *pkey)
  *                      rsa : length of the key in bits (e.g. 1024, 2048, 4096)
  *                      dsa : length of the key in bits (e.g. 1024, 2048, 3072)
  * @param[out] pkey     A pointer to store the allocated private key. You need
- *                      to free the memory.
+ *                      to free the memory using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
  * @warning             Generating a key pair may take some time.
+ *
+ * @see ssh_key_free()
  */
 int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         ssh_key *pkey){
@@ -2031,7 +2038,7 @@ error:
  * @param[in]  privkey  The private key to get the public key from.
  *
  * @param[out] pkey     A pointer to store the newly allocated public key. You
- *                      NEED to free the key.
+ *                      NEED to free the key using ssh_key_free().
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
@@ -2069,11 +2076,11 @@ int ssh_pki_export_privkey_to_pubkey(const ssh_key privkey,
  *                      from.
  *
  * @param[out] pblob    A pointer to store the newly allocated key blob. You
- *                      NEED to free it.
+ *                      need to free it using ssh_string_free().
  *
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  *
- * @see SSH_STRING_FREE()
+ * @see ssh_string_free()
  */
 int ssh_pki_export_pubkey_blob(const ssh_key key,
                                ssh_string *pblob)
@@ -2099,11 +2106,11 @@ int ssh_pki_export_pubkey_blob(const ssh_key key,
  * @param[in] key       The key to hash
  *
  * @param[out] b64_key  A pointer to store the allocated base64 encoded key. You
- *                      need to free the buffer.
+ *                      need to free the buffer using ssh_string_free_char()
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
- * @see SSH_STRING_FREE_CHAR()
+ * @see ssh_string_free_char()
  */
 int ssh_pki_export_pubkey_base64(const ssh_key key,
                                  char **b64_key)

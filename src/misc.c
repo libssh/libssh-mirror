@@ -834,7 +834,7 @@ const void *_ssh_list_pop_head(struct ssh_list *list){
  * dirname breaks a null-terminated pathname string into a directory component.
  * In the usual case, ssh_dirname() returns the string up to, but not including,
  * the final '/'. Trailing '/' characters are  not  counted as part of the
- * pathname. The caller must free the memory.
+ * pathname. The caller must free the memory using ssh_string_free_char().
  *
  * @param[in]  path     The path to parse.
  *
@@ -842,7 +842,10 @@ const void *_ssh_list_pop_head(struct ssh_list *list){
  *                      If path does not contain a slash, c_dirname() returns
  *                      the string ".".  If path is a string "/", it returns
  *                      the string "/". If path is NULL or an empty string,
- *                      "." is returned.
+ *                      "." is returned. The memory needs to be freed using
+ *                      ssh_string_free_char().
+ *
+ * @see ssh_string_free_char()
  */
 char *ssh_dirname (const char *path) {
   char *new = NULL;
@@ -897,7 +900,10 @@ char *ssh_dirname (const char *path) {
  * @return              The filename of path or NULL if we can't allocate
  *                      memory. If path is the string "/", basename returns
  *                      the string "/". If path is NULL or an empty string,
- *                      "." is returned.
+ *                      "." is returned. The caller needs to free this memory
+ *                      ssh_string_free_char().
+ *
+ * @see ssh_string_free_char()
  */
 char *ssh_basename (const char *path) {
   char *new = NULL;
@@ -1032,7 +1038,10 @@ int ssh_mkdirs(const char *pathname, mode_t mode)
  *
  * @param[in]  d        The directory to expand.
  *
- * @return              The expanded directory, NULL on error.
+ * @return              The expanded directory, NULL on error. The caller
+ *                      needs to free the memory using ssh_string_free_char().
+ *
+ * @see ssh_string_free_char()
  */
 char *ssh_path_expand_tilde(const char *d) {
     char *h = NULL, *r;
@@ -1101,7 +1110,10 @@ char *ssh_path_expand_tilde(const char *d) {
  *              %l local hostname
  *              %r remote username
  *              %p remote port
- * @returns Expanded string.
+ * @returns Expanded string. The caller needs to free the memory using
+ *          ssh_string_free_char().
+ *
+ * @see ssh_string_free_char()
  */
 char *ssh_path_expand_escape(ssh_session session, const char *s) {
     char host[NI_MAXHOST] = {0};
@@ -1844,7 +1856,10 @@ err:
  * @param[in]  replace      String to be replaced is stored in replace.
  *
  * @returns  src_replaced a pointer that points to the replaced string.
- * NULL if allocation fails or if src is NULL.
+ * NULL if allocation fails or if src is NULL. The returned memory needs to be
+ * freed using ssh_string_free_char().
+ *
+ * @see ssh_string_free_char()
  */
 char *ssh_strreplace(const char *src, const char *pattern, const char *replace)
 {

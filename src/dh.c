@@ -711,7 +711,8 @@ static char *ssh_get_b64_unpadded(const unsigned char *hash, size_t len)
  *
  * @param  len          Length of the buffer to convert.
  *
- * @return Returns the allocated fingerprint hash or NULL on error.
+ * @return Returns the allocated fingerprint hash or NULL on error. The caller
+ *         needs to free the memory using ssh_string_free_char().
  *
  * @see ssh_string_free_char()
  */

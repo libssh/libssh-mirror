@@ -57,11 +57,12 @@
  * @param src           The session to use to copy the options.
  *
  * @param dest          A pointer to store the allocated session with duplicated
- *                      options. You have to free the memory.
+ *                      options. You have to free the memory using ssh_free()
  *
  * @returns             0 on success, -1 on error with errno set.
  *
  * @see ssh_session_connect()
+ * @see ssh_free()
  */
 int ssh_options_copy(ssh_session src, ssh_session *dest)
 {
