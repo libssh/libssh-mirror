@@ -483,7 +483,8 @@ int ssh_options_set_algo(ssh_session session,
  * @return       0 on success, < 0 on error.
  */
 int ssh_options_set(ssh_session session, enum ssh_options_e type,
-    const void *value) {
+                    const void *value)
+{
     const char *v;
     char *p, *q;
     long int i;
@@ -1406,7 +1407,8 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
  *
  * @see ssh_options_set()
  */
-int ssh_options_parse_config(ssh_session session, const char *filename) {
+int ssh_options_parse_config(ssh_session session, const char *filename)
+{
   char *expanded_filename;
   int r;
 
@@ -1451,7 +1453,8 @@ out:
   return r;
 }
 
-int ssh_options_apply(ssh_session session) {
+int ssh_options_apply(ssh_session session)
+{
     struct ssh_iterator *it;
     char *tmp;
     int rc;
@@ -1544,8 +1547,9 @@ static bool ssh_bind_key_size_allowed(ssh_bind sshbind, ssh_key key)
  * @addtogroup libssh_server
  * @{
  */
-static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
-                            const void *value) {
+static int
+ssh_bind_set_key(ssh_bind sshbind, char **key_loc, const void *value)
+{
     if (value == NULL) {
         ssh_set_error_invalid(sshbind);
         return -1;

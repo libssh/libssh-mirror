@@ -122,15 +122,17 @@ const char *ssh_pki_key_ecdsa_name(const ssh_key key)
 
 /**
  * @brief creates a new empty SSH key
+ *
  * @returns an empty ssh_key handle, or NULL on error.
  */
-ssh_key ssh_key_new (void) {
-  ssh_key ptr = malloc (sizeof (struct ssh_key_struct));
-  if (ptr == NULL) {
-      return NULL;
-  }
-  ZERO_STRUCTP(ptr);
-  return ptr;
+ssh_key ssh_key_new (void)
+{
+    ssh_key ptr = malloc (sizeof (struct ssh_key_struct));
+    if (ptr == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(ptr);
+    return ptr;
 }
 
 ssh_key ssh_key_dup(const ssh_key key)
@@ -146,8 +148,9 @@ ssh_key ssh_key_dup(const ssh_key key)
  * @brief clean up the key and deallocate all existing keys
  * @param[in] key ssh_key to clean
  */
-void ssh_key_clean (ssh_key key){
-    if(key == NULL)
+void ssh_key_clean (ssh_key key)
+{
+    if (key == NULL)
         return;
 #ifdef HAVE_LIBGCRYPT
     if(key->dsa) gcry_sexp_release(key->dsa);
@@ -206,8 +209,9 @@ void ssh_key_clean (ssh_key key){
  * @brief deallocate a SSH key
  * @param[in] key ssh_key handle to free
  */
-void ssh_key_free (ssh_key key){
-    if(key){
+void ssh_key_free (ssh_key key)
+{
+    if (key) {
         ssh_key_clean(key);
         SAFE_FREE(key);
     }
@@ -224,7 +228,8 @@ void ssh_key_free (ssh_key key){
  *          SSH_KEYTYPE_ED25519_CERT01.
  * @returns SSH_KEYTYPE_UNKNOWN if the type is unknown
  */
-enum ssh_keytypes_e ssh_key_type(const ssh_key key){
+enum ssh_keytypes_e ssh_key_type(const ssh_key key)
+{
     if (key == NULL) {
         return SSH_KEYTYPE_UNKNOWN;
     }
@@ -573,7 +578,8 @@ enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name) {
  *
  * @return              The enum ssh key type.
  */
-enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
+enum ssh_keytypes_e ssh_key_type_from_name(const char *name)
+{
     if (name == NULL) {
         return SSH_KEYTYPE_UNKNOWN;
     }
@@ -628,7 +634,8 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
  *
  * @return           The matching public key type.
  */
-enum ssh_keytypes_e ssh_key_type_plain(enum ssh_keytypes_e type) {
+enum ssh_keytypes_e ssh_key_type_plain(enum ssh_keytypes_e type)
+{
     switch (type) {
         case SSH_KEYTYPE_DSS_CERT01:
             return SSH_KEYTYPE_DSS;
@@ -658,7 +665,8 @@ enum ssh_keytypes_e ssh_key_type_plain(enum ssh_keytypes_e type) {
  *
  * @return              1 if it is a public key, 0 if not.
  */
-int ssh_key_is_public(const ssh_key k) {
+int ssh_key_is_public(const ssh_key k)
+{
     if (k == NULL) {
         return 0;
     }
@@ -1091,7 +1099,8 @@ int ssh_pki_export_privkey_file(const ssh_key privkey,
 }
 
 /* temporary function to migrate seemlessly to ssh_key */
-ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key) {
+ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key)
+{
     ssh_public_key pub;
     ssh_key tmp;
 
@@ -1124,7 +1133,8 @@ ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key) {
     return pub;
 }
 
-ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key) {
+ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key)
+{
     ssh_private_key privkey;
 
     privkey = malloc(sizeof(struct ssh_private_key_struct));
@@ -1326,7 +1336,8 @@ fail:
 
 static int pki_import_pubkey_buffer(ssh_buffer buffer,
                                     enum ssh_keytypes_e type,
-                                    ssh_key *pkey) {
+                                    ssh_key *pkey)
+{
     ssh_key key = NULL;
     int rc;
 
@@ -1508,7 +1519,8 @@ fail:
 
 static int pki_import_cert_buffer(ssh_buffer buffer,
                                   enum ssh_keytypes_e type,
-                                  ssh_key *pkey) {
+                                  ssh_key *pkey)
+{
     ssh_buffer cert;
     ssh_string tmp_s;
     const char *type_c;
@@ -1610,7 +1622,8 @@ fail:
  */
 int ssh_pki_import_pubkey_base64(const char *b64_key,
                                  enum ssh_keytypes_e type,
-                                 ssh_key *pkey) {
+                                 ssh_key *pkey)
+{
     ssh_buffer buffer = NULL;
     ssh_string type_s = NULL;
     int rc;
@@ -1657,7 +1670,8 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
  * @see ssh_key_free()
  */
 int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
-                               ssh_key *pkey) {
+                               ssh_key *pkey)
+{
     ssh_buffer buffer = NULL;
     ssh_string type_s = NULL;
     enum ssh_keytypes_e type;
@@ -1891,7 +1905,8 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
  */
 int ssh_pki_import_cert_base64(const char *b64_cert,
                                enum ssh_keytypes_e type,
-                               ssh_key *pkey) {
+                               ssh_key *pkey)
+{
     return ssh_pki_import_pubkey_base64(b64_cert, type, pkey);
 }
 
@@ -1911,7 +1926,8 @@ int ssh_pki_import_cert_base64(const char *b64_cert,
  * @see ssh_key_free()
  */
 int ssh_pki_import_cert_blob(const ssh_string cert_blob,
-                             ssh_key *pkey) {
+                             ssh_key *pkey)
+{
     return ssh_pki_import_pubkey_blob(cert_blob, pkey);
 }
 
@@ -1951,7 +1967,8 @@ int ssh_pki_import_cert_file(const char *filename, ssh_key *pkey)
  * @see ssh_key_free()
  */
 int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
-        ssh_key *pkey){
+        ssh_key *pkey)
+{
     int rc;
     ssh_key key = ssh_key_new();
 

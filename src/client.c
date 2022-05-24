@@ -60,7 +60,8 @@
  * @param code one of SSH_SOCKET_CONNECTED_OK or SSH_SOCKET_CONNECTED_ERROR
  * @param user is a pointer to session
  */
-static void socket_callback_connected(int code, int errno_code, void *user){
+static void socket_callback_connected(int code, int errno_code, void *user)
+{
 	ssh_session session=(ssh_session)user;
 
 	if (session->session_state != SSH_SESSION_STATE_CONNECTING &&
@@ -96,10 +97,10 @@ static void socket_callback_connected(int code, int errno_code, void *user){
 static int callback_receive_banner(const void *data, size_t len, void *user)
 {
     char *buffer = (char *)data;
-    ssh_session session=(ssh_session) user;
+    ssh_session session = (ssh_session) user;
     char *str = NULL;
     size_t i;
-    int ret=0;
+    int ret = 0;
 
     if (session->session_state != SSH_SESSION_STATE_SOCKET_CONNECTED) {
         ssh_set_error(session,SSH_FATAL,
@@ -243,8 +244,8 @@ end:
  * @warning this function returning is no proof that DH handshake is
  * completed
  */
-static int dh_handshake(ssh_session session) {
-
+static int dh_handshake(ssh_session session)
+{
   int rc = SSH_AGAIN;
 
   switch (session->dh_handshake_state) {
@@ -299,13 +300,15 @@ static int dh_handshake(ssh_session session) {
   return rc;
 }
 
-static int ssh_service_request_termination(void *s){
-  ssh_session session = (ssh_session)s;
-  if(session->session_state == SSH_SESSION_STATE_ERROR ||
-      session->auth.service_state != SSH_AUTH_SERVICE_SENT)
-    return 1;
-  else
-    return 0;
+static int ssh_service_request_termination(void *s)
+{
+    ssh_session session = (ssh_session)s;
+
+    if (session->session_state == SSH_SESSION_STATE_ERROR ||
+        session->auth.service_state != SSH_AUTH_SERVICE_SENT)
+        return 1;
+    else
+        return 0;
 }
 
 /**
@@ -323,8 +326,9 @@ static int ssh_service_request_termination(void *s){
  * @return SSH_AGAIN No response received yet
  * @bug actually only works with ssh-userauth
  */
-int ssh_service_request(ssh_session session, const char *service) {
-  int rc=SSH_ERROR;
+int ssh_service_request(ssh_session session, const char *service)
+{
+  int rc = SSH_ERROR;
 
   if(session->auth.service_state != SSH_AUTH_SERVICE_NONE)
     goto pending;
@@ -481,16 +485,18 @@ error:
 /** @internal
  * @brief describe under which conditions the ssh_connect function may stop
  */
-static int ssh_connect_termination(void *user){
-  ssh_session session = (ssh_session)user;
-  switch(session->session_state){
+static int ssh_connect_termination(void *user)
+{
+    ssh_session session = (ssh_session)user;
+
+    switch (session->session_state) {
     case SSH_SESSION_STATE_ERROR:
     case SSH_SESSION_STATE_AUTHENTICATING:
     case SSH_SESSION_STATE_DISCONNECTED:
-      return 1;
+        return 1;
     default:
-      return 0;
-  }
+        return 0;
+    }
 }
 
 /**
@@ -649,12 +655,13 @@ pending:
  *
  * @return A newly allocated string with the banner, NULL on error.
  */
-char *ssh_get_issue_banner(ssh_session session) {
-  if (session == NULL || session->banner == NULL) {
-    return NULL;
-  }
+char *ssh_get_issue_banner(ssh_session session)
+{
+    if (session == NULL || session->banner == NULL) {
+        return NULL;
+    }
 
-  return ssh_string_to_char(session->banner);
+    return ssh_string_to_char(session->banner);
 }
 
 /**
@@ -675,12 +682,13 @@ char *ssh_get_issue_banner(ssh_session session) {
  * }
  * @endcode
  */
-int ssh_get_openssh_version(ssh_session session) {
-  if (session == NULL) {
-    return 0;
-  }
+int ssh_get_openssh_version(ssh_session session)
+{
+    if (session == NULL) {
+        return 0;
+    }
 
-  return session->openssh;
+    return session->openssh;
 }
 
 /**
@@ -774,7 +782,8 @@ error:
     }
 }
 
-const char *ssh_copyright(void) {
+const char *ssh_copyright(void)
+{
     return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2022 "
            "Aris Adamantiadis, Andreas Schneider "
            "and libssh contributors. "

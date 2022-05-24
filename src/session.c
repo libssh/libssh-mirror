@@ -1047,7 +1047,8 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash)
  *
  * @see ssh_get_pubkey_hash()
  */
-void ssh_clean_pubkey_hash(unsigned char **hash) {
+void ssh_clean_pubkey_hash(unsigned char **hash)
+{
     SAFE_FREE(*hash);
 }
 
