@@ -38,7 +38,7 @@ The libssh library provides:
 @section main-additional-features Additional Features
 
  - Client <b>and</b> server support
- - SSHv2 and SSHv1 protocol support
+ - SSHv2 protocol support
  - Supports <a href="https://test.libssh.org/" target="_blank">Linux, UNIX, BSD, Solaris, OS/2 and Windows</a>
  - Automated test cases with nightly <a href="https://test.libssh.org/" target="_blank">tests</a>
  - Event model based on poll(2), or a poll(2)-emulation.

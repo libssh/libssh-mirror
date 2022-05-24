@@ -2686,10 +2686,6 @@ error:
  * Sends a signal 'sig' to the remote process.
  * Note, that remote system may not support signals concept.
  * In such a case this request will be silently ignored.
- * Only SSH-v2 is supported (I'm not sure about SSH-v1).
- *
- * OpenSSH doesn't support signals yet, see:
- * https://bugzilla.mindrot.org/show_bug.cgi?id=1424
  *
  * @param[in]  channel  The channel to send signal.
  *
@@ -2709,8 +2705,7 @@ error:
  *                      SIGUSR1  -> USR1 \n
  *                      SIGUSR2  -> USR2 \n
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occurred
- *                      (including attempts to send signal via SSH-v1 session).
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred.
  */
 int ssh_channel_request_send_signal(ssh_channel channel, const char *sig) {
   ssh_buffer buffer = NULL;
@@ -2749,14 +2744,12 @@ error:
  * Sends a break signal to the remote process.
  * Note, that remote system may not support breaks.
  * In such a case this request will be silently ignored.
- * Only SSH-v2 is supported.
  *
  * @param[in]  channel  The channel to send the break to.
  *
  * @param[in]  length   The break-length in milliseconds to send.
  *
  * @return              SSH_OK on success, SSH_ERROR if an error occurred
- *                      (including attempts to send signal via SSH-v1 session).
  */
 int ssh_channel_request_send_break(ssh_channel channel, uint32_t length) {
     ssh_buffer buffer = NULL;
@@ -3679,14 +3672,12 @@ error:
  *
  * Sends the exit status to the remote process (as described in RFC 4254,
  * section 6.10).
- * Only SSH-v2 is supported (I'm not sure about SSH-v1).
  *
  * @param[in]  channel  The channel to send exit status.
  *
  * @param[in]  exit_status  The exit status to send
  *
  * @return     SSH_OK on success, SSH_ERROR if an error occurred.
- *             (including attempts to send exit status via SSH-v1 session).
  */
 int ssh_channel_request_send_exit_status(ssh_channel channel, int exit_status) {
   ssh_buffer buffer = NULL;
@@ -3720,7 +3711,6 @@ error:
  * This sends the exit status of the remote process.
  * Note, that remote system may not support signals concept.
  * In such a case this request will be silently ignored.
- * Only SSH-v2 is supported (I'm not sure about SSH-v1).
  *
  * @param[in]  channel  The channel to send signal.
  *
@@ -3731,7 +3721,6 @@ error:
  * @param[in]  lang     The language used in the message (format: RFC 3066)
  *
  * @return              SSH_OK on success, SSH_ERROR if an error occurred
- *                      (including attempts to send signal via SSH-v1 session).
  */
 int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
                             int core, const char *errmsg, const char *lang) {
