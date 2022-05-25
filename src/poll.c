@@ -964,11 +964,13 @@ int ssh_event_add_connector(ssh_event event, ssh_connector connector)
 }
 
 /**
- * @brief Poll all the sockets and sessions associated through an event object.i
+ * @brief Poll all the sockets and sessions associated through an event object.
  *
  * If any of the events are set after the poll, the call back functions of the
  * sessions or sockets will be called.
  * This function should be called once within the programs main loop.
+ * In case of failure, the errno should be consulted to find more information
+ * about the failure set by underlying poll imlpementation.
  *
  * @param  event        The ssh_event object to poll.
  *
