@@ -1513,7 +1513,7 @@ static int channel_write_common(ssh_channel channel,
       effectivelen = len;
     }
 
-    effectivelen = MIN(effectivelen, maxpacketlen);;
+    effectivelen = MIN(effectivelen, maxpacketlen);
 
     rc = ssh_buffer_pack(session->out_buffer,
                          "bd",
