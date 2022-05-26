@@ -474,7 +474,7 @@ int ssh_options_set_algo(ssh_session session,
  *                configuration option as they are considered completely broken.
  *                Setting 0 will revert the value to defaults.
  *                Default is 1024 bits or 2048 bits in FIPS mode.
- *                (unsigned int *)
+ *                (int *)
  *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
@@ -1045,7 +1045,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 ssh_set_error_invalid(session);
                 return -1;
             } else {
-                unsigned int *x = (unsigned int *)value;
+                int *x = (int *)value;
                 if (*x > 0 && *x < 768) {
                     ssh_set_error(session, SSH_REQUEST_DENIED,
                                   "The provided value (%u) for minimal RSA key "
@@ -1711,7 +1711,7 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        considered completely broken. Setting 0 will revert
  *                        the value to defaults.
  *                        Default is 1024 bits or 2048 bits in FIPS mode.
- *                        (unsigned int)
+ *                        (int)
  *
  *
  * @param  value        The value to set. This is a generic pointer and the
@@ -2099,7 +2099,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
             ssh_set_error_invalid(sshbind);
             return -1;
         } else {
-            unsigned int *x = (unsigned int *)value;
+            int *x = (int *)value;
             if (*x > 0 && *x < 768) {
                 ssh_set_error(sshbind, SSH_REQUEST_DENIED,
                               "The provided value (%u) for minimal RSA key "

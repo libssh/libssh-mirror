@@ -367,9 +367,9 @@ static bool dhgroup_better_size(uint32_t pmin,
  * @brief returns 1 with 1/n probability
  * @returns 1 on with P(1/n), 0 with P(n-1/n).
  */
-static bool invn_chance(int n)
+static bool invn_chance(size_t n)
 {
-    uint32_t nounce = 0;
+    size_t nounce = 0;
     int ok;
 
     ok = ssh_get_random(&nounce, sizeof(nounce), 0);

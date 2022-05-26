@@ -387,11 +387,11 @@ void sftp_free(sftp_session sftp)
     SAFE_FREE(sftp);
 }
 
-ssize_t sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload)
+int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload)
 {
     uint8_t header[5] = {0};
     uint32_t payload_size;
-    ssize_t size;
+    int size;
     int rc;
 
     /* Add size of type */
@@ -416,7 +416,7 @@ ssize_t sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload)
 
     if ((uint32_t)size != ssh_buffer_get_len(payload)) {
         SSH_LOG(SSH_LOG_PACKET,
-                "Had to write %d bytes, wrote only %zd",
+                "Had to write %d bytes, wrote only %d",
                 ssh_buffer_get_len(payload),
                 size);
     }

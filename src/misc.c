@@ -721,7 +721,7 @@ struct ssh_iterator *ssh_list_find(const struct ssh_list *list, void *value)
 size_t ssh_list_count(const struct ssh_list *list)
 {
   struct ssh_iterator *it = NULL;
-  int count = 0;
+  size_t count = 0;
 
   for (it = ssh_list_get_iterator(list); it != NULL ; it = it->next) {
       count++;
@@ -1454,15 +1454,20 @@ ssh_timestamp_difference(struct ssh_timestamp *old, struct ssh_timestamp *new)
  * @param[in] usec number of microseconds
  * @returns milliseconds, or 10000 if user supplied values are equal to zero
  */
-int ssh_make_milliseconds(long sec, long usec)
+int ssh_make_milliseconds(unsigned long sec, unsigned long usec)
 {
-    int res = usec ? (usec / 1000) : 0;
-    res += (sec * 1000);
-    if (res == 0) {
-        res = 10 * 1000; /* use a reasonable default value in case
-                          * SSH_OPTIONS_TIMEOUT is not set in options. */
+	unsigned long res = usec ? (usec / 1000) : 0;
+	res += (sec * 1000);
+	if (res == 0) {
+		res = 10 * 1000; /* use a reasonable default value in case
+				* SSH_OPTIONS_TIMEOUT is not set in options. */
+	}
+
+    if (res > INT_MAX) {
+        return SSH_TIMEOUT_INFINITE;
+    } else {
+        return (int)res;
     }
-    return res;
 }
 
 /**

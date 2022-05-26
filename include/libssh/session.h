@@ -173,7 +173,7 @@ struct ssh_session_struct {
     struct ssh_crypto_struct *next_crypto;  /* next_crypto is going to be used after a SSH2_MSG_NEWKEYS */
 
     struct ssh_list *channels; /* linked list of channels */
-    int maxchannel;
+    uint32_t maxchannel;
     ssh_agent agent; /* ssh agent */
 
 /* keyb interactive data */
@@ -233,7 +233,7 @@ struct ssh_session_struct {
         uint8_t options_seen[SOC_MAX];
         uint64_t rekey_data;
         uint32_t rekey_time;
-        unsigned int rsa_min_size;
+        int rsa_min_size;
     } opts;
     /* counters */
     ssh_counter socket_counter;
@@ -248,7 +248,7 @@ struct ssh_session_struct {
 typedef int (*ssh_termination_function)(void *user);
 int ssh_handle_packets(ssh_session session, int timeout);
 int ssh_handle_packets_termination(ssh_session session,
-                                   long timeout,
+                                   int timeout,
                                    ssh_termination_function fct,
                                    void *user);
 void ssh_socket_exception_callback(int code, int errno_code, void *user);

@@ -683,7 +683,7 @@ static char *ssh_get_b64_unpadded(const unsigned char *hash, size_t len)
     char *b64_unpadded = NULL;
     size_t k;
 
-    b64_padded = (char *)bin_to_base64(hash, (int)len);
+    b64_padded = (char *)bin_to_base64(hash, len);
     if (b64_padded == NULL) {
         return NULL;
     }

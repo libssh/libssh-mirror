@@ -108,7 +108,7 @@ const char *ssh_hmac_type_to_string(enum ssh_hmac_e hmac_type, bool etm)
 }
 
 /* it allocates a new cipher structure based on its offset into the global table */
-static struct ssh_cipher_struct *cipher_new(int offset) {
+static struct ssh_cipher_struct *cipher_new(uint8_t offset) {
   struct ssh_cipher_struct *cipher = NULL;
 
   cipher = malloc(sizeof(struct ssh_cipher_struct));
@@ -239,7 +239,7 @@ static int crypt_set_algorithms2(ssh_session session)
     const char *wanted = NULL;
     struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
     struct ssh_hmac_struct *ssh_hmactab=ssh_get_hmactab();
-    size_t i = 0;
+    uint8_t i = 0;
     int cmp;
 
     /*

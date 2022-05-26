@@ -126,7 +126,7 @@ SHACTX sha1_init(void)
     return c;
 }
 
-void sha1_update(SHACTX c, const void *data, unsigned long len)
+void sha1_update(SHACTX c, const void *data, size_t len)
 {
     EVP_DigestUpdate(c, data, len);
 }
@@ -139,7 +139,7 @@ void sha1_final(unsigned char *md, SHACTX c)
     EVP_MD_CTX_free(c);
 }
 
-void sha1(const unsigned char *digest, int len, unsigned char *hash)
+void sha1(const unsigned char *digest, size_t len, unsigned char *hash)
 {
     SHACTX c = sha1_init();
     if (c != NULL) {
@@ -165,7 +165,7 @@ static const EVP_MD *nid_to_evpmd(int nid)
     return NULL;
 }
 
-void evp(int nid, unsigned char *digest, int len, unsigned char *hash, unsigned int *hlen)
+void evp(int nid, unsigned char *digest, size_t len, unsigned char *hash, unsigned int *hlen)
 {
     const EVP_MD *evp_md = nid_to_evpmd(nid);
     EVP_MD_CTX *md = EVP_MD_CTX_new();
@@ -190,7 +190,7 @@ EVPCTX evp_init(int nid)
     return ctx;
 }
 
-void evp_update(EVPCTX ctx, const void *data, unsigned long len)
+void evp_update(EVPCTX ctx, const void *data, size_t len)
 {
     EVP_DigestUpdate(ctx, data, len);
 }
@@ -217,7 +217,7 @@ SHA256CTX sha256_init(void)
     return c;
 }
 
-void sha256_update(SHA256CTX c, const void *data, unsigned long len)
+void sha256_update(SHA256CTX c, const void *data, size_t len)
 {
     EVP_DigestUpdate(c, data, len);
 }
@@ -230,7 +230,7 @@ void sha256_final(unsigned char *md, SHA256CTX c)
     EVP_MD_CTX_free(c);
 }
 
-void sha256(const unsigned char *digest, int len, unsigned char *hash)
+void sha256(const unsigned char *digest, size_t len, unsigned char *hash)
 {
     SHA256CTX c = sha256_init();
     if (c != NULL) {
@@ -254,7 +254,7 @@ SHA384CTX sha384_init(void)
     return c;
 }
 
-void sha384_update(SHA384CTX c, const void *data, unsigned long len)
+void sha384_update(SHA384CTX c, const void *data, size_t len)
 {
     EVP_DigestUpdate(c, data, len);
 }
@@ -267,7 +267,7 @@ void sha384_final(unsigned char *md, SHA384CTX c)
     EVP_MD_CTX_free(c);
 }
 
-void sha384(const unsigned char *digest, int len, unsigned char *hash)
+void sha384(const unsigned char *digest, size_t len, unsigned char *hash)
 {
     SHA384CTX c = sha384_init();
     if (c != NULL) {
@@ -291,7 +291,7 @@ SHA512CTX sha512_init(void)
     return c;
 }
 
-void sha512_update(SHA512CTX c, const void *data, unsigned long len)
+void sha512_update(SHA512CTX c, const void *data, size_t len)
 {
     EVP_DigestUpdate(c, data, len);
 }
@@ -304,7 +304,7 @@ void sha512_final(unsigned char *md, SHA512CTX c)
     EVP_MD_CTX_free(c);
 }
 
-void sha512(const unsigned char *digest, int len, unsigned char *hash)
+void sha512(const unsigned char *digest, size_t len, unsigned char *hash)
 {
     SHA512CTX c = sha512_init();
     if (c != NULL) {
@@ -328,7 +328,7 @@ MD5CTX md5_init(void)
     return c;
 }
 
-void md5_update(MD5CTX c, const void *data, unsigned long len)
+void md5_update(MD5CTX c, const void *data, size_t len)
 {
     EVP_DigestUpdate(c, data, len);
 }
@@ -416,7 +416,7 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
 }
 #endif
 
-HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type)
+HMACCTX hmac_init(const void *key, size_t len, enum ssh_hmac_e type)
 {
     HMACCTX ctx = NULL;
     EVP_PKEY *pkey = NULL;
@@ -461,7 +461,7 @@ error:
     return NULL;
 }
 
-void hmac_update(HMACCTX ctx, const void *data, unsigned long len)
+void hmac_update(HMACCTX ctx, const void *data, size_t len)
 {
     EVP_DigestSignUpdate(ctx, data, len);
 }

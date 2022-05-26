@@ -529,7 +529,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   ssh_channel channel;
   ssh_string str;
   ssh_buffer buf;
-  size_t len;
+  uint32_t len;
   int is_stderr;
   int rest;
   (void)user;
@@ -562,7 +562,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   len = ssh_string_len(str);
 
   SSH_LOG(SSH_LOG_PACKET,
-      "Channel receiving %zu bytes data in %d (local win=%d remote win=%d)",
+      "Channel receiving %u bytes data in %d (local win=%d remote win=%d)",
       len,
       is_stderr,
       channel->local_window,
@@ -571,7 +571,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   /* What shall we do in this case? Let's accept it anyway */
   if (len > channel->local_window) {
     SSH_LOG(SSH_LOG_RARE,
-        "Data packet too big for our window(%zu vs %d)",
+        "Data packet too big for our window(%u vs %d)",
         len,
         channel->local_window);
   }
@@ -899,7 +899,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
  * FIXME is the window changed?
  */
 int channel_default_bufferize(ssh_channel channel,
-                              void *data, size_t len,
+                              void *data, uint32_t len,
                               bool is_stderr)
 {
   ssh_session session;
@@ -916,7 +916,7 @@ int channel_default_bufferize(ssh_channel channel,
   }
 
   SSH_LOG(SSH_LOG_PACKET,
-          "placing %zu bytes into channel buffer (%s)",
+          "placing %u bytes into channel buffer (%s)",
           len,
           is_stderr ? "stderr" : "stdout");
   if (!is_stderr) {
@@ -3102,7 +3102,7 @@ int ssh_channel_read_nonblocking(ssh_channel channel,
                                  int is_stderr)
 {
     ssh_session session;
-    ssize_t to_read;
+    uint32_t to_read;
     int rc;
     int blocking;
 
@@ -3116,22 +3116,24 @@ int ssh_channel_read_nonblocking(ssh_channel channel,
 
     session = channel->session;
 
-    to_read = ssh_channel_poll(channel, is_stderr);
+    rc = ssh_channel_poll(channel, is_stderr);
 
-    if (to_read <= 0) {
+    if (rc <= 0) {
         if (session->session_state == SSH_SESSION_STATE_ERROR){
             return SSH_ERROR;
         }
 
-        return to_read; /* may be an error code */
+        return rc; /* may be an error code */
     }
 
-    if ((size_t)to_read > count) {
-        to_read = (ssize_t)count;
+    to_read = (unsigned int)rc;
+
+    if (to_read > count) {
+        to_read = count;
     }
     blocking = ssh_is_blocking(session);
     ssh_set_blocking(session, 0);
-    rc = ssh_channel_read(channel, dest, (uint32_t)to_read, is_stderr);
+    rc = ssh_channel_read(channel, dest, to_read, is_stderr);
     ssh_set_blocking(session,blocking);
 
     return rc;

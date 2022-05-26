@@ -87,7 +87,7 @@ SHACTX sha1_init(void) {
   return ctx;
 }
 
-void sha1_update(SHACTX c, const void *data, unsigned long len) {
+void sha1_update(SHACTX c, const void *data, size_t len) {
   gcry_md_write(c, data, len);
 }
 
@@ -97,7 +97,7 @@ void sha1_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha1(const unsigned char *digest, int len, unsigned char *hash) {
+void sha1(const unsigned char *digest, size_t len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA1, hash, digest, len);
 }
 
@@ -115,7 +115,7 @@ static int nid_to_md_algo(int nid)
     return GCRY_MD_NONE;
 }
 
-void evp(int nid, unsigned char *digest, int len,
+void evp(int nid, unsigned char *digest, size_t len,
          unsigned char *hash, unsigned int *hlen)
 {
     int algo = nid_to_md_algo(nid);
@@ -140,7 +140,7 @@ EVPCTX evp_init(int nid)
     return ctx;
 }
 
-void evp_update(EVPCTX ctx, const void *data, unsigned long len)
+void evp_update(EVPCTX ctx, const void *data, size_t len)
 {
     gcry_md_write(ctx, data, len);
 }
@@ -161,7 +161,7 @@ SHA256CTX sha256_init(void) {
   return ctx;
 }
 
-void sha256_update(SHACTX c, const void *data, unsigned long len) {
+void sha256_update(SHACTX c, const void *data, size_t len) {
   gcry_md_write(c, data, len);
 }
 
@@ -171,7 +171,7 @@ void sha256_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha256(const unsigned char *digest, int len, unsigned char *hash){
+void sha256(const unsigned char *digest, size_t len, unsigned char *hash){
   gcry_md_hash_buffer(GCRY_MD_SHA256, hash, digest, len);
 }
 
@@ -182,7 +182,7 @@ SHA384CTX sha384_init(void) {
   return ctx;
 }
 
-void sha384_update(SHACTX c, const void *data, unsigned long len) {
+void sha384_update(SHACTX c, const void *data, size_t len) {
   gcry_md_write(c, data, len);
 }
 
@@ -192,7 +192,7 @@ void sha384_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha384(const unsigned char *digest, int len, unsigned char *hash) {
+void sha384(const unsigned char *digest, size_t len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA384, hash, digest, len);
 }
 
@@ -203,7 +203,7 @@ SHA512CTX sha512_init(void) {
   return ctx;
 }
 
-void sha512_update(SHACTX c, const void *data, unsigned long len) {
+void sha512_update(SHACTX c, const void *data, size_t len) {
   gcry_md_write(c, data, len);
 }
 
@@ -213,7 +213,7 @@ void sha512_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha512(const unsigned char *digest, int len, unsigned char *hash) {
+void sha512(const unsigned char *digest, size_t len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA512, hash, digest, len);
 }
 
@@ -224,7 +224,7 @@ MD5CTX md5_init(void) {
   return c;
 }
 
-void md5_update(MD5CTX c, const void *data, unsigned long len) {
+void md5_update(MD5CTX c, const void *data, size_t len) {
     gcry_md_write(c,data,len);
 }
 
@@ -243,7 +243,7 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
                              key_type, output, requested_len);
 }
 
-HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
+HMACCTX hmac_init(const void *key, size_t len, enum ssh_hmac_e type) {
   HMACCTX c = NULL;
 
   switch(type) {
@@ -268,7 +268,7 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
   return c;
 }
 
-void hmac_update(HMACCTX c, const void *data, unsigned long len) {
+void hmac_update(HMACCTX c, const void *data, size_t len) {
   gcry_md_write(c, data, len);
 }
 

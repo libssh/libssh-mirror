@@ -694,13 +694,13 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  *                      SSH_ERROR otherwise.
  */
 int ssh_handle_packets_termination(ssh_session session,
-                                   long timeout,
+                                   int timeout,
                                    ssh_termination_function fct,
                                    void *user)
 {
     struct ssh_timestamp ts;
-    long timeout_ms = SSH_TIMEOUT_INFINITE;
-    long tm;
+    int timeout_ms = SSH_TIMEOUT_INFINITE;
+    int tm;
     int ret = SSH_OK;
 
     /* If a timeout has been provided, use it */

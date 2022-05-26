@@ -41,7 +41,7 @@ void ssh_execute_command(const char *command, socket_t in, socket_t out);
 int ssh_socket_connect_proxycommand(ssh_socket s, const char *command);
 #endif
 void ssh_socket_close(ssh_socket s);
-int ssh_socket_write(ssh_socket s,const void *buffer, int len);
+int ssh_socket_write(ssh_socket s,const void *buffer, uint32_t len);
 int ssh_socket_is_open(ssh_socket s);
 int ssh_socket_fd_isset(ssh_socket s, fd_set *set);
 void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd);

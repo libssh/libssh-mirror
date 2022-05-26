@@ -63,9 +63,9 @@
   (((x) == SSH_AGENT_FAILURE) || ((x) == SSH_COM_AGENT2_FAILURE) || \
    ((x) == SSH2_AGENT_FAILURE))
 
-static size_t atomicio(struct ssh_agent_struct *agent, void *buf, size_t n, int do_read) {
+static uint32_t atomicio(struct ssh_agent_struct *agent, void *buf, uint32_t n, int do_read) {
   char *b = buf;
-  size_t pos = 0;
+  uint32_t pos = 0;
   ssize_t res;
   ssh_pollfd_t pfd;
   ssh_channel channel = agent->channel;
@@ -102,7 +102,7 @@ static size_t atomicio(struct ssh_agent_struct *agent, void *buf, size_t n, int 
         errno = do_read ? 0 : EPIPE;
         return pos;
       default:
-        pos += (size_t) res;
+        pos += (uint32_t) res;
         }
       }
       return pos;
@@ -117,7 +117,7 @@ static size_t atomicio(struct ssh_agent_struct *agent, void *buf, size_t n, int 
           continue;
         if (res == SSH_ERROR)
           return 0;
-        pos += (size_t)res;
+        pos += (uint32_t)res;
       }
       return pos;
     }
@@ -311,7 +311,7 @@ uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session)
     ssh_buffer reply = NULL;
     unsigned int type = 0;
     uint32_t count = 0;
-    int rc;
+    uint32_t rc;
 
     /* send message to the agent requesting the list of identities */
     request = ssh_buffer_new();

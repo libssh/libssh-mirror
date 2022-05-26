@@ -131,11 +131,11 @@ static int match_pattern(const char *s, const char *pattern, size_t limit)
  * no match at all.
  */
 int match_pattern_list(const char *string, const char *pattern,
-    unsigned int len, int dolower) {
+    size_t len, int dolower) {
   char sub[1024];
   int negated;
   int got_positive;
-  unsigned int i, subi;
+  size_t i, subi;
 
   got_positive = 0;
   for (i = 0; i < len;) {

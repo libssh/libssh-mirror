@@ -638,7 +638,7 @@ void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd)
  * \returns SSH_OK, or SSH_ERROR
  * \warning has no effect on socket before a flush
  */
-int ssh_socket_write(ssh_socket s, const void *buffer, int len)
+int ssh_socket_write(ssh_socket s, const void *buffer, uint32_t len)
 {
     if (len > 0) {
         if (ssh_buffer_add_data(s->out_buffer, buffer, len) < 0) {

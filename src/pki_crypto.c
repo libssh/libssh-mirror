@@ -1401,10 +1401,10 @@ static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
     const BIGNUM *pr = NULL, *ps = NULL;
 
     ssh_string r = NULL;
-    int r_len, r_offset_in, r_offset_out;
+    size_t r_len, r_offset_in, r_offset_out;
 
     ssh_string s = NULL;
-    int s_len, s_offset_in, s_offset_out;
+    size_t s_len, s_offset_in, s_offset_out;
 
     const unsigned char *raw_sig_data = NULL;
     size_t raw_sig_len;
@@ -1679,7 +1679,7 @@ static int pki_signature_from_dsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     size_t len;
 
-    int raw_sig_len = 0;
+    size_t raw_sig_len = 0;
     unsigned char *raw_sig_data = NULL;
     unsigned char *temp_raw_sig = NULL;
 

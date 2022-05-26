@@ -56,7 +56,7 @@ typedef void (*ssh_callback_int) (int code, void *user);
  * @returns number of bytes processed by the callee. The remaining bytes will
  * be sent in the next callback message, when more data is available.
  */
-typedef int (*ssh_callback_data) (const void *data, size_t len, void *user);
+typedef ssize_t (*ssh_callback_data) (const void *data, size_t len, void *user);
 
 typedef void (*ssh_callback_int_int) (int code, int errno_code, void *user);
 
@@ -777,7 +777,7 @@ typedef int (*ssh_channel_subsystem_request_callback) (ssh_session session,
  */
 typedef int (*ssh_channel_write_wontblock_callback) (ssh_session session,
                                                      ssh_channel channel,
-                                                     size_t bytes,
+                                                     uint32_t bytes,
                                                      void *userdata);
 
 struct ssh_channel_callbacks_struct {

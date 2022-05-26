@@ -459,12 +459,12 @@ error:
  * @param  user is a pointer to session
  * @returns Number of bytes processed, or zero if the banner is not complete.
  */
-static int callback_receive_banner(const void *data, size_t len, void *user) {
+static ssize_t callback_receive_banner(const void *data, size_t len, void *user) {
     char *buffer = (char *) data;
     ssh_session session = (ssh_session) user;
     char *str = NULL;
     size_t i;
-    int ret=0;
+    ssize_t ret = 0;
 
     for (i = 0; i < len; i++) {
 #ifdef WITH_PCAP

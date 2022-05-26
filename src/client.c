@@ -94,13 +94,13 @@ static void socket_callback_connected(int code, int errno_code, void *user)
  * @param  user is a pointer to session
  * @returns Number of bytes processed, or zero if the banner is not complete.
  */
-static int callback_receive_banner(const void *data, size_t len, void *user)
+static ssize_t callback_receive_banner(const void *data, size_t len, void *user)
 {
     char *buffer = (char *)data;
     ssh_session session = (ssh_session) user;
     char *str = NULL;
-    size_t i;
-    int ret = 0;
+    uint32_t i;
+    int ret=0;
 
     if (session->session_state != SSH_SESSION_STATE_SOCKET_CONNECTED) {
         ssh_set_error(session,SSH_FATAL,

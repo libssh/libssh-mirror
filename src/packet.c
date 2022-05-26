@@ -1054,14 +1054,14 @@ static bool ssh_packet_need_rekey(ssh_session session,
  * @len length of data received. It might not be enough for a complete packet
  * @returns number of bytes read and processed.
  */
-int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
+ssize_t ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 {
     ssh_session session = (ssh_session)user;
     uint32_t blocksize = 8;
     uint32_t lenfield_blocksize = 8;
     size_t current_macsize = 0;
     uint8_t *ptr = NULL;
-    int to_be_read;
+    long to_be_read;
     int rc;
     uint8_t *cleartext_packet = NULL;
     uint8_t *packet_second_block = NULL;
@@ -1069,7 +1069,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     size_t packet_remaining;
     uint32_t packet_len, compsize, payloadsize;
     uint8_t padding;
-    size_t processed = 0; /* number of byte processed from the callback */
+    uint32_t processed = 0; /* number of bytes processed from the callback */
     enum ssh_packet_filter_result_e filter_result;
     struct ssh_crypto_struct *crypto = NULL;
     bool etm = false;
@@ -1169,7 +1169,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 /* remote sshd sends invalid sizes? */
                 ssh_set_error(session,
                               SSH_FATAL,
-                              "Given numbers of bytes left to be read < 0 (%d)!",
+                              "Given numbers of bytes left to be read < 0 (%ld)!",
                               to_be_read);
                 goto error;
             }
@@ -1183,11 +1183,11 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             to_be_read = packet_len + sizeof(uint32_t) + current_macsize;
             /* if to_be_read is zero, the whole packet was blocksize bytes. */
             if (to_be_read != 0) {
-                if (receivedlen  < (unsigned int)to_be_read) {
+                if (receivedlen  < (unsigned long)to_be_read) {
                     /* give up, not enough data in buffer */
                     SSH_LOG(SSH_LOG_PACKET,
                             "packet: partial packet (read len) "
-                            "[len=%d, receivedlen=%d, to_be_read=%d]",
+                            "[len=%d, receivedlen=%d, to_be_read=%ld]",
                             packet_len,
                             (int)receivedlen,
                             to_be_read);
@@ -1382,7 +1382,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
 error:
     session->session_state= SSH_SESSION_STATE_ERROR;
-    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %zu bytes", processed);
+    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %u bytes", processed);
     return processed;
 }
 
