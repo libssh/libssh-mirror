@@ -189,7 +189,7 @@ int web_server(ssh_session session)
     return rc;
   }
 
-  channel = ssh_channel_open_forward_port(session, 60000, &port, 
+  channel = ssh_channel_open_forward_port(session, 60000, &port,
                                         &peer_address, &peer_port);
   if (channel == NULL)
   {

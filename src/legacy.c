@@ -164,7 +164,7 @@ int channel_change_pty_size(ssh_channel channel,int cols,int rows){
 }
 
 ssh_channel channel_forward_accept(ssh_session session, int timeout_ms){
-  return ssh_channel_accept_forward(session, timeout_ms, NULL);
+  return ssh_channel_open_forward_port(session, timeout_ms, NULL, NULL, NULL);
 }
 
 int channel_close(ssh_channel channel){

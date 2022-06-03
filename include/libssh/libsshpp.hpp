@@ -669,7 +669,7 @@ private:
 
 inline Channel *Session::acceptForward(int timeout_ms){
     ssh_channel forward =
-        ssh_channel_accept_forward(c_session, timeout_ms, NULL);
+        ssh_channel_open_forward_port(c_session, timeout_ms, NULL, NULL, NULL);
     ssh_throw_null(c_session,forward);
     Channel *newchan = new Channel(*this,forward);
     return newchan;
