@@ -1361,21 +1361,25 @@ int ssh_analyze_banner(ssh_session session, int server)
          * 012345678901234567890
          */
         if (strlen(openssh) > 9) {
+            errno = 0;
             major = strtoul(openssh + 8, &tmp, 10);
             if ((tmp == (openssh + 8)) ||
                 ((errno == ERANGE) && (major == ULONG_MAX)) ||
                 ((errno != 0) && (major == 0)) ||
                 ((major < 1) || (major > 100))) {
                 /* invalid major */
+                errno = 0;
                 goto done;
             }
 
+            errno = 0;
             minor = strtoul(openssh + 10, &tmp, 10);
             if ((tmp == (openssh + 10)) ||
                 ((errno == ERANGE) && (major == ULONG_MAX)) ||
                 ((errno != 0) && (major == 0)) ||
                 (minor > 100)) {
                 /* invalid minor */
+                errno = 0;
                 goto done;
             }
 
