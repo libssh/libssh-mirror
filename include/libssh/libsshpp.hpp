@@ -523,7 +523,7 @@ public:
     return ssh_channel_is_open(channel) != 0;
   }
   int openForward(const char *remotehost, int remoteport,
-      const char *sourcehost=NULL, int localport=0){
+      const char *sourcehost, int localport=0){
     int err=ssh_channel_open_forward(channel,remotehost,remoteport,
         sourcehost, localport);
     ssh_throw(err);
