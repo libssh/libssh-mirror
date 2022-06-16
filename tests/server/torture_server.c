@@ -174,6 +174,7 @@ static void torture_server_auth_none(void **state)
     struct test_server_st *tss = *state;
     struct torture_state *s = NULL;
     ssh_session session = NULL;
+    char *banner = NULL;
     int rc;
 
     assert_non_null(tss);
@@ -192,6 +193,11 @@ static void torture_server_auth_none(void **state)
 
     rc = ssh_userauth_none(session, NULL);
     assert_int_equal(rc, SSH_AUTH_DENIED);
+
+    banner = ssh_get_issue_banner(session);
+    assert_string_equal(banner, SSHD_BANNER_MESSAGE);
+    free(banner);
+    banner = NULL;
 
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {

@@ -524,6 +524,30 @@ void ssh_set_auth_methods(ssh_session session, int auth_methods)
     session->auth.supported_methods = (uint32_t)auth_methods & 0x3fU;
 }
 
+int ssh_send_issue_banner(ssh_session session, const ssh_string banner)
+{
+    int rc = SSH_ERROR;
+
+    if (session == NULL) {
+        return SSH_ERROR;
+    }
+
+    SSH_LOG(SSH_LOG_PACKET,
+            "Sending a server issue banner");
+
+    rc = ssh_buffer_pack(session->out_buffer,
+                         "bS",
+                         SSH2_MSG_USERAUTH_BANNER,
+                         banner);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    rc = ssh_packet_send(session);
+    return rc;
+}
+
 /* Do the banner and key exchange */
 int ssh_handle_key_exchange(ssh_session session) {
     int rc;

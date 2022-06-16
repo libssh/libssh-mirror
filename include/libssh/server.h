@@ -245,6 +245,18 @@ LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
  */
 LIBSSH_API void ssh_set_auth_methods(ssh_session session, int auth_methods);
 
+/**
+ * @brief Send the server's issue-banner to client.
+ *
+ *
+ * @param[in]  session      The server session.
+ *
+ * @param[in]  banner       The server's banner.
+ *
+ * @return                  SSH_OK on success, SSH_ERROR on error.
+ */
+LIBSSH_API int ssh_send_issue_banner(ssh_session session, const ssh_string banner);
+
 /**********************************************************
  * SERVER MESSAGING
  **********************************************************/

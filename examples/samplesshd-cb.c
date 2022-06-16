@@ -49,6 +49,27 @@ static int tries = 0;
 static int error = 0;
 static ssh_channel chan=NULL;
 
+static int auth_none(ssh_session session,
+                     const char *user,
+                     void *userdata)
+{
+    ssh_string banner = NULL;
+
+    (void)user; /* unused */
+    (void)userdata; /* unused */
+
+    ssh_set_auth_methods(session,
+                         SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_GSSAPI_MIC);
+
+    banner = ssh_string_from_char("Banner Example\n");
+    if (banner != NULL) {
+        ssh_send_issue_banner(session, banner);
+    }
+    ssh_string_free(banner);
+
+    return SSH_AUTH_DENIED;
+}
+
 static int auth_password(ssh_session session, const char *user,
         const char *password, void *userdata){
     (void)userdata;
@@ -242,6 +263,7 @@ int main(int argc, char **argv){
     ssh_event mainloop;
     struct ssh_server_callbacks_struct cb = {
         .userdata = NULL,
+        .auth_none_function = auth_none,
         .auth_password_function = auth_password,
 #ifdef WITH_GSSAPI
         .auth_gssapi_mic_function = auth_gssapi_mic,
