@@ -459,12 +459,12 @@ error:
  * @param  user is a pointer to session
  * @returns Number of bytes processed, or zero if the banner is not complete.
  */
-static ssize_t callback_receive_banner(const void *data, size_t len, void *user) {
+static size_t callback_receive_banner(const void *data, size_t len, void *user) {
     char *buffer = (char *) data;
     ssh_session session = (ssh_session) user;
     char *str = NULL;
     size_t i;
-    ssize_t ret = 0;
+    size_t processed = 0;
 
     for (i = 0; i < len; i++) {
 #ifdef WITH_PCAP
@@ -485,13 +485,13 @@ static ssize_t callback_receive_banner(const void *data, size_t len, void *user)
 
             str = strdup(buffer);
             /* number of bytes read */
-            ret = i + 1;
+            processed = i + 1;
             session->clientbanner = str;
             session->session_state = SSH_SESSION_STATE_BANNER_RECEIVED;
             SSH_LOG(SSH_LOG_PACKET, "Received banner: %s", str);
             session->ssh_connection_callback(session);
 
-            return ret;
+            return processed;
         }
 
         if(i > 127) {
@@ -503,7 +503,7 @@ static ssize_t callback_receive_banner(const void *data, size_t len, void *user)
         }
     }
 
-    return ret;
+    return processed;
 }
 
 /* returns 0 until the key exchange is not finished */
@@ -707,7 +707,7 @@ int ssh_message_global_request_reply_success(ssh_message msg, uint16_t bound_por
             goto error;
         }
 
-        if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD 
+        if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD
                                 && msg->global_request.bind_port == 0) {
             rc = ssh_buffer_pack(msg->session->out_buffer, "d", bound_port);
             if (rc != SSH_OK) {
@@ -719,7 +719,7 @@ int ssh_message_global_request_reply_success(ssh_message msg, uint16_t bound_por
         return ssh_packet_send(msg->session);
     }
 
-    if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD 
+    if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD
                                 && msg->global_request.bind_port == 0) {
         SSH_LOG(SSH_LOG_PACKET,
                 "The client doesn't want to know the remote port!");

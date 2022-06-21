@@ -56,7 +56,7 @@ typedef void (*ssh_callback_int) (int code, void *user);
  * @returns number of bytes processed by the callee. The remaining bytes will
  * be sent in the next callback message, when more data is available.
  */
-typedef ssize_t (*ssh_callback_data) (const void *data, size_t len, void *user);
+typedef size_t (*ssh_callback_data) (const void *data, size_t len, void *user);
 
 typedef void (*ssh_callback_int_int) (int code, int errno_code, void *user);
 

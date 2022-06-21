@@ -94,7 +94,7 @@ static void socket_callback_connected(int code, int errno_code, void *user)
  * @param  user is a pointer to session
  * @returns Number of bytes processed, or zero if the banner is not complete.
  */
-static ssize_t callback_receive_banner(const void *data, size_t len, void *user)
+static size_t callback_receive_banner(const void *data, size_t len, void *user)
 {
     char *buffer = (char *)data;
     ssh_session session = (ssh_session) user;
@@ -107,7 +107,7 @@ static ssize_t callback_receive_banner(const void *data, size_t len, void *user)
                       "Wrong state in callback_receive_banner : %d",
                       session->session_state);
 
-        return SSH_ERROR;
+        return 0;
     }
     for (i = 0; i < len; ++i) {
 #ifdef WITH_PCAP

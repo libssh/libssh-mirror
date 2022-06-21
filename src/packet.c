@@ -113,7 +113,7 @@ static ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_global_request,               // SSH2_MSG_GLOBAL_REQUEST             80
 #else /* WITH_SERVER */
   NULL,
-#endif /* WITH_SERVER */ 
+#endif /* WITH_SERVER */
   ssh_request_success,                     // SSH2_MSG_REQUEST_SUCCESS            81
   ssh_request_denied,                      // SSH2_MSG_REQUEST_FAILURE            82
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,//                                     83-89
@@ -1054,7 +1054,7 @@ static bool ssh_packet_need_rekey(ssh_session session,
  * @len length of data received. It might not be enough for a complete packet
  * @returns number of bytes read and processed.
  */
-ssize_t ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
+size_t ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 {
     ssh_session session = (ssh_session)user;
     uint32_t blocksize = 8;
@@ -1069,7 +1069,7 @@ ssize_t ssh_packet_socket_callback(const void *data, size_t receivedlen, void *u
     size_t packet_remaining;
     uint32_t packet_len, compsize, payloadsize;
     uint8_t padding;
-    uint32_t processed = 0; /* number of bytes processed from the callback */
+    size_t processed = 0; /* number of bytes processed from the callback */
     enum ssh_packet_filter_result_e filter_result;
     struct ssh_crypto_struct *crypto = NULL;
     bool etm = false;
@@ -1382,7 +1382,7 @@ ssize_t ssh_packet_socket_callback(const void *data, size_t receivedlen, void *u
 
 error:
     session->session_state= SSH_SESSION_STATE_ERROR;
-    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %u bytes", processed);
+    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %zu bytes", processed);
     return processed;
 }
 
