@@ -23,6 +23,7 @@
 #include <stdbool.h>
 
 #include "libssh/priv.h"
+#include "libssh/callbacks.h"
 #include "libssh/kex.h"
 #include "libssh/packet.h"
 #include "libssh/pcap.h"
