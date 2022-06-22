@@ -518,7 +518,7 @@ int ssh_userauth_try_publickey(ssh_session session,
                           SSH_FATAL,
                           "Wrong state (%d) during pending SSH call",
                           session->pending_call_state);
-            return SSH_ERROR;
+            return SSH_AUTH_ERROR;
     }
 
     /* Check if the given public key algorithm is allowed */
