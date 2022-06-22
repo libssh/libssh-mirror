@@ -257,6 +257,50 @@ static void torture_auth_none_nonblocking(void **state) {
 
 }
 
+static void torture_auth_pubkey(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char bob_ssh_key[1024];
+    ssh_key privkey = NULL;
+    struct passwd *pwd = NULL;
+    int rc;
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+
+    snprintf(bob_ssh_key,
+             sizeof(bob_ssh_key),
+             "%s/.ssh/id_rsa",
+             pwd->pw_dir);
+
+    /* Authenticate as alice with bob his pubkey */
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_none(session, NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_pki_import_privkey_file(bob_ssh_key, NULL, NULL, NULL, &privkey);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_try_publickey(session, NULL, privkey);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    rc = ssh_userauth_publickey(session, NULL, privkey);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    SSH_KEY_FREE(privkey);
+}
+
 static void torture_auth_autopubkey(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
@@ -1126,6 +1170,9 @@ int torture_run_tests(void) {
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_kbdint_nonblocking,
                                         session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_pubkey,
+                                        pubkey_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_autopubkey,
                                         pubkey_setup,
