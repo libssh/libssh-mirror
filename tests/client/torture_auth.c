@@ -301,6 +301,56 @@ static void torture_auth_pubkey(void **state) {
     SSH_KEY_FREE(privkey);
 }
 
+static void torture_auth_pubkey_nonblocking(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char bob_ssh_key[1024];
+    ssh_key privkey = NULL;
+    struct passwd *pwd = NULL;
+    int rc;
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+
+    snprintf(bob_ssh_key,
+             sizeof(bob_ssh_key),
+             "%s/.ssh/id_rsa",
+             pwd->pw_dir);
+
+    /* Authenticate as alice with bob his pubkey */
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    ssh_set_blocking(session, 0);
+
+    do {
+        rc = ssh_userauth_none(session,NULL);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_int_equal(rc, SSH_AUTH_DENIED);
+    assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_pki_import_privkey_file(bob_ssh_key, NULL, NULL, NULL, &privkey);
+    assert_int_equal(rc, SSH_OK);
+
+    do {
+        rc = ssh_userauth_try_publickey(session, NULL, privkey);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    do {
+        rc = ssh_userauth_publickey(session, NULL, privkey);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    SSH_KEY_FREE(privkey);
+}
+
 static void torture_auth_autopubkey(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
@@ -1172,6 +1222,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_pubkey,
+                                        pubkey_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_pubkey_nonblocking,
                                         pubkey_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_autopubkey,
