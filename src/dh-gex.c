@@ -108,7 +108,11 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     bignum pmin1 = NULL, one = NULL;
     bignum_CTX ctx = bignum_ctx_new();
     bignum modulus = NULL, generator = NULL;
+#if !defined(HAVE_LIBCRYPTO) || OPENSSL_VERSION_NUMBER < 0x30000000L
     const_bignum pubkey;
+#else
+    bignum pubkey = NULL;
+#endif /* OPENSSL_VERSION_NUMBER */
     (void) type;
     (void) user;
 
@@ -212,6 +216,9 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     if (rc != SSH_OK) {
         goto error;
     }
+#if defined(HAVE_LIBCRYPTO) && OPENSSL_VERSION_NUMBER >= 0x30000000L
+    bignum_safe_free(pubkey);
+#endif /* OPENSSL_VERSION_NUMBER */
 
     session->dh_handshake_state = DH_STATE_INIT_SENT;
 
@@ -229,6 +236,9 @@ error:
     bignum_safe_free(generator);
     bignum_safe_free(one);
     bignum_safe_free(pmin1);
+#if defined(HAVE_LIBCRYPTO) && OPENSSL_VERSION_NUMBER >= 0x30000000L
+    bignum_safe_free(pubkey);
+#endif /* OPENSSL_VERSION_NUMBER */
     if(!bignum_ctx_invalid(ctx)) {
         bignum_ctx_free(ctx);
     }
