@@ -58,8 +58,9 @@ static int hash_hostname(const char *name,
                          unsigned char *salt,
                          unsigned int salt_size,
                          unsigned char **hash,
-                         unsigned int *hash_size)
+                         size_t *hash_size)
 {
+    int rc;
     HMACCTX mac_ctx;
 
     mac_ctx = hmac_init(salt, salt_size, SSH_HMAC_SHA1);
@@ -67,8 +68,13 @@ static int hash_hostname(const char *name,
         return SSH_ERROR;
     }
 
-    hmac_update(mac_ctx, name, strlen(name));
-    hmac_final(mac_ctx, *hash, hash_size);
+    rc = hmac_update(mac_ctx, name, strlen(name));
+    if (rc != 1)
+        return SSH_ERROR;
+
+    rc = hmac_final(mac_ctx, *hash, hash_size);
+    if (rc != 1)
+        return SSH_ERROR;
 
     return SSH_OK;
 }
@@ -81,7 +87,7 @@ static int match_hashed_hostname(const char *host, const char *hashed_host)
     ssh_buffer hash = NULL;
     unsigned char hashed_buf[256] = {0};
     unsigned char *hashed_buf_ptr = hashed_buf;
-    unsigned int hashed_buf_size = sizeof(hashed_buf);
+    size_t hashed_buf_size = sizeof(hashed_buf);
     int cmp;
     int rc;
     int match = 0;

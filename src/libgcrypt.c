@@ -268,14 +268,20 @@ HMACCTX hmac_init(const void *key, size_t len, enum ssh_hmac_e type) {
   return c;
 }
 
-void hmac_update(HMACCTX c, const void *data, size_t len) {
+int hmac_update(HMACCTX c, const void *data, size_t len) {
   gcry_md_write(c, data, len);
+  return 1;
 }
 
-void hmac_final(HMACCTX c, unsigned char *hashmacbuf, unsigned int *len) {
-  *len = gcry_md_get_algo_dlen(gcry_md_get_algo(c));
+int hmac_final(HMACCTX c, unsigned char *hashmacbuf, size_t *len) {
+  unsigned int tmp = gcry_md_get_algo_dlen(gcry_md_get_algo(c));
+  if (tmp > SIZE_MAX) {
+      return 0;
+  }
+  *len = (size_t)tmp;
   memcpy(hashmacbuf, gcry_md_read(c, 0), *len);
   gcry_md_close(c);
+  return 1;
 }
 
 #ifdef WITH_BLOWFISH_CIPHER

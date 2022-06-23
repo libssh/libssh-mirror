@@ -210,8 +210,8 @@ static int match_hashed_host(const char *host, const char *sourcehash)
   HMACCTX mac;
   char *source;
   char *b64hash;
-  int match;
-  unsigned int size;
+  int match, rc;
+  size_t size;
 
   if (strncmp(sourcehash, "|1|", 3) != 0) {
     return 0;
@@ -256,8 +256,20 @@ static int match_hashed_host(const char *host, const char *sourcehash)
     return 0;
   }
   size = sizeof(buffer);
-  hmac_update(mac, host, strlen(host));
-  hmac_final(mac, buffer, &size);
+  rc = hmac_update(mac, host, strlen(host));
+  if (rc != 1) {
+    ssh_buffer_free(salt);
+    ssh_buffer_free(hash);
+
+    return 0;
+  }
+  rc = hmac_final(mac, buffer, &size);
+  if (rc != 1) {
+    ssh_buffer_free(salt);
+    ssh_buffer_free(hash);
+
+    return 0;
+  }
 
   if (size == ssh_buffer_get_len(hash) &&
       memcmp(buffer, ssh_buffer_get(hash), size) == 0) {

@@ -130,14 +130,15 @@ int ssh_packet_decrypt(ssh_session session,
     return 0;
 }
 
-unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
+unsigned char *ssh_packet_encrypt(ssh_session session, void *data, size_t len)
 {
   struct ssh_crypto_struct *crypto = NULL;
   struct ssh_cipher_struct *cipher = NULL;
   HMACCTX ctx = NULL;
   char *out = NULL;
-  int etm_packet_offset = 0;
-  unsigned int finallen, blocksize;
+  int etm_packet_offset = 0, rc;
+  unsigned int blocksize;
+  size_t finallen = DIGEST_MAX_LEN;
   uint32_t seq, lenfield_blocksize;
   enum ssh_hmac_e type;
   bool etm;
@@ -161,7 +162,7 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
 
   if ((len - lenfield_blocksize - etm_packet_offset) % blocksize != 0) {
       ssh_set_error(session, SSH_FATAL, "Cryptographic functions must be set"
-                    " on at least one blocksize (received %d)", len);
+                    " on at least one blocksize (received %zu)", len);
       return NULL;
   }
   out = calloc(1, len);
@@ -185,9 +186,21 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
           }
 
           if (!etm) {
-              hmac_update(ctx, (unsigned char *)&seq, sizeof(uint32_t));
-              hmac_update(ctx, data, len);
-              hmac_final(ctx, crypto->hmacbuf, &finallen);
+              rc = hmac_update(ctx, (unsigned char *)&seq, sizeof(uint32_t));
+              if (rc != 1) {
+                  SAFE_FREE(out);
+                  return NULL;
+              }
+              rc = hmac_update(ctx, data, len);
+              if (rc != 1) {
+                  SAFE_FREE(out);
+                  return NULL;
+              }
+              rc = hmac_final(ctx, crypto->hmacbuf, &finallen);
+              if (rc != 1) {
+                  SAFE_FREE(out);
+                  return NULL;
+              }
           }
       }
 
@@ -197,14 +210,26 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
       if (type != SSH_HMAC_NONE) {
           if (etm) {
               PUSH_BE_U32(data, 0, len - etm_packet_offset);
-              hmac_update(ctx, (unsigned char *)&seq, sizeof(uint32_t));
-              hmac_update(ctx, data, len);
-              hmac_final(ctx, crypto->hmacbuf, &finallen);
+              rc = hmac_update(ctx, (unsigned char *)&seq, sizeof(uint32_t));
+              if (rc != 1) {
+                  SAFE_FREE(out);
+                  return NULL;
+              }
+              rc = hmac_update(ctx, data, len);
+              if (rc != 1) {
+                  SAFE_FREE(out);
+                  return NULL;
+              }
+              rc = hmac_final(ctx, crypto->hmacbuf, &finallen);
+              if (rc != 1) {
+                  SAFE_FREE(out);
+                  return NULL;
+              }
           }
 #ifdef DEBUG_CRYPTO
           ssh_log_hexdump("mac: ", data, len);
           if (finallen != hmac_digest_len(type)) {
-              printf("Final len is %d\n", finallen);
+              printf("Final len is %zu\n", finallen);
           }
           ssh_log_hexdump("Packet hmac", crypto->hmacbuf, hmac_digest_len(type));
 #endif
@@ -238,7 +263,7 @@ int ssh_packet_hmac_verify(ssh_session session,
   struct ssh_crypto_struct *crypto = NULL;
   unsigned char hmacbuf[DIGEST_MAX_LEN] = {0};
   HMACCTX ctx;
-  unsigned int hmaclen;
+  size_t hmaclen = DIGEST_MAX_LEN;
   uint32_t seq;
 
   /* AEAD types have no mac checking */

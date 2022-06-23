@@ -26,13 +26,14 @@
 #include <string.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif
+#endif /* HAVE_SYS_TIME_H */
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
 #include "libssh/crypto.h"
 #include "libssh/wrapper.h"
 #include "libssh/libcrypto.h"
+#include "libssh/pki.h"
 #if defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305)
 #include "libssh/bytearray.h"
 #include "libssh/chacha20-poly1305-common.h"
@@ -40,12 +41,17 @@
 
 #ifdef HAVE_LIBCRYPTO
 
+#include <openssl/opensslv.h>
 #include <openssl/sha.h>
 #include <openssl/md5.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #include <openssl/dsa.h>
 #include <openssl/rsa.h>
 #include <openssl/hmac.h>
-#include <openssl/opensslv.h>
+#else
+#include <openssl/param_build.h>
+#include <openssl/core_names.h>
+#endif /* OPENSSL_VERSION_NUMBER */
 #include <openssl/rand.h>
 #include <openssl/engine.h>
 
@@ -54,11 +60,11 @@
 #ifdef HAVE_OPENSSL_AES_H
 #define HAS_AES
 #include <openssl/aes.h>
-#endif
+#endif /* HAVE_OPENSSL_AES_H */
 #ifdef HAVE_OPENSSL_DES_H
 #define HAS_DES
 #include <openssl/des.h>
-#endif
+#endif /* HAVE_OPENSSL_DES_H */
 
 #if (defined(HAVE_VALGRIND_VALGRIND_H) && defined(HAVE_OPENSSL_IA32CAP_LOC))
 #include <valgrind/valgrind.h>
@@ -200,7 +206,7 @@ void evp_final(EVPCTX ctx, unsigned char *md, unsigned int *mdlen)
     EVP_DigestFinal(ctx, md, mdlen);
     EVP_MD_CTX_free(ctx);
 }
-#endif
+#endif /* HAVE_OPENSSL_ECC */
 
 SHA256CTX sha256_init(void)
 {
@@ -414,8 +420,7 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
     return sshkdf_derive_key(crypto, key, key_len,
                              key_type, output, requested_len);
 }
-#endif
-
+#endif /* HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID */
 HMACCTX hmac_init(const void *key, size_t len, enum ssh_hmac_e type)
 {
     HMACCTX ctx = NULL;
@@ -461,17 +466,22 @@ error:
     return NULL;
 }
 
-void hmac_update(HMACCTX ctx, const void *data, size_t len)
+int hmac_update(HMACCTX ctx, const void *data, size_t len)
 {
-    EVP_DigestSignUpdate(ctx, data, len);
+    return EVP_DigestSignUpdate(ctx, data, len);
 }
 
-void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len)
+int hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, size_t *len)
 {
-    size_t res = 0;
-    EVP_DigestSignFinal(ctx, hashmacbuf, &res);
+    size_t res = *len;
+    int rc;
+    rc = EVP_DigestSignFinal(ctx, hashmacbuf, &res);
     EVP_MD_CTX_free(ctx);
-    *len = res;
+    if (rc == 1) {
+        *len = res;
+    }
+
+    return rc;
 }
 
 static void evp_cipher_init(struct ssh_cipher_struct *cipher)
@@ -515,7 +525,7 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher)
         cipher->cipher = EVP_bf_cbc();
         break;
         /* ciphers not using EVP */
-#endif
+#endif /* WITH_BLOWFISH_CIPHER */
     case SSH_AEAD_CHACHA20_POLY1305:
         SSH_LOG(SSH_LOG_WARNING, "The ChaCha cipher cannot be handled here");
         break;
@@ -822,12 +832,17 @@ struct chacha20_poly1305_keysched {
     EVP_CIPHER_CTX *main_evp;
     /* cipher handle used for encrypting the length field */
     EVP_CIPHER_CTX *header_evp;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* mac handle used for authenticating the packets */
     EVP_PKEY_CTX *pctx;
     /* Poly1305 key */
     EVP_PKEY *key;
     /* MD context for digesting data in poly1305 */
     EVP_MD_CTX *mctx;
+#else
+    /* MAC context used to do poly1305 */
+    EVP_MAC_CTX *mctx;
+#endif /* OPENSSL_VERSION_NUMBER */
 };
 
 static void
@@ -845,11 +860,16 @@ chacha20_poly1305_cleanup(struct ssh_cipher_struct *cipher)
     ctx->main_evp  = NULL;
     EVP_CIPHER_CTX_free(ctx->header_evp);
     ctx->header_evp = NULL;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* ctx->pctx is freed as part of MD context */
     EVP_PKEY_free(ctx->key);
     ctx->key = NULL;
     EVP_MD_CTX_free(ctx->mctx);
     ctx->mctx = NULL;
+#else
+    EVP_MAC_CTX_free(ctx->mctx);
+    ctx->mctx = NULL;
+#endif /* OPENSSL_VERSION_NUMBER */
 
     SAFE_FREE(cipher->chacha20_schedule);
 }
@@ -862,6 +882,9 @@ chacha20_poly1305_set_key(struct ssh_cipher_struct *cipher,
     struct chacha20_poly1305_keysched *ctx = NULL;
     uint8_t *u8key = key;
     int ret = SSH_ERROR, rv;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    EVP_MAC *mac = NULL;
+#endif
 
     if (cipher->chacha20_schedule == NULL) {
         ctx = calloc(1, sizeof(*ctx));
@@ -901,14 +924,30 @@ chacha20_poly1305_set_key(struct ssh_cipher_struct *cipher,
     /* The Poly1305 key initialization is delayed to the time we know
      * the actual key for packet so we do not need to create a bogus keys
      */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     ctx->mctx = EVP_MD_CTX_new();
     if (ctx->mctx == NULL) {
         SSH_LOG(SSH_LOG_WARNING, "EVP_MD_CTX_new failed");
         return SSH_ERROR;
     }
+#else
+    mac = EVP_MAC_fetch(NULL, "poly1305", NULL);
+    if (mac == NULL) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_fetch failed");
+        goto out;
+    }
+    ctx->mctx = EVP_MAC_CTX_new(mac);
+    if (ctx->mctx == NULL) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_CTX_new failed");
+        goto out;
+    }
+#endif /* OPENSSL_VERSION_NUMBER */
 
     ret = SSH_OK;
 out:
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    EVP_MAC_free(mac);
+#endif
     if (ret != SSH_OK) {
         chacha20_poly1305_cleanup(cipher);
     }
@@ -980,6 +1019,7 @@ chacha20_poly1305_packet_setup(struct ssh_cipher_struct *cipher,
 #endif /* DEBUG_CRYPTO */
 
     /* Set the Poly1305 key */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     if (ctx->key == NULL) {
         /* Poly1305 Initialization needs to know the actual key */
         ctx->key = EVP_PKEY_new_mac_key(EVP_PKEY_POLY1305, NULL,
@@ -1003,6 +1043,13 @@ chacha20_poly1305_packet_setup(struct ssh_cipher_struct *cipher,
             goto out;
         }
     }
+#else
+    rv = EVP_MAC_init(ctx->mctx, poly_key, POLY1305_KEYLEN, NULL);
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_init failed");
+        goto out;
+    }
+#endif /* OPENSSL_VERSION_NUMBER */
 
     ret = SSH_OK;
 out:
@@ -1080,6 +1127,7 @@ chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
 #endif /* DEBUG_CRYPTO */
 
     /* Calculate MAC of received data */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     rv = EVP_DigestSignUpdate(ctx->mctx, complete_packet,
                               encrypted_size + sizeof(uint32_t));
     if (rv != 1) {
@@ -1092,6 +1140,20 @@ chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
         SSH_LOG(SSH_LOG_WARNING, "poly1305 verify error");
         goto out;
     }
+#else
+    rv = EVP_MAC_update(ctx->mctx, complete_packet,
+                        encrypted_size + sizeof(uint32_t));
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_update failed");
+        goto out;
+    }
+
+    rv = EVP_MAC_final(ctx->mctx, tag, &taglen, POLY1305_TAGLEN);
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_final failed");
+        goto out;
+    }
+#endif /* OPENSSL_VERSION_NUMBER */
 
 #ifdef DEBUG_CRYPTO
     ssh_log_hexdump("calculated mac", tag, POLY1305_TAGLEN);
@@ -1182,6 +1244,7 @@ chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
     }
 
     /* step 4, compute the MAC */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     ret = EVP_DigestSignUpdate(ctx->mctx, out_packet, len);
     if (ret <= 0) {
         SSH_LOG(SSH_LOG_WARNING, "EVP_DigestSignUpdate failed");
@@ -1192,6 +1255,19 @@ chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
         SSH_LOG(SSH_LOG_WARNING, "EVP_DigestSignFinal failed");
         return;
     }
+#else
+    ret = EVP_MAC_update(ctx->mctx, (void*)out_packet, len);
+    if (ret != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_update failed");
+        return;
+    }
+
+    ret = EVP_MAC_final(ctx->mctx, tag, &taglen, POLY1305_TAGLEN);
+    if (ret != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MAC_final failed");
+        return;
+    }
+#endif /* OPENSSL_VERSION_NUMBER */
 }
 #endif /* defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305) */
 
@@ -1222,7 +1298,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .decrypt = evp_cipher_decrypt,
     .cleanup = evp_cipher_cleanup
   },
-#endif
+#endif /* WITH_BLOWFISH_CIPHER */
 #ifdef HAS_AES
   {
     .name = "aes128-ctr",
@@ -1398,10 +1474,10 @@ int ssh_crypto_init(void)
         /* Bit #57 denotes AES-NI instruction set extension */
         OPENSSL_ia32cap &= ~(1LL << 57);
     }
-#endif
+#endif /* CAN_DISABLE_AESNI */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();
-#endif
+#endif /* OPENSSL_VERSION_NUMBER */
 
 #if !defined(HAVE_OPENSSL_EVP_CHACHA20) || !defined(HAVE_OPENSSL_EVP_POLY1305)
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
@@ -1436,9 +1512,151 @@ void ssh_crypto_finalize(void)
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
-#endif
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
 
     libcrypto_initialized = 0;
 }
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+/**
+ * @internal
+ * @brief Create EVP_PKEY from parameters
+ *
+ * @param[in] name Algorithm to use. For more info see manpage of EVP_PKEY_CTX_new_from_name
+ *
+ * @param[in] param_bld Constructed param builder for the pkey
+ *
+ * @param[out] pkey Created EVP_PKEY variable
+ *
+ * @param[in] selection Reference selections at man EVP_PKEY_FROMDATA
+ *
+ * @return 0 on success, -1 on error
+ */
+int evp_build_pkey(const char* name, OSSL_PARAM_BLD *param_bld,
+                   EVP_PKEY **pkey, int selection)
+{
+    int rc;
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_name(NULL, name, NULL);
+    OSSL_PARAM *params = NULL;
+
+    if (ctx == NULL) {
+        return -1;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(param_bld);
+    if (params == NULL) {
+        EVP_PKEY_CTX_free(ctx);
+        return -1;
+    }
+
+    rc = EVP_PKEY_fromdata_init(ctx);
+    if (rc != 1) {
+        OSSL_PARAM_free(params);
+        EVP_PKEY_CTX_free(ctx);
+        return -1;
+    }
+
+    rc = EVP_PKEY_fromdata(ctx, pkey, selection, params);
+    if (rc != 1) {
+        OSSL_PARAM_free(params);
+        EVP_PKEY_CTX_free(ctx);
+        return -1;
+    }
+
+    OSSL_PARAM_free(params);
+    EVP_PKEY_CTX_free(ctx);
+
+    return SSH_OK;
+}
+
+/**
+ * @brief creates a copy of EVP_PKEY
+ *
+ * @param[in] name Algorithm to use. For more info see manpage of
+ *                 EVP_PKEY_CTX_new_from_name
+ *
+ * @param[in] key Key being duplicated from
+ *
+ * @param[in] demote Same as at pki_key_dup, only the public
+ *                   part of the key gets duplicated if true
+ *
+ * @param[out] new_key The key where the duplicate is saved
+ *
+ * @return 0 on success, -1 on error
+ */
+static int evp_dup_pkey(const char* name, const ssh_key key, int demote,
+                        ssh_key new_key)
+{
+    int rc;
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_name(NULL, name, NULL);
+    OSSL_PARAM *params = NULL;
+
+    if (ctx == NULL) {
+        return -1;
+    }
+
+    if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
+        rc = EVP_PKEY_todata(key->key, EVP_PKEY_KEYPAIR, &params);
+        if (rc != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            return -1;
+        }
+
+        rc = EVP_PKEY_fromdata_init(ctx);
+        if (rc != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            OSSL_PARAM_free(params);
+            return -1;
+        }
+
+        rc = EVP_PKEY_fromdata(ctx, &(new_key->key), EVP_PKEY_KEYPAIR, params);
+        if (rc != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            OSSL_PARAM_free(params);
+            return -1;
+        }
+    } else {
+        rc = EVP_PKEY_todata(key->key, EVP_PKEY_PUBLIC_KEY, &params);
+        if (rc != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            return -1;
+        }
+
+        rc = EVP_PKEY_fromdata_init(ctx);
+        if (rc != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            OSSL_PARAM_free(params);
+            return -1;
+        }
+
+        rc = EVP_PKEY_fromdata(ctx, &(new_key->key), EVP_PKEY_PUBLIC_KEY, params);
+        if (rc != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            OSSL_PARAM_free(params);
+            return -1;
+        }
+    }
+
+    OSSL_PARAM_free(params);
+    EVP_PKEY_CTX_free(ctx);
+
+    return SSH_OK;
+}
+
+int evp_dup_dsa_pkey(const ssh_key key, ssh_key new, int demote)
+{
+    return evp_dup_pkey("DSA", key, demote, new);
+}
+
+int evp_dup_rsa_pkey(const ssh_key key, ssh_key new, int demote)
+{
+    return evp_dup_pkey("RSA", key, demote, new);
+}
+
+int evp_dup_ecdsa_pkey(const ssh_key key, ssh_key new, int demote)
+{
+    return evp_dup_pkey("EC", key, demote, new);
+}
+#endif /* OPENSSL_VERSION_NUMBER */
 
 #endif /* LIBCRYPTO */

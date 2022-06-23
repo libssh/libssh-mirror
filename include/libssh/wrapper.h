@@ -96,9 +96,9 @@ EVPCTX evp_init(int nid);
 void evp_update(EVPCTX ctx, const void *data, size_t len);
 void evp_final(EVPCTX ctx, unsigned char *md, unsigned int *mdlen);
 
-HMACCTX hmac_init(const void *key, size_t len, enum ssh_hmac_e type);
-void hmac_update(HMACCTX c, const void *data, size_t len);
-void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
+HMACCTX hmac_init(const void *key,size_t len, enum ssh_hmac_e type);
+int hmac_update(HMACCTX c, const void *data, size_t len);
+int hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, size_t *len);
 size_t hmac_digest_len(enum ssh_hmac_e type);
 
 int ssh_kdf(struct ssh_crypto_struct *crypto,
@@ -119,5 +119,12 @@ void ssh_cipher_clear(struct ssh_cipher_struct *cipher);
 struct ssh_hmac_struct *ssh_get_hmactab(void);
 struct ssh_cipher_struct *ssh_get_ciphertab(void);
 const char *ssh_hmac_type_to_string(enum ssh_hmac_e hmac_type, bool etm);
+
+#if defined(HAVE_LIBCRYPTO) && OPENSSL_VERSION_NUMBER >= 0x30000000L
+int evp_build_pkey(const char* name, OSSL_PARAM_BLD *param_bld, EVP_PKEY **pkey, int selection);
+int evp_dup_dsa_pkey(const ssh_key key, ssh_key new, int demote);
+int evp_dup_rsa_pkey(const ssh_key key, ssh_key new, int demote);
+int evp_dup_ecdsa_pkey(const ssh_key key, ssh_key new, int demote);
+#endif /* HAVE_LIBCRYPTO && OPENSSL_VERSION_NUMBER */
 
 #endif /* WRAPPER_H_ */

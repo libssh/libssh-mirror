@@ -447,17 +447,21 @@ error:
     return NULL;
 }
 
-void hmac_update(HMACCTX c, const void *data, size_t len)
+/* mbedtls returns 0 on success, but in this context
+ * success is 1 */
+int hmac_update(HMACCTX c, const void *data, size_t len)
 {
-    mbedtls_md_hmac_update(c, data, len);
+    return !mbedtls_md_hmac_update(c, data, len);
 }
 
-void hmac_final(HMACCTX c, unsigned char *hashmacbuf, unsigned int *len)
+int hmac_final(HMACCTX c, unsigned char *hashmacbuf, size_t *len)
 {
-    *len = mbedtls_md_get_size(c->MBEDTLS_PRIVATE(md_info));
-    mbedtls_md_hmac_finish(c, hashmacbuf);
+    int rc;
+    *len = (unsigned int)mbedtls_md_get_size(c->md_info);
+    rc = !mbedtls_md_hmac_finish(c, hashmacbuf);
     mbedtls_md_free(c);
     SAFE_FREE(c);
+    return rc;
 }
 
 static int
