@@ -1406,13 +1406,21 @@ int ssh_userauth_agent_pubkey(ssh_session session,
     key->type = publickey->type;
     key->type_c = ssh_key_type_to_char(key->type);
     key->flags = SSH_KEY_FLAG_PUBLIC;
+#if !defined(HAVE_LIBCRYPTO) || OPENSSL_VERSION_NUMBER < 0x30000000L
     key->dsa = publickey->dsa_pub;
     key->rsa = publickey->rsa_pub;
+#else
+    key->key = publickey->key_pub;
+#endif /* OPENSSL_VERSION_NUMBER */
 
     rc = ssh_userauth_agent_publickey(session, username, key);
 
+#if !defined(HAVE_LIBCRYPTO) || OPENSSL_VERSION_NUMBER < 0x30000000L
     key->dsa = NULL;
     key->rsa = NULL;
+#else
+    key->key = NULL;
+#endif /* OPENSSL_VERSION_NUMBER */
     ssh_key_free(key);
 
     return rc;

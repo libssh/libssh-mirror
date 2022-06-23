@@ -55,7 +55,7 @@
 #  undef unlink
 #  define unlink _unlink
 # endif /* HAVE_IO_H */
-#endif
+#endif /* _WIN32 */
 
 #include "libssh/libssh.h"
 #include "libssh/session.h"
@@ -69,7 +69,7 @@
 
 #ifndef MAX_LINE_SIZE
 #define MAX_LINE_SIZE 4096
-#endif
+#endif /* NOT MAX_LINE_SIZE */
 
 #define PKCS11_URI "pkcs11:"
 
@@ -117,7 +117,7 @@ const char *ssh_pki_key_ecdsa_name(const ssh_key key)
     return pki_key_ecdsa_nid_to_name(key->ecdsa_nid);
 #else
     return NULL;
-#endif
+#endif /* HAVE_ECC */
 }
 
 /**
@@ -157,10 +157,20 @@ void ssh_key_clean (ssh_key key)
     if(key->rsa) gcry_sexp_release(key->rsa);
     if(key->ecdsa) gcry_sexp_release(key->ecdsa);
 #elif defined HAVE_LIBCRYPTO
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     if(key->dsa) DSA_free(key->dsa);
     if(key->rsa) RSA_free(key->rsa);
+#else
+    if(key->key) EVP_PKEY_free(key->key);
+#endif /* OPENSSL_VERSION_NUMBER */
 #ifdef HAVE_OPENSSL_ECC
+/* TODO Change to new API when the OpenSSL will support export of uncompressed EC keys
+ * https://github.com/openssl/openssl/pull/16624
+ * Move whole HAVE_OPENSSL_EC into #if < 0x3 above
+ */
+#if 1
     if(key->ecdsa) EC_KEY_free(key->ecdsa);
+#endif
 #endif /* HAVE_OPENSSL_ECC */
 #elif defined HAVE_LIBMBEDCRYPTO
     if (key->rsa != NULL) {
@@ -181,7 +191,7 @@ void ssh_key_clean (ssh_key key)
         explicit_bzero(key->ed25519_privkey, ED25519_KEY_LEN);
 #else
         explicit_bzero(key->ed25519_privkey, sizeof(ed25519_privkey));
-#endif
+#endif /* HAVE_OPENSSL_ED25519 */
         SAFE_FREE(key->ed25519_privkey);
     }
     SAFE_FREE(key->ed25519_pubkey);
@@ -200,8 +210,16 @@ void ssh_key_clean (ssh_key key)
     key->type=SSH_KEYTYPE_UNKNOWN;
     key->ecdsa_nid = 0;
     key->type_c=NULL;
+#if !defined(HAVE_LIBCRYPTO) || OPENSSL_VERSION_NUMBER < 0x30000000L
     key->dsa = NULL;
     key->rsa = NULL;
+#else
+    key->key = NULL;
+#endif /* OPENSSL_VERSION_NUMBER */
+/* TODO Change to new API when the OpenSSL will support export of uncompressed EC keys
+ * https://github.com/openssl/openssl/pull/16624
+ * Move into #if OPENSSL_VERSION_NUMBER < 0x3 above
+ */
     key->ecdsa = NULL;
 }
 
@@ -399,7 +417,7 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
             return 0;
         }
     }
-#endif
+#endif /* WITH_SERVER */
     else {
         SSH_LOG(SSH_LOG_WARN, "Session invalid: not set as client nor server");
         return 0;
@@ -760,14 +778,14 @@ void ssh_signature_free(ssh_signature sig)
         case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
             gcry_sexp_release(sig->dsa_sig);
-#endif
+#endif /* HAVE_LIBGCRYPT */
             break;
         case SSH_KEYTYPE_RSA:
 #ifdef HAVE_LIBGCRYPT
             gcry_sexp_release(sig->rsa_sig);
 #elif defined HAVE_LIBMBEDCRYPTO
             SAFE_FREE(sig->rsa_sig);
-#endif
+#endif /* HAVE_LIBGCRYPT */
             break;
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
@@ -778,14 +796,14 @@ void ssh_signature_free(ssh_signature sig)
 #elif defined HAVE_LIBMBEDCRYPTO
             bignum_safe_free(sig->ecdsa_sig.r);
             bignum_safe_free(sig->ecdsa_sig.s);
-#endif
+#endif /* HAVE_GCRYPT_ECC */
             break;
         case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_SK_ED25519:
 #ifndef HAVE_OPENSSL_ED25519
             /* When using OpenSSL, the signature is stored in sig->raw_sig */
             SAFE_FREE(sig->ed25519_sig);
-#endif
+#endif /* HAVE_OPENSSL_ED25519 */
             break;
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
@@ -969,7 +987,7 @@ int ssh_pki_import_privkey_file(const char *filename,
         rc = pki_uri_import(filename, pkey, SSH_KEY_PRIVATE);
         return rc;
     }
-#endif
+#endif /* WITH_PKCS11_URI */
 
     file = fopen(filename, "rb");
     if (file == NULL) {
@@ -1125,10 +1143,15 @@ ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key)
     pub->type = tmp->type;
     pub->type_c = tmp->type_c;
 
+#if !defined(HAVE_LIBCRYPTO) || OPENSSL_VERSION_NUMBER < 0x30000000L
     pub->dsa_pub = tmp->dsa;
     tmp->dsa = NULL;
     pub->rsa_pub = tmp->rsa;
     tmp->rsa = NULL;
+#else
+    pub->key_pub = tmp->key;
+    tmp->key = NULL;
+#endif /* OPENSSL_VERSION_NUMBER */
 
     ssh_key_free(tmp);
 
@@ -1146,8 +1169,12 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key)
     }
 
     privkey->type = key->type;
+#if !defined(HAVE_LIBCRYPTO) || OPENSSL_VERSION_NUMBER < 0x30000000L
     privkey->dsa_priv = key->dsa;
     privkey->rsa_priv = key->rsa;
+#else
+    privkey->key_priv = key->key;
+#endif /* OPENSSL_VERSION_NUMBER */
 
     return privkey;
 }
@@ -1193,7 +1220,7 @@ int pki_import_privkey_buffer(enum ssh_keytypes_e type,
                                ssh_string_len(pubkey));
                 ssh_log_hexdump("privkey", ssh_string_data(privkey),
                                ssh_string_len(privkey));
-#endif
+#endif /* DEBUG_CRYPTO */
                 ssh_string_burn(p);
                 SSH_STRING_FREE(p);
                 ssh_string_burn(q);
@@ -1234,7 +1261,7 @@ int pki_import_privkey_buffer(enum ssh_keytypes_e type,
                                ssh_string_len(iqmp));
                 ssh_log_hexdump("p", ssh_string_data(p), ssh_string_len(p));
                 ssh_log_hexdump("q", ssh_string_data(q), ssh_string_len(q));
-#endif
+#endif /* DEBUG_CRYPTO */
                 ssh_string_burn(n);
                 SSH_STRING_FREE(n);
                 ssh_string_burn(e);
@@ -1290,7 +1317,7 @@ int pki_import_privkey_buffer(enum ssh_keytypes_e type,
                 }
             }
             break;
-#endif
+#endif /* HAVE_ECC */
         case SSH_KEYTYPE_ED25519:
             {
                 ssh_string pubkey = NULL, privkey = NULL;
@@ -1371,7 +1398,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_log_hexdump("p", ssh_string_data(p), ssh_string_len(p));
                 ssh_log_hexdump("q", ssh_string_data(q), ssh_string_len(q));
                 ssh_log_hexdump("g", ssh_string_data(g), ssh_string_len(g));
-#endif
+#endif /* DEBUG_CRYPTO */
                 ssh_string_burn(p);
                 SSH_STRING_FREE(p);
                 ssh_string_burn(q);
@@ -1401,7 +1428,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
 #ifdef DEBUG_CRYPTO
                 ssh_log_hexdump("e", ssh_string_data(e), ssh_string_len(e));
                 ssh_log_hexdump("n", ssh_string_data(n), ssh_string_len(n));
-#endif
+#endif /* DEBUG_CRYPTO */
                 ssh_string_burn(e);
                 SSH_STRING_FREE(e);
                 ssh_string_burn(n);
@@ -1462,7 +1489,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 }
             }
             break;
-#endif
+#endif /* HAVE_ECC */
         case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_SK_ED25519:
         {
@@ -1804,7 +1831,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
         rc = pki_uri_import(filename, pkey, SSH_KEY_PUBLIC);
         return rc;
     }
-#endif
+#endif /* WITH_PKCS11_URI */
 
     file = fopen(filename, "rb");
     if (file == NULL) {
@@ -2022,7 +2049,7 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
                 goto error;
             }
             break;
-#endif
+#endif /* HAVE_ECC */
         case SSH_KEYTYPE_ED25519:
             rc = pki_key_generate_ed25519(key);
             if (rc == SSH_ERROR) {
