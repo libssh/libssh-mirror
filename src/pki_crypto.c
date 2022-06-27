@@ -3260,7 +3260,17 @@ int ssh_key_size(ssh_key key)
             return SSH_ERROR;
         }
         bits = EVP_PKEY_bits(pkey);
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
         EVP_PKEY_free(pkey);
+/* TODO Change to new API when the OpenSSL will support export of uncompressed EC keys
+ * https://github.com/openssl/openssl/pull/16624
+ * no need of this free
+ */
+#else
+        if (is_ecdsa_key_type(key->type)) {
+            EVP_PKEY_free(pkey);
+        }
+#endif /* OPENSSL_VERSION_NUMBER */
         return bits;
     case SSH_KEYTYPE_ED25519:
     case SSH_KEYTYPE_ED25519_CERT01:
