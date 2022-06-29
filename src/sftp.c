@@ -2178,8 +2178,8 @@ ssize_t sftp_write(sftp_file file, const void *buf, size_t count) {
     sftp_set_error(sftp, SSH_FX_FAILURE);
     return -1;
   }
-  packetlen=ssh_buffer_get_len(buffer);
   len = sftp_packet_write(file->sftp, SSH_FXP_WRITE, buffer);
+  packetlen=ssh_buffer_get_len(buffer);
   SSH_BUFFER_FREE(buffer);
   if (len < 0) {
     return -1;
