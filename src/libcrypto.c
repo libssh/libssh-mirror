@@ -73,9 +73,13 @@
 
 #include "libssh/crypto.h"
 
-#ifdef HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID
+#ifdef HAVE_OPENSSL_EVP_KDF_CTX
 #include <openssl/kdf.h>
-#endif
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/param_build.h>
+#include <openssl/core_names.h>
+#endif /* OPENSSL_VERSION_NUMBER */
+#endif /* HAVE_OPENSSL_EVP_KDF_CTX */
 
 #include "libssh/crypto.h"
 
@@ -347,7 +351,8 @@ void md5_final(unsigned char *md, MD5CTX c)
     EVP_MD_CTX_free(c);
 }
 
-#ifdef HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID
+#ifdef HAVE_OPENSSL_EVP_KDF_CTX
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 static const EVP_MD *sshkdf_digest_to_md(enum ssh_kdf_digest digest_type)
 {
     switch (digest_type) {
@@ -362,19 +367,50 @@ static const EVP_MD *sshkdf_digest_to_md(enum ssh_kdf_digest digest_type)
     }
     return NULL;
 }
+#else
+static const char *sshkdf_digest_to_md(enum ssh_kdf_digest digest_type)
+{
+    switch (digest_type) {
+    case SSH_KDF_SHA1:
+        return SN_sha1;
+    case SSH_KDF_SHA256:
+        return SN_sha256;
+    case SSH_KDF_SHA384:
+        return SN_sha384;
+    case SSH_KDF_SHA512:
+        return SN_sha512;
+    }
+    return NULL;
+}
+#endif /* OPENSSL_VERSION_NUMBER */
 
 int ssh_kdf(struct ssh_crypto_struct *crypto,
             unsigned char *key, size_t key_len,
             int key_type, unsigned char *output,
             size_t requested_len)
 {
+    int rc = -1;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     EVP_KDF_CTX *ctx = EVP_KDF_CTX_new_id(EVP_KDF_SSHKDF);
-    int rc;
+#else
+    EVP_KDF *kdf = EVP_KDF_fetch(NULL, "SSHKDF", NULL);
+    EVP_KDF_CTX *ctx = EVP_KDF_CTX_new(kdf);
+    OSSL_PARAM_BLD *param_bld = OSSL_PARAM_BLD_new();
+    OSSL_PARAM *params = NULL;
+    const char *md = sshkdf_digest_to_md(crypto->digest_type);
 
-    if (ctx == NULL) {
+    EVP_KDF_free(kdf);
+    if (param_bld == NULL) {
+        EVP_KDF_CTX_free(ctx);
         return -1;
     }
+#endif /* OPENSSL_VERSION_NUMBER */
 
+    if (ctx == NULL) {
+        goto out;
+    }
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     rc = EVP_KDF_ctrl(ctx, EVP_KDF_CTRL_SET_MD,
                       sshkdf_digest_to_md(crypto->digest_type));
     if (rc != 1) {
@@ -402,8 +438,60 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
     if (rc != 1) {
         goto out;
     }
+#else
+    rc = OSSL_PARAM_BLD_push_utf8_string(param_bld, OSSL_KDF_PARAM_DIGEST,
+                                         md, strlen(md));
+    if (rc != 1) {
+        rc = -1;
+        goto out;
+    }
+    rc = OSSL_PARAM_BLD_push_octet_string(param_bld, OSSL_KDF_PARAM_KEY,
+                                          key, key_len);
+    if (rc != 1) {
+        rc = -1;
+        goto out;
+    }
+    rc = OSSL_PARAM_BLD_push_octet_string(param_bld,
+                                          OSSL_KDF_PARAM_SSHKDF_XCGHASH,
+                                          crypto->secret_hash,
+                                          crypto->digest_len);
+    if (rc != 1) {
+        rc = -1;
+        goto out;
+    }
+    rc = OSSL_PARAM_BLD_push_octet_string(param_bld,
+                                          OSSL_KDF_PARAM_SSHKDF_SESSION_ID,
+                                          crypto->session_id,
+                                          crypto->session_id_len);
+    if (rc != 1) {
+        rc = -1;
+        goto out;
+    }
+    rc = OSSL_PARAM_BLD_push_utf8_string(param_bld, OSSL_KDF_PARAM_SSHKDF_TYPE,
+                                         (const char*)&key_type, 1);
+    if (rc != 1) {
+        rc = -1;
+        goto out;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(param_bld);
+    if (params == NULL) {
+        rc = -1;
+        goto out;
+    }
+    
+    rc = EVP_KDF_derive(ctx, output, requested_len, params);
+    if (rc != 1) {
+        rc = -1;
+        goto out;
+    }
+#endif /* OPENSSL_VERSION_NUMBER */
 
 out:
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    OSSL_PARAM_BLD_free(param_bld);
+    OSSL_PARAM_free(params);
+#endif
     EVP_KDF_CTX_free(ctx);
     if (rc < 0) {
         return rc;
@@ -420,7 +508,8 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
     return sshkdf_derive_key(crypto, key, key_len,
                              key_type, output, requested_len);
 }
-#endif /* HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID */
+#endif /* HAVE_OPENSSL_EVP_KDF_CTX */
+
 HMACCTX hmac_init(const void *key, size_t len, enum ssh_hmac_e type)
 {
     HMACCTX ctx = NULL;
