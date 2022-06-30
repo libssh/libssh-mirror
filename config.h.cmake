@@ -114,8 +114,8 @@
 /* Define to 1 if you have the `EVP_chacha20' function. */
 #cmakedefine HAVE_OPENSSL_EVP_CHACHA20 1
 
-/* Define to 1 if you have the `EVP_KDF_CTX_new_id' function. */
-#cmakedefine HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID 1
+/* Define to 1 if you have the `EVP_KDF_CTX_new_id' or `EVP_KDF_CTX_new` function. */
+#cmakedefine HAVE_OPENSSL_EVP_KDF_CTX 1
 
 /* Define to 1 if you have the `FIPS_mode' function. */
 #cmakedefine HAVE_OPENSSL_FIPS_MODE 1
