@@ -161,12 +161,14 @@ static int _ssh_finalize(unsigned destructor) {
 
         if (_ssh_initialized > 1) {
             _ssh_initialized--;
-            goto _ret;
+            ssh_mutex_unlock(&ssh_init_mutex);
+            return 0;
         }
 
         if (_ssh_initialized == 1) {
             if (_ssh_init_ret < 0) {
-                goto _ret;
+                ssh_mutex_unlock(&ssh_init_mutex);
+                return 0;
             }
         }
     }
@@ -181,10 +183,17 @@ static int _ssh_finalize(unsigned destructor) {
 
     _ssh_initialized = 0;
 
-_ret:
     if (!destructor) {
         ssh_mutex_unlock(&ssh_init_mutex);
     }
+
+#if (defined(_WIN32) && !defined(HAVE_PTHREAD))
+    if (ssh_init_mutex != NULL) {
+        DeleteCriticalSection(ssh_init_mutex);
+        SAFE_FREE(ssh_init_mutex);
+    }
+#endif
+
     return 0;
 }
 
