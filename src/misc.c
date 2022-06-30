@@ -1941,4 +1941,28 @@ char *ssh_strreplace(const char *src, const char *pattern, const char *replace)
     }
 }
 
+/**
+ * @internal
+ *
+ * @brief Processes errno into error string
+ *
+ * @param[in] err_num The errno value
+ * @param[out] buf Pointer to a place where the string could be saved
+ * @param[in] buflen The allocated size of buf
+ *
+ * @return error string
+ */
+char *ssh_strerror(int err_num, char *buf, size_t buflen)
+{
+#if defined(_WIN32)
+    strerror_s(buf, buflen, err_num);
+    return buf;
+#elif !defined(_GNU_SOURCE)
+    strerror_r(err_num, buf, buflen);
+    return buf;
+#else
+    return strerror_r(err_num, buf, buflen);
+#endif /* _WIN32 */
+}
+
 /** @} */
