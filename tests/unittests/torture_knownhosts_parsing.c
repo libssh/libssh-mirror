@@ -4,10 +4,10 @@
 
 #define LIBSSH_STATIC
 #include <libssh/priv.h>
-#include "torture.h"
 
 #include "knownhosts.c"
 
+#include "torture.h"
 #if (defined _WIN32) || (defined _WIN64)
 #ifndef S_IRWXO
 #define S_IRWXO 0

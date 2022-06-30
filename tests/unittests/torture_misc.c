@@ -13,8 +13,8 @@
 #define LIBSSH_STATIC
 #include <libssh/priv.h>
 
-#include "torture.h"
 #include "misc.c"
+#include "torture.h"
 #include "error.c"
 
 #define TORTURE_TEST_DIR "/usr/local/bin/truc/much/.."

@@ -6,10 +6,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "pki.c"
 #include "torture.h"
 #include "torture_pki.h"
 #include "torture_key.h"
-#include "pki.c"
 
 #define LIBSSH_ECDSA_TESTKEY "libssh_testkey.id_"
 #define LIBSSH_ECDSA_TESTKEY_PEM "libssh_testkey_pem.id_"
