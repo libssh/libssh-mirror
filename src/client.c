@@ -77,8 +77,10 @@ static void socket_callback_connected(int code, int errno_code, void *user)
 	if(code == SSH_SOCKET_CONNECTED_OK)
 		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
 	else {
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
 		session->session_state=SSH_SESSION_STATE_ERROR;
-		ssh_set_error(session,SSH_FATAL,"%s",strerror(errno_code));
+		ssh_set_error(session,SSH_FATAL,"%s",
+                      ssh_strerror(errno_code, err_msg, SSH_ERRNO_MSG_MAX));
 	}
 	session->ssh_connection_callback(session);
 }
