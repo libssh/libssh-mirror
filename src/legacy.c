@@ -622,8 +622,12 @@ int ssh_publickey_to_file(ssh_session session,
 
     fp = fopen(file, "w+");
     if (fp == NULL) {
-        ssh_set_error(session, SSH_REQUEST_DENIED,
-                "Error opening %s: %s", file, strerror(errno));
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
+        ssh_set_error(session,
+                      SSH_REQUEST_DENIED,
+                      "Error opening %s: %s",
+                      file,
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_ERROR;
     }
 
