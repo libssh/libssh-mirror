@@ -515,10 +515,11 @@ static int ssh_retrieve_dhgroup(char *moduli_file,
         moduli = fopen(MODULI_FILE, "r");
 
     if (moduli == NULL) {
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
         SSH_LOG(SSH_LOG_WARNING,
                 "Unable to open moduli file: %s",
-                strerror(errno));
-        return ssh_fallback_group(pmax, p, g);
+                ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
+                return ssh_fallback_group(pmax, p, g);
     }
 
     *size = 0;
