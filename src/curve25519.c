@@ -136,7 +136,7 @@ static int ssh_curve25519_init(ssh_session session)
         crypto_scalarmult_base(session->next_crypto->curve25519_client_pubkey,
                                session->next_crypto->curve25519_privkey);
     }
-#endif /* HAVE_OPENSSL_X25519 */
+#endif /* defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_X25519) */
 
     return SSH_OK;
 }
@@ -255,7 +255,7 @@ out:
         crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
                           session->next_crypto->curve25519_server_pubkey);
     }
-#endif /* HAVE_OPENSSL_X25519 */
+#endif /* defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_X25519) */
 
     bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, &session->next_crypto->shared_secret);
     if (session->next_crypto->shared_secret == NULL) {
