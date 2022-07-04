@@ -275,9 +275,6 @@ int hmac_update(HMACCTX c, const void *data, size_t len) {
 
 int hmac_final(HMACCTX c, unsigned char *hashmacbuf, size_t *len) {
   unsigned int tmp = gcry_md_get_algo_dlen(gcry_md_get_algo(c));
-  if (tmp > SIZE_MAX) {
-      return 0;
-  }
   *len = (size_t)tmp;
   memcpy(hashmacbuf, gcry_md_read(c, 0), *len);
   gcry_md_close(c);
