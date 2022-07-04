@@ -1,9 +1,30 @@
-ChangeLog
-==========
+CHANGELOG
+=========
 
-version 0.10.0 (released 2020-xx-xx)
-  * Support for Smart Cards
-  * Support for chacha20-poly1305@openssh.com with libgcrypt
+version 0.10.0 (released 2022-07-xx)
+  * Added support for OpenSSL 3.0
+  * Added support for mbedTLS 3
+  * Added support for Smart Cards  (through openssl pkcs11 engine)
+  * Added support for chacha20-poly1305@openssh.com with libgcrypt
+  * Added support ed25519 keys in PEM files
+  * Added support for sk-ecdsa and sk-ed25519 (server side)
+  * Added support for limiting RSA key sizes and not accepting small one by
+    default
+  * Added support for ssh-agent on Windows
+  * Added ssh_userauth_publickey_auto_get_current_identity() API
+  * Added ssh_vlog() API
+  * Added ssh_send_issue_banner() API
+  * Added ssh_session_set_disconnect_message() API
+  * Added new configuration options:
+    + IdentityAgent
+    + ModuliFile
+  * Provided X11 client example
+  * Disabled DSA support at build time by default (will be removed in the next
+    release)
+  * Deprecated the SCP API!
+  * Deprecated old pubkey, privatekey API
+  * Avoided some needless large stack buffers to minimize memory footprint
+  * Removed support for OpenSSL < 1.0.1
 
 version 0.9.6 (released 2021-08-26)
   * CVE-2021-3634: Fix possible heap-buffer overflow when rekeying with
