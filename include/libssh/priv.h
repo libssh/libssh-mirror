@@ -429,6 +429,7 @@ void ssh_agent_state_free(void *data);
 
 bool is_ssh_initialized(void);
 
+#define SSH_ERRNO_MSG_MAX   1024
 char *ssh_strerror(int err_num, char *buf, size_t buflen);
 
 #endif /* _LIBSSH_PRIV_H */
