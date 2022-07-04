@@ -1126,7 +1126,7 @@ int ssh_get_publickey_hash(const ssh_key key,
                            size_t *hlen)
 {
     ssh_string blob;
-    unsigned char *h;
+    unsigned char *h = NULL;
     int rc;
 
     rc = ssh_pki_export_pubkey_blob(key, &blob);
