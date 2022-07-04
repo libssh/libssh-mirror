@@ -258,6 +258,7 @@ static int agent_talk(struct ssh_session_struct *session,
   uint32_t len = 0;
   uint8_t tmpbuf[4];
   uint8_t *payload = tmpbuf;
+  char err_msg[SSH_ERRNO_MSG_MAX] = {0};
 
   len = ssh_buffer_get_len(request);
   SSH_LOG(SSH_LOG_TRACE, "Request length: %u", len);
@@ -268,20 +269,20 @@ static int agent_talk(struct ssh_session_struct *session,
     if (atomicio(session->agent, ssh_buffer_get(request), len, 0)
         != len) {
       SSH_LOG(SSH_LOG_WARN, "atomicio sending request failed: %s",
-          strerror(errno));
+          ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
       return -1;
     }
   } else {
     SSH_LOG(SSH_LOG_WARN,
         "atomicio sending request length failed: %s",
-        strerror(errno));
+        ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
     return -1;
   }
 
   /* wait for response, read the length of the response packet */
   if (atomicio(session->agent, payload, 4, 1) != 4) {
     SSH_LOG(SSH_LOG_WARN, "atomicio read response length failed: %s",
-        strerror(errno));
+        ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
     return -1;
   }
 
