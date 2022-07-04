@@ -422,6 +422,7 @@ void ssh_socket_free(ssh_socket s)
 int ssh_socket_unix(ssh_socket s, const char *path)
 {
     struct sockaddr_un sunaddr;
+    char err_msg[SSH_ERRNO_MSG_MAX] = {0};
     socket_t fd;
     sunaddr.sun_family = AF_UNIX;
     snprintf(sunaddr.sun_path, sizeof(sunaddr.sun_path), "%s", path);
@@ -430,7 +431,7 @@ int ssh_socket_unix(ssh_socket s, const char *path)
     if (fd == SSH_INVALID_SOCKET) {
         ssh_set_error(s->session, SSH_FATAL,
                       "Error from socket(AF_UNIX, SOCK_STREAM, 0): %s",
-                      strerror(errno));
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return -1;
     }
 
@@ -438,7 +439,7 @@ int ssh_socket_unix(ssh_socket s, const char *path)
     if (fcntl(fd, F_SETFD, 1) == -1) {
         ssh_set_error(s->session, SSH_FATAL,
                       "Error from fcntl(fd, F_SETFD, 1): %s",
-                      strerror(errno));
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         CLOSE_SOCKET(fd);
         return -1;
     }
@@ -447,7 +448,7 @@ int ssh_socket_unix(ssh_socket s, const char *path)
     if (connect(fd, (struct sockaddr *) &sunaddr, sizeof(sunaddr)) < 0) {
         ssh_set_error(s->session, SSH_FATAL, "Error from connect(%s): %s",
                       path,
-                      strerror(errno));
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         CLOSE_SOCKET(fd);
         return -1;
     }
@@ -487,7 +488,9 @@ void ssh_socket_close(ssh_socket s)
         kill(pid, SIGTERM);
         while (waitpid(pid, &status, 0) == -1) {
             if (errno != EINTR) {
-                SSH_LOG(SSH_LOG_WARN, "waitpid failed: %s", strerror(errno));
+                char err_msg[SSH_ERRNO_MSG_MAX] = {0};
+                SSH_LOG(SSH_LOG_WARN, "waitpid failed: %s",
+                        ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 return;
             }
         }
@@ -678,11 +681,12 @@ int ssh_socket_nonblocking_flush(ssh_socket s)
                                     s->last_errno,
                                     s->callbacks->userdata);
         } else {
+            char err_msg[SSH_ERRNO_MSG_MAX] = {0};
             ssh_set_error(session,
                           SSH_FATAL,
                           "Writing packet: error on socket (or connection "
                           "closed): %s",
-                          strerror(s->last_errno));
+                          ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         }
 
         return SSH_ERROR;
@@ -711,11 +715,12 @@ int ssh_socket_nonblocking_flush(ssh_socket s)
                                         s->last_errno,
                                         s->callbacks->userdata);
             } else {
+                char err_msg[SSH_ERRNO_MSG_MAX] = {0};
                 ssh_set_error(session,
                               SSH_FATAL,
                               "Writing packet: error on socket (or connection "
                               "closed): %s",
-                              strerror(s->last_errno));
+                              ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
             }
 
             return SSH_ERROR;
