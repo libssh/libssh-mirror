@@ -516,10 +516,12 @@ int ssh_write_knownhost(ssh_session session)
     errno = 0;
     file = fopen(session->opts.knownhosts, "a");
     if (file == NULL) {
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
         if (errno == ENOENT) {
             dir = ssh_dirname(session->opts.knownhosts);
             if (dir == NULL) {
-                ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+                ssh_set_error(session, SSH_FATAL,
+                        "%s", ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 return SSH_ERROR;
             }
 
@@ -527,7 +529,7 @@ int ssh_write_knownhost(ssh_session session)
             if (rc < 0) {
                 ssh_set_error(session, SSH_FATAL,
                               "Cannot create %s directory: %s",
-                              dir, strerror(errno));
+                              dir, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 SAFE_FREE(dir);
                 return SSH_ERROR;
             }
@@ -539,13 +541,15 @@ int ssh_write_knownhost(ssh_session session)
                 ssh_set_error(session, SSH_FATAL,
                               "Couldn't open known_hosts file %s"
                               " for appending: %s",
-                              session->opts.knownhosts, strerror(errno));
+                              session->opts.knownhosts,
+                              ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 return SSH_ERROR;
             }
         } else {
             ssh_set_error(session, SSH_FATAL,
                           "Couldn't open known_hosts file %s for appending: %s",
-                          session->opts.knownhosts, strerror(errno));
+                          session->opts.knownhosts,
+                          ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
             return SSH_ERROR;
         }
     }
