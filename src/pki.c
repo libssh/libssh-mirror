@@ -958,6 +958,7 @@ int ssh_pki_import_privkey_file(const char *filename,
     FILE *file;
     off_t size;
     int rc;
+    char err_msg[SSH_ERRNO_MSG_MAX] = {0};
 
     if (pkey == NULL || filename == NULL || *filename == '\0') {
         return SSH_ERROR;
@@ -975,7 +976,7 @@ int ssh_pki_import_privkey_file(const char *filename,
         SSH_LOG(SSH_LOG_WARN,
                 "Error opening %s: %s",
                 filename,
-                strerror(errno));
+                ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_EOF;
     }
 
@@ -985,7 +986,7 @@ int ssh_pki_import_privkey_file(const char *filename,
         SSH_LOG(SSH_LOG_WARN,
                 "Error getting stat of %s: %s",
                 filename,
-                strerror(errno));
+                ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         switch (errno) {
             case ENOENT:
             case EACCES:
@@ -1017,7 +1018,7 @@ int ssh_pki_import_privkey_file(const char *filename,
         SSH_LOG(SSH_LOG_WARN,
                 "Error reading %s: %s",
                 filename,
-                strerror(errno));
+                ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_ERROR;
     }
     key_buf[size] = 0;
@@ -1065,8 +1066,9 @@ int ssh_pki_export_privkey_file(const ssh_key privkey,
 
     fp = fopen(filename, "wb");
     if (fp == NULL) {
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
         SSH_LOG(SSH_LOG_FUNCTIONS, "Error opening %s: %s",
-                filename, strerror(errno));
+                filename, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_EOF;
     }
 
@@ -1791,6 +1793,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     FILE *file;
     off_t size;
     int rc, cmp;
+    char err_msg[SSH_ERRNO_MSG_MAX] = {0};
 
     if (pkey == NULL || filename == NULL || *filename == '\0') {
         return SSH_ERROR;
@@ -1806,7 +1809,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     file = fopen(filename, "rb");
     if (file == NULL) {
         SSH_LOG(SSH_LOG_WARN, "Error opening %s: %s",
-                    filename, strerror(errno));
+                    filename, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_EOF;
     }
 
@@ -1814,7 +1817,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     if (rc < 0) {
         fclose(file);
         SSH_LOG(SSH_LOG_WARN, "Error gettint stat of %s: %s",
-                    filename, strerror(errno));
+                    filename, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         switch (errno) {
             case ENOENT:
             case EACCES:
@@ -1841,7 +1844,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     if (size != sb.st_size) {
         SAFE_FREE(key_buf);
         SSH_LOG(SSH_LOG_WARN, "Error reading %s: %s",
-                    filename, strerror(errno));
+                    filename, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_ERROR;
     }
     key_buf[size] = '\0';
