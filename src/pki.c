@@ -77,10 +77,12 @@ enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey)
 {
     char *start = NULL;
 
+#ifdef HAVE_DSA
     start = strstr(privkey, DSA_HEADER_BEGIN);
     if (start != NULL) {
         return SSH_KEYTYPE_DSS;
     }
+#endif /* HAVE_DSA */
 
     start = strstr(privkey, RSA_HEADER_BEGIN);
     if (start != NULL) {
