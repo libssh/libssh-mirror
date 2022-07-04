@@ -513,7 +513,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     ssh_set_error_oom(session);
                     return -1;
                 }
-                p = strchr(q, '@');
+                p = strrchr(q, '@');
 
                 SAFE_FREE(session->opts.host);
 
