@@ -183,11 +183,13 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
     }
 
     for (itr = ai; itr != NULL; itr = itr->ai_next) {
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
         /* create socket */
         s = socket(itr->ai_family, itr->ai_socktype, itr->ai_protocol);
         if (s < 0) {
             ssh_set_error(session, SSH_FATAL,
-                          "Socket create failed: %s", strerror(errno));
+                          "Socket create failed: %s",
+                          ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
             continue;
         }
 
@@ -214,7 +216,8 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
             {
                 if (bind(s, bind_itr->ai_addr, bind_itr->ai_addrlen) < 0) {
                     ssh_set_error(session, SSH_FATAL,
-                                  "Binding local address: %s", strerror(errno));
+                                  "Binding local address: %s",
+                                  ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                     continue;
                 } else {
                     break;
@@ -246,7 +249,7 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
             if (rc < 0) {
                 ssh_set_error(session, SSH_FATAL,
                               "Failed to set TCP_NODELAY on socket: %s",
-                              strerror(errno));
+                              ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 ssh_connect_socket_close(s);
                 s = -1;
                 continue;
@@ -257,7 +260,8 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         rc = connect(s, itr->ai_addr, itr->ai_addrlen);
         if (rc == -1 && (errno != 0) && (errno != EINPROGRESS)) {
             ssh_set_error(session, SSH_FATAL,
-                          "Failed to connect: %s", strerror(errno));
+                          "Failed to connect: %s",
+                          ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
             ssh_connect_socket_close(s);
             s = -1;
             continue;
