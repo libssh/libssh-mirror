@@ -228,8 +228,9 @@ static int ssh_known_hosts_read_entries(const char *match,
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
         SSH_LOG(SSH_LOG_WARN, "Failed to open the known_hosts file '%s': %s",
-                filename, strerror(errno));
+                filename, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         /* The missing file is not an error here */
         return SSH_OK;
     }
@@ -980,6 +981,7 @@ int ssh_session_update_known_hosts(ssh_session session)
     size_t nwritten;
     size_t len;
     int rc;
+    char err_msg[SSH_ERRNO_MSG_MAX] = {0};
 
     if (session->opts.knownhosts == NULL) {
         rc = ssh_options_apply(session);
@@ -995,7 +997,8 @@ int ssh_session_update_known_hosts(ssh_session session)
         if (errno == ENOENT) {
             dir = ssh_dirname(session->opts.knownhosts);
             if (dir == NULL) {
-                ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+                ssh_set_error(session, SSH_FATAL, "%s",
+                              ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 return SSH_ERROR;
             }
 
@@ -1003,7 +1006,8 @@ int ssh_session_update_known_hosts(ssh_session session)
             if (rc < 0) {
                 ssh_set_error(session, SSH_FATAL,
                               "Cannot create %s directory: %s",
-                              dir, strerror(errno));
+                              dir,
+                              ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 SAFE_FREE(dir);
                 return SSH_ERROR;
             }
@@ -1015,7 +1019,8 @@ int ssh_session_update_known_hosts(ssh_session session)
                 ssh_set_error(session, SSH_FATAL,
                               "Couldn't open known_hosts file %s"
                               " for appending: %s",
-                              session->opts.knownhosts, strerror(errno));
+                              session->opts.knownhosts,
+                              ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
                 return SSH_ERROR;
             }
         } else {
@@ -1038,7 +1043,8 @@ int ssh_session_update_known_hosts(ssh_session session)
     if (nwritten != len || ferror(fp)) {
         ssh_set_error(session, SSH_FATAL,
                       "Couldn't append to known_hosts file %s: %s",
-                      session->opts.knownhosts, strerror(errno));
+                      session->opts.knownhosts,
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         fclose(fp);
         return SSH_ERROR;
     }
