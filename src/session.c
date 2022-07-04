@@ -856,7 +856,9 @@ void ssh_socket_exception_callback(int code, int errno_code, void *user){
     if (errno_code == 0 && code == SSH_SOCKET_EXCEPTION_EOF) {
         ssh_set_error(session, SSH_FATAL, "Socket error: disconnected");
     } else {
-        ssh_set_error(session, SSH_FATAL, "Socket error: %s", strerror(errno_code));
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
+        ssh_set_error(session, SSH_FATAL, "Socket error: %s",
+                ssh_strerror(errno_code, err_msg, SSH_ERRNO_MSG_MAX));
     }
 
     session->ssh_connection_callback(session);
