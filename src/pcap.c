@@ -315,6 +315,7 @@ static int ssh_pcap_context_connect(ssh_pcap_context ctx)
     socket_t fd;
     socklen_t len;
     int rc;
+    char err_msg[SSH_ERRNO_MSG_MAX] = {0};
 
     if (session == NULL) {
         return SSH_ERROR;
@@ -337,7 +338,7 @@ static int ssh_pcap_context_connect(ssh_pcap_context ctx)
         ssh_set_error(session,
                       SSH_REQUEST_DENIED,
                       "Getting local IP address: %s",
-                      strerror(errno));
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_ERROR;
     }
 
@@ -347,7 +348,7 @@ static int ssh_pcap_context_connect(ssh_pcap_context ctx)
         ssh_set_error(session,
                       SSH_REQUEST_DENIED,
                       "Getting remote IP address: %s",
-                      strerror(errno));
+                      ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
         return SSH_ERROR;
     }
 
