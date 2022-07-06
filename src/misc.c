@@ -1957,11 +1957,13 @@ char *ssh_strerror(int err_num, char *buf, size_t buflen)
 #if defined(_WIN32)
     strerror_s(buf, buflen, err_num);
     return buf;
-#elif !defined(_GNU_SOURCE)
+#elif defined(__linux__) && defined(_GNU_SOURCE)
+    /* GNU extension on Linux */
+    return strerror_r(err_num, buf, buflen);
+#else
+    /* POSIX version available for example on FreeBSD */
     strerror_r(err_num, buf, buflen);
     return buf;
-#else
-    return strerror_r(err_num, buf, buflen);
 #endif /* _WIN32 */
 }
 
