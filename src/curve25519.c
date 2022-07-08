@@ -39,7 +39,7 @@
 #include "libssh/pki.h"
 #include "libssh/bignum.h"
 
-#ifdef HAVE_OPENSSL_X25519
+#if defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_X25519)
 #include <openssl/err.h>
 #endif
 
@@ -59,7 +59,7 @@ static struct ssh_packet_callbacks_struct ssh_curve25519_client_callbacks = {
 static int ssh_curve25519_init(ssh_session session)
 {
     int rc;
-#ifdef HAVE_OPENSSL_X25519
+#if defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_X25519)
     EVP_PKEY_CTX *pctx = NULL;
     EVP_PKEY *pkey = NULL;
     size_t pubkey_len = CURVE25519_PUBKEY_SIZE;
@@ -176,7 +176,7 @@ static int ssh_curve25519_build_k(ssh_session session)
 {
     ssh_curve25519_pubkey k;
 
-#ifdef HAVE_OPENSSL_X25519
+#if defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_X25519)
     EVP_PKEY_CTX *pctx = NULL;
     EVP_PKEY *pkey = NULL, *pubkey = NULL;
     size_t shared_key_len = sizeof(k);
