@@ -300,12 +300,12 @@ if (WITH_GSSAPI AND GSSAPI_FOUND)
 endif (WITH_GSSAPI AND GSSAPI_FOUND)
 
 if (NOT WITH_NACL)
-    if (NOT HAVE_OPENSSL_ED25519)
+    if (NOT HAVE_LIBCRYPTO OR NOT HAVE_OPENSSL_ED25519)
         set(libssh_SRCS
             ${libssh_SRCS}
             external/curve25519_ref.c
            )
-    endif (NOT HAVE_OPENSSL_ED25519)
+    endif()
 endif (NOT WITH_NACL)
 
 # Set the path to the default map file
