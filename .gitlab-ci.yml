@@ -106,10 +106,10 @@ fedora/ninja:
   script:
     - cmake -G Ninja $CMAKE_OPTIONS ../ && ninja && ninja test
 
-fedora/openssl_1.1.x/x86_64:
+fedora/openssl_3.0.x/x86_64:
   extends: .fedora
 
-fedora/openssl_1.1.x/x86_64/fips:
+fedora/openssl_3.0.x/x86_64/fips:
   extends: .fedora
   before_script:
     - echo "# userspace fips" > /etc/system-fips
@@ -134,51 +134,8 @@ fedora/openssl_1.1.x/x86_64/fips:
       make -j$(nproc) &&
       OPENSSL_FORCE_FIPS_MODE=1 ctest --output-on-failure
 
-fedora/openssl_1.1.x/x86_64/minimal:
+fedora/openssl_3.0.x/x86_64/minimal:
   extends: .fedora
-  variables:
-  script:
-    - cmake $CMAKE_DEFAULT_OPTIONS
-      -DWITH_SFTP=OFF
-      -DWITH_SERVER=OFF
-      -DWITH_ZLIB=OFF
-      -DWITH_PCAP=OFF
-      -DWITH_DSA=OFF
-      -DUNIT_TESTING=ON
-      -DCLIENT_TESTING=ON
-      -DWITH_GEX=OFF .. &&
-      make -j$(nproc)
-
-fedora/openssl_3.0/x86_64:
-  extends: .fedora_rawhide
-
-fedora/openssl_3.0/x86_64/fips:
-  extends: .fedora_rawhide
-  before_script:
-    - echo "# userspace fips" > /etc/system-fips
-    # We do not need the kernel part, but in case we ever do:
-    # mkdir -p /var/tmp/userspace-fips
-    # echo 1 > /var/tmp/userspace-fips/fips_enabled
-    # mount --bind /var/tmp/userspace-fips/fips_enabled \
-    # /proc/sys/crypto/fips_enabled
-    - update-crypto-policies --show
-    - update-crypto-policies --set FIPS
-    - update-crypto-policies --show
-    - mkdir -p obj && cd obj && cmake
-      -DCMAKE_BUILD_TYPE=RelWithDebInfo
-      -DPICKY_DEVELOPER=ON
-      -DWITH_BLOWFISH_CIPHER=ON
-      -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-      -DWITH_DEBUG_CRYPTO=ON -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
-      -DWITH_DSA=ON
-      -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
-  script:
-    - cmake $CMAKE_OPTIONS .. &&
-      make -j$(nproc) &&
-      OPENSSL_FORCE_FIPS_MODE=1 ctest --output-on-failure
-
-fedora/openssl_3.0/x86_64/minimal:
-  extends: .fedora_rawhide
   variables:
   script:
     - cmake $CMAKE_DEFAULT_OPTIONS
@@ -316,19 +273,8 @@ fedora/mingw32:
     paths:
       - obj-csbuild/
 
-fedora/csbuild/openssl_1.1.x:
-  extends: .csbuild
-  script:
-    - csbuild
-      --build-dir=obj-csbuild
-      --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_DSA=ON @SRCDIR@ && make clean && make -j$(nproc)"
-      --git-commit-range $CI_COMMIT_RANGE
-      --color
-      --print-current --print-fixed
-
 fedora/csbuild/openssl_3.0.x:
   extends: .csbuild
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$RAWHIDE_BUILD
   script:
     - csbuild
       --build-dir=obj-csbuild
