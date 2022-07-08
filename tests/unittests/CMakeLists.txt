@@ -101,6 +101,10 @@ foreach(_UNIT_TEST ${LIBSSH_UNIT_TESTS})
                     COMPILE_OPTIONS ${DEFAULT_C_COMPILE_FLAGS}
                     LINK_LIBRARIES ${TEST_TARGET_LIBRARIES}
     )
+
+    set_property(TEST ${_UNIT_TEST}
+                 PROPERTY
+                     ENVIRONMENT LSAN_OPTIONS=suppressions=${libssh-tests_SOURCE_DIR}/suppressions/lsan.supp)
 endforeach()
 
 if (CMAKE_USE_PTHREADS_INIT)
@@ -110,6 +114,10 @@ if (CMAKE_USE_PTHREADS_INIT)
                         COMPILE_OPTIONS ${DEFAULT_C_COMPILE_FLAGS}
                         LINK_LIBRARIES ${TEST_TARGET_LIBRARIES} Threads::Threads
         )
+
+    set_property(TEST ${_UNIT_TEST}
+                 PROPERTY
+                    ENVIRONMENT LSAN_OPTIONS=suppressions=${libssh-tests_SOURCE_DIR}/suppressions/lsan.supp)
     endforeach()
 endif ()
 
