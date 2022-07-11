@@ -66,6 +66,13 @@ static void torture_options_set_host(void **state) {
     assert_string_equal(session->opts.host, "meditation");
     assert_non_null(session->opts.username);
     assert_string_equal(session->opts.username, "guru");
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "at@login@hostname");
+    assert_true(rc == 0);
+    assert_non_null(session->opts.host);
+    assert_string_equal(session->opts.host, "hostname");
+    assert_non_null(session->opts.username);
+    assert_string_equal(session->opts.username, "at@login");
 }
 
 static void torture_options_set_ciphers(void **state) {
