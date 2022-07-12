@@ -282,7 +282,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
       }
 
       if (listen(fd, 10) < 0) {
-        char err_msg[] = {0};
+        char err_msg[SSH_ERRNO_MSG_MAX] = {0};
           ssh_set_error(sshbind, SSH_FATAL,
                   "Listening to socket %d: %s",
                   fd, ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
