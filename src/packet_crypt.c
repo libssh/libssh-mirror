@@ -260,42 +260,59 @@ int ssh_packet_hmac_verify(ssh_session session,
                            uint8_t *mac,
                            enum ssh_hmac_e type)
 {
-  struct ssh_crypto_struct *crypto = NULL;
-  unsigned char hmacbuf[DIGEST_MAX_LEN] = {0};
-  HMACCTX ctx;
-  size_t hmaclen = DIGEST_MAX_LEN;
-  uint32_t seq;
+    struct ssh_crypto_struct *crypto = NULL;
+    unsigned char hmacbuf[DIGEST_MAX_LEN] = {0};
+    HMACCTX ctx;
+    size_t hmaclen = DIGEST_MAX_LEN;
+    uint32_t seq;
 
-  /* AEAD types have no mac checking */
-  if (type == SSH_HMAC_AEAD_POLY1305 ||
-      type == SSH_HMAC_AEAD_GCM) {
-      return SSH_OK;
-  }
+    /* AEAD types have no mac checking */
+    if (type == SSH_HMAC_AEAD_POLY1305 ||
+        type == SSH_HMAC_AEAD_GCM) {
+        return SSH_OK;
+    }
 
-  crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
-  if (crypto == NULL) {
-      return SSH_ERROR;
-  }
+    crypto = ssh_packet_get_current_crypto(session,
+                                           SSH_DIRECTION_IN);
+    if (crypto == NULL) {
+        return SSH_ERROR;
+    }
 
-  ctx = hmac_init(crypto->decryptMAC, hmac_digest_len(type), type);
-  if (ctx == NULL) {
-    return -1;
-  }
+    ctx = hmac_init(crypto->decryptMAC,
+                    hmac_digest_len(type),
+                    type);
+    if (ctx == NULL) {
+        return -1;
+    }
 
-  seq = htonl(session->recv_seq);
+    seq = htonl(session->recv_seq);
 
-  hmac_update(ctx, (unsigned char *) &seq, sizeof(uint32_t));
-  hmac_update(ctx, data, len);
-  hmac_final(ctx, hmacbuf, &hmaclen);
+    hmac_update(ctx,
+                (unsigned char *)&seq,
+                sizeof(uint32_t));
+    hmac_update(ctx,
+                data,
+                len);
+    hmac_final(ctx,
+               hmacbuf,
+               &hmaclen);
 
 #ifdef DEBUG_CRYPTO
-  ssh_log_hexdump("received mac",mac,hmaclen);
-  ssh_log_hexdump("Computed mac",hmacbuf,hmaclen);
-  ssh_log_hexdump("seq",(unsigned char *)&seq,sizeof(uint32_t));
+    ssh_log_hexdump("received mac",
+                    mac,
+                    hmaclen);
+    ssh_log_hexdump("Computed mac",
+                    hmacbuf,
+                    hmaclen);
+    ssh_log_hexdump("seq",
+                    (unsigned char *)&seq,
+                    sizeof(uint32_t));
 #endif
-  if (secure_memcmp(mac, hmacbuf, hmaclen) == 0) {
-    return 0;
-  }
+    if (secure_memcmp(mac,
+                      hmacbuf,
+                      hmaclen) == 0) {
+        return 0;
+    }
 
-  return -1;
+    return -1;
 }
