@@ -34,14 +34,42 @@ set(ED25519_OVERRIDE_LIBRARY
 ${libssh_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}ed25519_override${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 # curve25519_override
-add_library(curve25519_override SHARED
-            curve25519_override.c
-            ${libssh_SOURCE_DIR}/src/external/curve25519_ref.c
-            ${libssh_SOURCE_DIR}/src/external/fe25519.c
-            ${libssh_SOURCE_DIR}/src/external/ge25519.c
-            ${libssh_SOURCE_DIR}/src/external/sc25519.c
-            ${libssh_SOURCE_DIR}/src/external/ed25519.c
-           )
+set (curve25519_override_src
+    curve25519_override.c
+    ${libssh_SOURCE_DIR}/src/external/curve25519_ref.c
+    ${libssh_SOURCE_DIR}/src/external/fe25519.c
+    ${libssh_SOURCE_DIR}/src/external/ge25519.c
+    ${libssh_SOURCE_DIR}/src/external/sc25519.c
+    ${libssh_SOURCE_DIR}/src/external/ed25519.c
+)
+if (WITH_GCRYPT)
+    set (curve25519_override_src
+        ${curve25519_override_src}
+        ${libssh_SOURCE_DIR}/src/getrandom_gcrypt.c
+    )
+    set(curve25519_override_libs
+        ${GCRYPT_LIBRARIES}
+    )
+elseif (WITH_MBEDTLS)
+    set (curve25519_override_src
+        ${curve25519_override_src}
+        ${libssh_SOURCE_DIR}/src/getrandom_mbedcrypto.c
+    )
+    set(curve25519_override_libs
+        ${MBEDTLS_CRYPTO_LIBRARY}
+    )
+else ()
+    set (curve25519_override_src
+        ${curve25519_override_src}
+        ${libssh_SOURCE_DIR}/src/getrandom_crypto.c
+    )
+    set(curve25519_override_libs
+        ${OPENSSL_CRYPTO_LIBRARIES}
+    )
+endif (WITH_GCRYPT)
+add_library(curve25519_override SHARED ${curve25519_override_src})
+target_link_libraries(curve25519_override
+                      PRIVATE ${curve25519_override_libs})
 set(CURVE25519_OVERRIDE_LIBRARY
 ${libssh_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}curve25519_override${CMAKE_SHARED_LIBRARY_SUFFIX})
 

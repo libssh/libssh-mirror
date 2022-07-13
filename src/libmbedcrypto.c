@@ -42,18 +42,13 @@
 #endif /* MBEDTLS_GCM_C */
 
 static mbedtls_entropy_context ssh_mbedtls_entropy;
-static mbedtls_ctr_drbg_context ssh_mbedtls_ctr_drbg;
+extern mbedtls_ctr_drbg_context ssh_mbedtls_ctr_drbg;
 
 static int libmbedcrypto_initialized = 0;
 
 void ssh_reseed(void)
 {
     mbedtls_ctr_drbg_reseed(&ssh_mbedtls_ctr_drbg, NULL, 0);
-}
-
-int ssh_get_random(void *where, int len, int strong)
-{
-    return ssh_mbedtls_random(where, len, strong);
 }
 
 SHACTX sha1_init(void)
@@ -1436,22 +1431,6 @@ int ssh_crypto_init(void)
     libmbedcrypto_initialized = 1;
 
     return SSH_OK;
-}
-
-int ssh_mbedtls_random(void *where, int len, int strong)
-{
-    int rc = 0;
-    if (strong) {
-        mbedtls_ctr_drbg_set_prediction_resistance(&ssh_mbedtls_ctr_drbg,
-                MBEDTLS_CTR_DRBG_PR_ON);
-        rc = mbedtls_ctr_drbg_random(&ssh_mbedtls_ctr_drbg, where, len);
-        mbedtls_ctr_drbg_set_prediction_resistance(&ssh_mbedtls_ctr_drbg,
-                MBEDTLS_CTR_DRBG_PR_OFF);
-    } else {
-        rc = mbedtls_ctr_drbg_random(&ssh_mbedtls_ctr_drbg, where, len);
-    }
-
-    return !rc;
 }
 
 mbedtls_ctr_drbg_context *ssh_get_mbedtls_ctr_drbg_context(void)

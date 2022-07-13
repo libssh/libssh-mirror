@@ -69,17 +69,6 @@ static int alloc_key(struct ssh_cipher_struct *cipher) {
 void ssh_reseed(void){
 }
 
-int ssh_get_random(void *where, int len, int strong)
-{
-    /* variable not used in gcrypt */
-    (void) strong;
-
-    /* not using GCRY_VERY_STRONG_RANDOM which is a bit overkill */
-    gcry_randomize(where,len,GCRY_STRONG_RANDOM);
-
-    return 1;
-}
-
 SHACTX sha1_init(void) {
   SHACTX ctx = NULL;
   gcry_md_open(&ctx, GCRY_MD_SHA1, 0);

@@ -93,34 +93,6 @@ void ssh_reseed(void){
 #endif
 }
 
-/**
- * @brief Get random bytes
- *
- * Make sure to always check the return code of this function!
- *
- * @param[in]  where    The buffer to fill with random bytes
- *
- * @param[in]  len      The size of the buffer to fill.
- *
- * @param[in]  strong   Use a strong or private RNG source.
- *
- * @return 1 on success, 0 on error.
- */
-int ssh_get_random(void *where, int len, int strong)
-{
-#ifdef HAVE_OPENSSL_RAND_PRIV_BYTES
-    if (strong) {
-        /* Returns -1 when not supported, 0 on error, 1 on success */
-        return !!RAND_priv_bytes(where, len);
-    }
-#else
-    (void)strong;
-#endif /* HAVE_RAND_PRIV_BYTES */
-
-    /* Returns -1 when not supported, 0 on error, 1 on success */
-    return !!RAND_bytes(where, len);
-}
-
 SHACTX sha1_init(void)
 {
     int rc;

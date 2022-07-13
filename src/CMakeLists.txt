@@ -184,6 +184,7 @@ if (WITH_GCRYPT)
         gcrypt_missing.c
         pki_gcrypt.c
         ecdh_gcrypt.c
+        getrandom_gcrypt.c
         dh_key.c
         pki_ed25519.c
         external/ed25519.c
@@ -207,6 +208,7 @@ elseif (WITH_MBEDTLS)
         mbedcrypto_missing.c
         pki_mbedcrypto.c
         ecdh_mbedcrypto.c
+        getrandom_mbedcrypto.c
         dh_key.c
         pki_ed25519.c
         external/ed25519.c
@@ -229,6 +231,7 @@ else (WITH_GCRYPT)
         threads/libcrypto.c
         pki_crypto.c
         ecdh_crypto.c
+        getrandom_crypto.c
         libcrypto.c
         dh_crypto.c
        )
