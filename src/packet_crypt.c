@@ -266,6 +266,7 @@ int ssh_packet_hmac_verify(ssh_session session,
     size_t hmaclen = DIGEST_MAX_LEN;
     uint32_t seq;
     int cmp;
+    int rc;
 
     /* AEAD types have no mac checking */
     if (type == SSH_HMAC_AEAD_POLY1305 ||
@@ -288,15 +289,24 @@ int ssh_packet_hmac_verify(ssh_session session,
 
     seq = htonl(session->recv_seq);
 
-    hmac_update(ctx,
-                (unsigned char *)&seq,
-                sizeof(uint32_t));
-    hmac_update(ctx,
-                data,
-                len);
-    hmac_final(ctx,
-               hmacbuf,
-               &hmaclen);
+    rc = hmac_update(ctx,
+                     (unsigned char *) &seq,
+                     sizeof(uint32_t));
+    if (rc != 1) {
+        return SSH_ERROR;
+    }
+    rc = hmac_update(ctx,
+                     data,
+                     len);
+    if (rc != 1) {
+        return SSH_ERROR;
+    }
+    rc = hmac_final(ctx,
+                    hmacbuf,
+                    &hmaclen);
+    if (rc != 1) {
+        return SSH_ERROR;
+    }
 
 #ifdef DEBUG_CRYPTO
     ssh_log_hexdump("received mac",
