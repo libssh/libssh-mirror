@@ -265,6 +265,7 @@ int ssh_packet_hmac_verify(ssh_session session,
     HMACCTX ctx;
     size_t hmaclen = DIGEST_MAX_LEN;
     uint32_t seq;
+    int cmp;
 
     /* AEAD types have no mac checking */
     if (type == SSH_HMAC_AEAD_POLY1305 ||
@@ -282,7 +283,7 @@ int ssh_packet_hmac_verify(ssh_session session,
                     hmac_digest_len(type),
                     type);
     if (ctx == NULL) {
-        return -1;
+        return SSH_ERROR;
     }
 
     seq = htonl(session->recv_seq);
@@ -308,11 +309,12 @@ int ssh_packet_hmac_verify(ssh_session session,
                     (unsigned char *)&seq,
                     sizeof(uint32_t));
 #endif
-    if (secure_memcmp(mac,
-                      hmacbuf,
-                      hmaclen) == 0) {
-        return 0;
+    cmp = secure_memcmp(mac,
+                        hmacbuf,
+                        hmaclen);
+    if (cmp == 0) {
+        return SSH_OK;
     }
 
-    return -1;
+    return SSH_ERROR;
 }
