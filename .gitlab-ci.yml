@@ -7,7 +7,6 @@ variables:
   MINGW_BUILD: buildenv-mingw
   TUMBLEWEED_BUILD: buildenv-tumbleweed
   UBUNTU_BUILD: buildenv-ubuntu
-  RAWHIDE_BUILD: buildenv-rawhide
 
 stages:
   - build
@@ -60,14 +59,6 @@ stages:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   variables:
     CMAKE_ADDITIONAL_OPTIONS: -DWITH_PKCS11_URI=ON
-
-.fedora_rawhide:
-  extends: .fedora
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$RAWHIDE_BUILD
-  before_script:
-    - *build
-    # Legacy cp is needed for SHA1 tests to pass
-    - update-crypto-policies --set LEGACY
 
 .tumbleweed:
   extends: .tests
