@@ -2,6 +2,7 @@
 variables:
   BUILD_IMAGES_PROJECT: libssh/build-images
   CENTOS7_BUILD: buildenv-centos7
+  CENTOS9_BUILD: buildenv-c9s
   COVERITY_BUILD: buildenv-coverity
   FEDORA_BUILD: buildenv-fedora
   MINGW_BUILD: buildenv-mingw
@@ -71,6 +72,14 @@ stages:
 # pkd tests fail on CentOS7 docker images, so we don't use -DSERVER_TESTING=ON
 centos7/openssl_1.0.x/x86_64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
+  extends: .tests
+  script:
+    - cmake3 $CMAKE_OPTIONS .. &&
+      make -j$(nproc) &&
+      ctest --output-on-failure
+
+centos9s/openssl_3.0.x/x86_64:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS9_BUILD
   extends: .tests
   script:
     - cmake3 $CMAKE_OPTIONS .. &&
