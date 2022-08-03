@@ -1033,11 +1033,13 @@ void torture_setup_libssh_server(void **state, const char *server_path)
     }
 
     /* Write the environment setting */
+    /* OPENSSL variable is needed to enable SHA1 */
     printed = snprintf(env, sizeof(env),
                        "SOCKET_WRAPPER_DIR=%s "
                        "SOCKET_WRAPPER_DEFAULT_IFACE=10 "
                        "LD_PRELOAD=%s "
-                       "%s",
+                       "%s "
+                       "OPENSSL_ENABLE_SHA1_SIGNATURES=1",
                        s->socket_dir, ld_preload, force_fips);
     if (printed < 0) {
         fail_msg("Failed to print env!");
