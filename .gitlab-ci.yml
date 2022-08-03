@@ -82,6 +82,7 @@ centos9s/openssl_3.0.x/x86_64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS9_BUILD
   extends: .tests
   script:
+    - export OPENSSL_ENABLE_SHA1_SIGNATURES=1
     - cmake3 $CMAKE_OPTIONS .. &&
       make -j$(nproc) &&
       ctest --output-on-failure
