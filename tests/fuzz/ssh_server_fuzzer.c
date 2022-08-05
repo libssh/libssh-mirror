@@ -169,8 +169,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         assert(rc == 0);
     }
     rc = ssh_bind_options_set(sshbind,
-                         SSH_BIND_OPTIONS_RSAKEY,
-                         "/tmp/libssh_fuzzer_private_key");
+                              SSH_BIND_OPTIONS_RSAKEY,
+                              "/tmp/libssh_fuzzer_private_key");
     assert(rc == 0);
     rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_CIPHERS_C_S, "none");
     assert(rc == 0);
@@ -197,7 +197,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         ssh_event_add_session(event, session);
 
         size_t n = 0;
-        while(sdata.authenticated == false || sdata.channel == NULL) {
+        while (sdata.authenticated == false || sdata.channel == NULL) {
             if (sdata.auth_attempts >= 3 || n >= 100) {
                 break;
             }
