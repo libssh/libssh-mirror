@@ -152,7 +152,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     }
 
     channel = ssh_channel_new(session);
-    assert(channel != NULL);
+    if (channel == NULL) {
+        goto out;
+    }
 
     rc = ssh_channel_open_session(channel);
     if (rc != SSH_OK) {
@@ -160,7 +162,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     }
 
     rc = ssh_channel_request_exec(channel, "ls");
-    assert(rc == SSH_OK);
+    if (rc != SSH_OK) {
+        goto out;
+    }
 
     select_loop(session, channel);
 
