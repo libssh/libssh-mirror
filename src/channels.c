@@ -94,6 +94,9 @@ ssh_channel ssh_channel_new(ssh_session session)
 
     /* Check if we have an authenticated session */
     if (!(session->flags & SSH_SESSION_FLAG_AUTHENTICATED)) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Connection is not authenticated.");
         return NULL;
     }
 
@@ -133,7 +136,13 @@ ssh_channel ssh_channel_new(ssh_session session)
         }
     }
 
-    ssh_list_prepend(session->channels, channel);
+    if (ssh_list_prepend(session->channels, channel) == SSH_ERROR) {
+        ssh_set_error_oom(session);
+        SSH_BUFFER_FREE(channel->stdout_buffer);
+        SSH_BUFFER_FREE(channel->stderr_buffer);
+        SAFE_FREE(channel);
+        return NULL;
+    }
 
     /* Set states explicitly */
     channel->state = SSH_CHANNEL_STATE_NOT_OPEN;

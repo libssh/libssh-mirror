@@ -344,6 +344,7 @@ ssh_send_keepalive
 ssh_accept
 channel_write_stderr
 sftp_new
+sftp_nonblocking_new
 sftp_new_channel
 sftp_free
 sftp_init

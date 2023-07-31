@@ -109,7 +109,24 @@ static void sftp_ext_free(sftp_ext ext)
     SAFE_FREE(ext);
 }
 
-sftp_session sftp_new(ssh_session session)
+static void sftp_ext_free_session(sftp_session sftp)
+{
+    if (sftp->ext != NULL) {
+        sftp_ext_free(sftp->ext);
+    }
+    if (sftp->channel != NULL) {
+        ssh_channel_free(sftp->channel);
+    }
+    if (sftp->read_packet != NULL) {
+        if (sftp->read_packet->payload != NULL) {
+            SSH_BUFFER_FREE(sftp->read_packet->payload);
+        }
+        SAFE_FREE(sftp->read_packet);
+    }
+    SAFE_FREE(sftp);
+}
+
+static sftp_session sftp_ext_alloc_session(ssh_session session)
 {
     sftp_session sftp;
 
@@ -120,7 +137,6 @@ sftp_session sftp_new(ssh_session session)
     sftp = calloc(1, sizeof(struct sftp_session_struct));
     if (sftp == NULL) {
         ssh_set_error_oom(session);
-
         return NULL;
     }
 
@@ -145,8 +161,24 @@ sftp_session sftp_new(ssh_session session)
     sftp->session = session;
     sftp->channel = ssh_channel_new(session);
     if (sftp->channel == NULL) {
-        ssh_set_error_oom(session);
         goto error;
+    }
+
+    return sftp;
+
+error:
+    sftp_ext_free_session(sftp);
+
+    return NULL;
+}
+
+sftp_session sftp_new(ssh_session session)
+{
+    sftp_session sftp;
+
+    sftp = sftp_ext_alloc_session(session);
+    if (sftp == NULL) {
+        return NULL;
     }
 
     if (ssh_channel_open_session(sftp->channel)) {
@@ -158,21 +190,57 @@ sftp_session sftp_new(ssh_session session)
     }
 
     return sftp;
+
 error:
-    if (sftp->ext != NULL) {
-        sftp_ext_free(sftp->ext);
-    }
-    if (sftp->channel != NULL) {
-        ssh_channel_free(sftp->channel);
-    }
-    if (sftp->read_packet != NULL) {
-        if (sftp->read_packet->payload != NULL) {
-            SSH_BUFFER_FREE(sftp->read_packet->payload);
-        }
-        SAFE_FREE(sftp->read_packet);
-    }
-    SAFE_FREE(sftp);
+    sftp_ext_free_session(sftp);
+
     return NULL;
+}
+
+int sftp_nonblocking_new(ssh_session session, sftp_session* asftp)
+{
+    sftp_session sftp;
+    int err = SSH_NO_ERROR;
+
+    if (asftp == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (*asftp == NULL) {
+        sftp = sftp_ext_alloc_session(session);
+        if (sftp == NULL) {
+            return SSH_ERROR;
+        }
+        *asftp = sftp;
+    } else {
+        sftp = *asftp;
+    }
+
+    if (sftp->channel->state != SSH_CHANNEL_STATE_OPEN) {
+        err = ssh_channel_open_session(sftp->channel);
+        if (err != SSH_OK) {
+            if (err == SSH_AGAIN) {
+                return SSH_AGAIN;
+            }
+            goto error;
+        }
+    }
+
+    err = ssh_channel_request_sftp(sftp->channel);
+    if (err != SSH_OK) {
+        if (err == SSH_AGAIN) {
+            return SSH_AGAIN;
+        }
+        goto error;
+    }
+
+    return err;
+
+error:
+    sftp_ext_free_session(sftp);
+    *asftp = NULL;
+
+    return SSH_ERROR;
 }
 
 sftp_session

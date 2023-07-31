@@ -217,6 +217,26 @@ struct sftp_statvfs_struct {
 LIBSSH_API sftp_session sftp_new(ssh_session session);
 
 /**
+ * @brief Creates a new sftp session.
+ *
+ * This function does the same thing as sftp_new except that it operates in
+ * non-blocking mode.
+ *
+ * @param session       The ssh session to use.
+ * @param asftp         An address to a sftp session.
+ *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
+ *
+ * @see sftp_new()
+ * @see sftp_free()
+ * @see sftp_init()
+ */
+LIBSSH_API int sftp_nonblocking_new(ssh_session session, sftp_session* asftp);
+
+/**
  * @brief Start a new sftp session with an existing channel.
  *
  * @param session       The ssh session to use.
@@ -227,7 +247,6 @@ LIBSSH_API sftp_session sftp_new(ssh_session session);
  * @see sftp_free()
  */
 LIBSSH_API sftp_session sftp_new_channel(ssh_session session, ssh_channel channel);
-
 
 /**
  * @brief Close and deallocate a sftp session.

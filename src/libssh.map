@@ -81,6 +81,7 @@ LIBSSH_4_5_0    # Released
         sftp_lstat;
         sftp_mkdir;
         sftp_new;
+        sftp_nonblocking_new;
         sftp_new_channel;
         sftp_open;
         sftp_opendir;
