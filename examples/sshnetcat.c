@@ -238,7 +238,7 @@ void set_pcap(ssh_session session){
 }
 
 void cleanup_pcap(void);
-void cleanup_pcap(){
+void cleanup_pcap(void){
 	ssh_pcap_file_free(pcap);
 	pcap=NULL;
 }

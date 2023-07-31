@@ -278,7 +278,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,
  *
  * @see ssh_init()
  */
-bool is_ssh_initialized() {
+bool is_ssh_initialized(void) {
 
     bool is_initialized = false;
 
