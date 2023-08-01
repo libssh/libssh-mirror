@@ -984,6 +984,9 @@ LIBSSH_API void sftp_handle_remove(sftp_session sftp, void *handle);
 #define SSH_FX_WRITE_PROTECT 12
 /** No media in remote drive */
 #define SSH_FX_NO_MEDIA 13
+/** There is a timeout on a server response in blocking mode */
+#define SSH_FX_TIMEOUT 14
+
 
 /** @} */
 

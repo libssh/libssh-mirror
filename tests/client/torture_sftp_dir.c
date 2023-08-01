@@ -26,6 +26,7 @@ static int session_setup(void **state)
 {
     struct torture_state *s = *state;
     struct passwd *pwd;
+    int timeout = 60; /* in seconds */
     int rc;
 
     pwd = getpwnam("bob");
@@ -40,6 +41,9 @@ static int session_setup(void **state)
                                          TORTURE_SSH_USER_ALICE,
                                          NULL);
     assert_non_null(s->ssh.session);
+
+    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_TIMEOUT, &timeout); 
+    assert_int_equal(rc, 0);
 
     s->ssh.tsftp = torture_sftp_session(s->ssh.session);
     assert_non_null(s->ssh.tsftp);
