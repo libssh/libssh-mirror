@@ -1,0 +1,2 @@
+Host my_host
+  MACs hmac-sha2-256,hmac-sha2-512

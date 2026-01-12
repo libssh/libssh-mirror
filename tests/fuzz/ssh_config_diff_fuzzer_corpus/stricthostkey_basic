@@ -1,0 +1,2 @@
+Host my_host
+  StrictHostKeyChecking accept-new

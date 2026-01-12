@@ -42,6 +42,10 @@ option(
     FUZZ_TESTING
     "Build with fuzzer for the server and client (automatically enables none cipher!)"
     OFF)
+option(
+    FUZZ_CONTINUOUS_MODE
+    "Continuous fuzzing in Differential Configuration fuzzer"
+    OFF)
 option(PICKY_DEVELOPER "Build with picky developer flags" OFF)
 option(WITH_HERMETIC_USR "Build with support for hermetic /usr/" OFF)
 

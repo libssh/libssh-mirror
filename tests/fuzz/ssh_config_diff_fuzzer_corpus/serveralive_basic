@@ -1,0 +1,3 @@
+Host my_host
+  ServerAliveCountMax 5
+  ServerAliveInterval 300

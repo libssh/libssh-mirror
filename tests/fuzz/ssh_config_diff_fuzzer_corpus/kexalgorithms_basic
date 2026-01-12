@@ -1,0 +1,2 @@
+Host my_host
+  KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp256
