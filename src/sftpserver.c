@@ -149,6 +149,13 @@ sftp_make_client_message(sftp_session sftp, sftp_packet packet)
             if (rc != SSH_OK) {
                 goto error;
             }
+            if (msg->len > MAX_PACKET_LEN - 1024) {
+                ssh_set_error(sftp->session,
+                              SSH_FATAL,
+                              "Too large SSH_FXP_READ length: %" PRIu32,
+                              msg->len);
+                goto error;
+            }
             break;
         case SSH_FXP_WRITE:
             rc = ssh_buffer_unpack(payload,
