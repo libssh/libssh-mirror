@@ -1,0 +1,4 @@
+stripping
+# libssh previously failed to strip quotes from parsed paths.
+Host stripping
+    UserKnownHostsFile "file1" 'file2' file3

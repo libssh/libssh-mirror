@@ -4361,6 +4361,228 @@ static void torture_config_parser_get_yesno(void **state)
     assert_int_equal(*p, '\0');
 }
 
+static void torture_config_get_path(void **state)
+{
+    char *p = NULL, *tok = NULL;
+    char data[256];
+
+    (void) state;
+
+    /* Normal path */
+    strncpy(data, "  /home/user/.ssh/id_rsa  \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/.ssh/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Path with spaces in double quotes */
+    strncpy(data, " \"/home/user/my keys/id_rsa\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/my keys/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Path with spaces in single quotes */
+    strncpy(data, " '/home/user/my keys/id_rsa' \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/my keys/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Escaped spaces */
+    strncpy(data, " /home/user/my\\ keys/id_rsa \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/my keys/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Escaped quotes */
+    strncpy(data, " \"/home/user/\\\"my keys\\\"/id_rsa\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/\"my keys\"/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Unclosed quotes should return NULL */
+    strncpy(data, " \"/home/user/my keys/id_rsa \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_null(tok);
+
+    /* Comments handling */
+    strncpy(data, " /home/user/.ssh/id_rsa # my keys \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/.ssh/id_rsa");
+    assert_int_equal(*p, '#');
+
+    /* Comments inside string */
+    strncpy(data, " \"/home/user/#my keys/id_rsa\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/#my keys/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Missing quote at end of string without newline */
+    strncpy(data, " \"/home/user/my keys/id_rsa", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_null(tok);
+
+    /* Mixed quotes: starting with single, containing double */
+    strncpy(data, " '/home/user/\"my keys\"/id_rsa' \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/\"my keys\"/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Mixed quotes: starting with double, containing single */
+    strncpy(data, " \"/home/user/'my keys'/id_rsa\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/home/user/'my keys'/id_rsa");
+    assert_int_equal(*p, '\n');
+
+    /* Empty quotes */
+    strncpy(data, " \"\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "");
+    assert_int_equal(*p, '\n');
+
+    /* Empty single quotes */
+    strncpy(data, " '' \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "");
+    assert_int_equal(*p, '\n');
+
+    /* Leading and trailing whitespace with quotes */
+    strncpy(data, "  \t  \"/path/to/key\"  \t  \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/to/key");
+    assert_int_equal(*p, '\n');
+
+    /* Just whitespace and a comment */
+    strncpy(data, "    # just a comment\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_null(tok);
+    assert_int_equal(*p, '#');
+
+    /* Early exit with newline */
+    strncpy(data, "\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_null(tok);
+    assert_int_equal(*p, '\n');
+
+    /* Escaped comment character */
+    strncpy(data, " /path/with/\\#/hash \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/\\#/hash");
+    assert_int_equal(*p, '\n');
+
+    /* Multiple paths */
+    strncpy(data, " path1 path2 \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "path1");
+    assert_int_equal(*p, 'p');
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "path2");
+    assert_int_equal(*p, '\n');
+
+    /* Unclosed single quotes */
+    strncpy(data, " '/home/user/my keys/id_rsa \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_null(tok);
+
+    /* Quotes in the middle of a token */
+    strncpy(data, " /path/with/\"quote\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/quote");
+    assert_int_equal(*p, '\n');
+    strncpy(data, " /path/with/'single_quote' \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/single_quote");
+    assert_int_equal(*p, '\n');
+
+    /* Escaped single quote */
+    strncpy(data, " /path/with/\\'single_quote\\' \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/'single_quote'");
+    assert_int_equal(*p, '\n');
+
+    /* Escaped space inside quotes */
+    strncpy(data, " \"/path/with/\\ /space\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/\\ /space");
+    assert_int_equal(*p, '\n');
+
+    /* Unrecognised escape character (slash) inside quotes */
+    strncpy(data, " \"/path/with/\\/slash\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/\\/slash");
+    assert_int_equal(*p, '\n');
+
+    /* No trailing newline, ends with \0 */
+    strncpy(data, "/path/to/key", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/to/key");
+    assert_int_equal(*p, '\0');
+
+    /* Ends with a comment directly after the path (no space, so it's part of the token) */
+    strncpy(data, "/path/to/key#comment", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/to/key#comment");
+    assert_int_equal(*p, '\0');
+
+    /* Ends with a newline directly after the path */
+    strncpy(data, "/path/to/key\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/to/key");
+    assert_int_equal(*p, '\0');
+
+    /* Multiple spaces between tokens */
+    strncpy(data, "path1  path2\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "path1");
+    assert_string_equal(p, "path2\n");
+
+    strncpy(data, " '/path/with/\\/slash' \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "/path/with/\\/slash");
+    assert_int_equal(*p, '\n');
+
+    /* Unrecognised escape character outside quotes */
+    strncpy(data, " \\/path/with/backslash \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "\\/path/with/backslash");
+    assert_int_equal(*p, '\n');
+
+    /* Literal escaped backslash */
+    strncpy(data, " C:\\\\path\\\\to\\\\key \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_path(&p);
+    assert_string_equal(tok, "C:\\path\\to\\key");
+    assert_int_equal(*p, '\n');
+}
+
 /* match_pattern() sanity tests
  */
 static void torture_config_match_pattern(void **state)
@@ -5473,6 +5695,9 @@ int torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_parser_get_yesno,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_get_path,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_match_pattern,

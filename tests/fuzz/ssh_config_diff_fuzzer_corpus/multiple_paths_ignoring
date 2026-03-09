@@ -1,0 +1,4 @@
+multiple
+# OpenSSH allows multiple paths for some options; libssh previously incorrectly parsed all space-separated paths as a single combined path string.
+Host multiple
+    UserKnownHostsFile file1 file2 file3

@@ -1,0 +1,4 @@
+comment
+# libssh path parsing was not properly stopping at comments (#).
+Host comment
+    UserKnownHostsFile file1 # comment

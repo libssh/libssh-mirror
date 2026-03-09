@@ -1611,7 +1611,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
         }
         break;
     case SOC_IDENTITY:
-      p = ssh_config_get_str_tok(&s, NULL);
+      p = ssh_config_get_path(&s);
       CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
       if (*parsing) {
           ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, p);
@@ -1669,7 +1669,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
       }
       break;
     case SOC_KNOWNHOSTS:
-      p = ssh_config_get_str_tok(&s, NULL);
+      p = ssh_config_get_path(&s);
       CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
       if (*parsing) {
           ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, p);
@@ -1727,7 +1727,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
         }
         break;
     case SOC_GLOBALKNOWNHOSTSFILE:
-        p = ssh_config_get_str_tok(&s, NULL);
+        p = ssh_config_get_path(&s);
         CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
         if (*parsing) {
             ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, p);
@@ -1941,7 +1941,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
         CHECK_COND_OR_FAIL(1, "Unknown option");
         break;
     case SOC_IDENTITYAGENT:
-      p = ssh_config_get_str_tok(&s, NULL);
+      p = ssh_config_get_path(&s);
       CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
       if (*parsing) {
           ssh_options_set(session, SSH_OPTIONS_IDENTITY_AGENT, p);
@@ -2133,7 +2133,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
       }
       break;
     case SOC_CERTIFICATE:
-        p = ssh_config_get_str_tok(&s, NULL);
+        p = ssh_config_get_path(&s);
         CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
         if (*parsing) {
             ssh_options_set(session, SSH_OPTIONS_CERTIFICATE, p);

@@ -44,6 +44,8 @@ struct ssh_config_token_info {
     bool invalid;
 };
 
+char *ssh_config_get_path(char **str);
+
 char *ssh_config_get_token(char **str);
 
 char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info);

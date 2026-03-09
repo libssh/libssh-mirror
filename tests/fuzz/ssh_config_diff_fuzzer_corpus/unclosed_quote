@@ -1,0 +1,4 @@
+unclosed
+# OpenSSH explicitly rejects unclosed quotes, libssh should reject them instead of crashing or misparsing.
+Host unclosed
+    UserKnownHostsFile "file1

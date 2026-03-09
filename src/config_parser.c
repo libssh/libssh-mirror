@@ -395,3 +395,92 @@ error:
     }
     return SSH_ERROR;
 }
+
+/**
+ * @brief Get a path from a string, handling quotes and spaces.
+ *
+ * It handles single and double quotes and strips them from the result.
+ * It also handles escaped characters (\\).
+ * It preserves comment boundaries (#) unless inside quotes.
+ *
+ * @param[in,out] str Pointer to the string to parse. Updated to point
+ *                    to the next token.
+ *
+ * @return  A pointer to the extracted path string, or NULL on error
+ *          (e.g. unclosed quotes) or if no path is found.
+ */
+char *ssh_config_get_path(char **str)
+{
+    char *c = *str;
+    char *r = NULL;
+    char *out = NULL;
+    char delimiter;
+    bool in_double_quote = false;
+    bool in_single_quote = false;
+
+    /* Skip leading spaces */
+    while (isblank((unsigned char)*c)) {
+        c++;
+    }
+
+    if (*c == '\0' || *c == '\n' || *c == '#') {
+        *str = c;
+        return NULL;
+    }
+
+    r = out = c;
+
+    for (; *c != '\0' && *c != '\n'; c++) {
+        bool in_quotes = in_single_quote || in_double_quote;
+
+        if (*c == '\\') {
+            /* If we encounter an escape character, check if it's escaping something meaningful */
+            if (c[1] == '\'' || c[1] == '\"' || c[1] == '\\' ||
+                (!in_quotes && isblank((unsigned char)c[1]))) {
+                c++; /* Skip the escape character */
+            }
+        } else if ((in_single_quote && *c == '\'') || (in_double_quote && *c == '\"')) {
+            /* Closing quote */
+            in_single_quote = false;
+            in_double_quote = false;
+            continue;
+        } else if (!in_quotes) {
+            /* We are outside of quotes - handle opening quotes and token boundaries */
+            if (isblank((unsigned char)*c)) {
+                break; /* Space means we've reached the end of the token */
+            } else if (*c == '\'' || *c == '\"') {
+                if (*c == '\'') {
+                    in_single_quote = true;
+                } else {
+                    in_double_quote = true;
+                }
+                continue; /* Skip the opening quote character itself */
+            }
+        }
+
+        /* Everything else (regular characters, and literal characters inside quotes) 
+         * gets appended to the token */
+        *out++ = *c;
+    }
+
+    /* Return NULL on unclosed quotes */
+    if (in_double_quote || in_single_quote) {
+        return NULL;
+    }
+
+    delimiter = *c;
+    *out = '\0';
+
+    /* Move past the delimiter for the next time this is called */
+    if (delimiter != '\0' && delimiter != '\n' && delimiter != '#') {
+        c++;
+    }
+
+    /* Skip any trailing whitespace as well */
+    while (isblank((unsigned char)*c)) {
+        c++;
+    }
+
+    *str = c;
+    return r;
+}

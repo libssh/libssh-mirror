@@ -1,0 +1,4 @@
+spaces
+# libssh previously failed to parse spaces inside quoted path tokens.
+Host spaces
+    UserKnownHostsFile "file 1" "file 2"

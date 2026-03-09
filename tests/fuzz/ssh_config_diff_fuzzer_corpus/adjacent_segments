@@ -1,0 +1,4 @@
+adjacent
+# libssh failed to parse paths when unquoted text is adjacent to quoted text (e.g., file"1").
+Host adjacent
+    UserKnownHostsFile file"1"file2
