@@ -96,19 +96,19 @@ struct ssh_counter_struct {
 };
 typedef struct ssh_counter_struct *ssh_counter;
 
-typedef struct ssh_agent_struct* ssh_agent;
-typedef struct ssh_buffer_struct* ssh_buffer;
-typedef struct ssh_channel_struct* ssh_channel;
-typedef struct ssh_message_struct* ssh_message;
-typedef struct ssh_pcap_file_struct* ssh_pcap_file;
-typedef struct ssh_key_struct* ssh_key;
-typedef struct ssh_scp_struct* ssh_scp;
-typedef struct ssh_session_struct* ssh_session;
-typedef struct ssh_string_struct* ssh_string;
-typedef struct ssh_event_struct* ssh_event;
-typedef struct ssh_connector_struct * ssh_connector;
+typedef struct ssh_agent_struct *ssh_agent;
+typedef struct ssh_buffer_struct *ssh_buffer;
+typedef struct ssh_channel_struct *ssh_channel;
+typedef struct ssh_message_struct *ssh_message;
+typedef struct ssh_pcap_file_struct *ssh_pcap_file;
+typedef struct ssh_key_struct *ssh_key;
+typedef struct ssh_scp_struct *ssh_scp;
+typedef struct ssh_session_struct *ssh_session;
+typedef struct ssh_string_struct *ssh_string;
+typedef struct ssh_event_struct *ssh_event;
+typedef struct ssh_connector_struct *ssh_connector;
 typedef struct ssh_pki_ctx_struct *ssh_pki_ctx;
-typedef void* ssh_gssapi_creds;
+typedef void *ssh_gssapi_creds;
 
 /* Socket type */
 #ifdef _WIN32
