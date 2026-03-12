@@ -20,6 +20,7 @@ program.
 #include <sys/stat.h>
 
 #include <libssh/libssh.h>
+#include <libssh/scp.h>
 #include "examples_common.h"
 
 #ifndef BUF_SIZE

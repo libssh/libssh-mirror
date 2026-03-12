@@ -102,7 +102,6 @@ typedef struct ssh_channel_struct *ssh_channel;
 typedef struct ssh_message_struct *ssh_message;
 typedef struct ssh_pcap_file_struct *ssh_pcap_file;
 typedef struct ssh_key_struct *ssh_key;
-typedef struct ssh_scp_struct *ssh_scp;
 typedef struct ssh_session_struct *ssh_session;
 typedef struct ssh_string_struct *ssh_string;
 typedef struct ssh_event_struct *ssh_event;
@@ -489,27 +488,6 @@ enum ssh_options_e {
     SSH_OPTIONS_GATEWAY_PORTS,
 };
 
-enum {
-  /** Code is going to write/create remote files */
-  SSH_SCP_WRITE,
-  /** Code is going to read remote files */
-  SSH_SCP_READ,
-  SSH_SCP_RECURSIVE=0x10
-};
-
-enum ssh_scp_request_types {
-  /** A new directory is going to be pulled */
-  SSH_SCP_REQUEST_NEWDIR=1,
-  /** A new file is going to be pulled */
-  SSH_SCP_REQUEST_NEWFILE,
-  /** End of requests */
-  SSH_SCP_REQUEST_EOF,
-  /** End of directory */
-  SSH_SCP_REQUEST_ENDDIR,
-  /** Warning received */
-  SSH_SCP_REQUEST_WARNING
-};
-
 enum ssh_connector_flags_e {
     /** Only the standard stream of the channel */
     SSH_CONNECTOR_STDOUT = 1,
@@ -651,26 +629,6 @@ SSH_DEPRECATED LIBSSH_API int ssh_is_server_known(ssh_session session);
 SSH_DEPRECATED LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 SSH_DEPRECATED LIBSSH_API int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans, ssh_channel *exceptchans, struct
         timeval * timeout);
-
-SSH_DEPRECATED LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_close(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, const char *reason);
-SSH_DEPRECATED LIBSSH_API void ssh_scp_free(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_init(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_leave_directory(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int perms);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size, int perms);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_read(ssh_scp scp, void *buffer, size_t size);
-SSH_DEPRECATED LIBSSH_API const char *ssh_scp_request_get_filename(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_request_get_permissions(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API size_t ssh_scp_request_get_size(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API uint64_t ssh_scp_request_get_size64(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API const char *ssh_scp_request_get_warning(ssh_scp scp);
-SSH_DEPRECATED LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
-
 
 LIBSSH_API int ssh_get_random(void *where,int len,int strong);
 LIBSSH_API int ssh_get_version(ssh_session session);

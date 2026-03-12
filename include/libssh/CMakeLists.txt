@@ -29,6 +29,13 @@ if (WITH_SERVER)
   endif (WITH_SFTP)
 endif (WITH_SERVER)
 
+if (WITH_SCP)
+  set(libssh_HDRS
+    ${libssh_HDRS}
+    scp.h
+  )
+endif (WITH_SCP)
+
 if (WITH_FIDO2)
     set(libssh_HDRS
         ${libssh_HDRS}

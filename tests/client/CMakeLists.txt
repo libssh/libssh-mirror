@@ -25,7 +25,7 @@ set(LIBSSH_CLIENT_TESTS
     )
 
 find_program(SCP_EXECUTABLE NAMES scp)
-if (SCP_EXECUTABLE)
+if (WITH_SCP AND SCP_EXECUTABLE)
     set(LIBSSH_CLIENT_TESTS
         ${LIBSSH_CLIENT_TESTS}
         torture_scp)

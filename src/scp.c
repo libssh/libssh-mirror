@@ -22,13 +22,11 @@
  */
 
 #include "config.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include "libssh/priv.h"
-#include "libssh/scp.h"
+#include "libssh/scp_priv.h"
 #include "libssh/misc.h"
 #include "libssh/session.h"
 

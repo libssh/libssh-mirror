@@ -349,6 +349,7 @@ fedora/openssl_3.x/x86_64/minimal:
       -DWITH_PCAP=OFF
       -DWITH_GSSAPI=OFF
       -DWITH_GEX=OFF
+      -DWITH_SCP=OFF
       -DUNIT_TESTING=ON
       -DCLIENT_TESTING=ON .. &&
       make -j$(nproc)

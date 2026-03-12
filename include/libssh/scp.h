@@ -18,53 +18,69 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef _SCP_H
-#define _SCP_H
+#ifndef _LIBSSH_SCP_H
+#define _LIBSSH_SCP_H
 
-#include "config.h"
-
-#include <stddef.h>
-#include <stdint.h>
-
-#include "libssh/libssh.h"
-
-enum ssh_scp_states {
-  SSH_SCP_NEW,          //Data structure just created
-  SSH_SCP_WRITE_INITED, //Gave our intention to write
-  SSH_SCP_WRITE_WRITING,//File was opened and currently writing
-  SSH_SCP_READ_INITED,  //Gave our intention to read
-  SSH_SCP_READ_REQUESTED, //We got a read request
-  SSH_SCP_READ_READING, //File is opened and reading
-  SSH_SCP_ERROR,         //Something bad happened
-  SSH_SCP_TERMINATED	//Transfer finished
-};
-
-struct ssh_scp_struct {
-  ssh_session session;
-  int mode;
-  int recursive;
-  ssh_channel channel;
-  char *location;
-  enum ssh_scp_states state;
-  uint64_t filelen;
-  uint64_t processed;
-  enum ssh_scp_request_types request_type;
-  char *request_name;
-  char *warning;
-  int request_mode;
-};
+#include <libssh/libssh.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);
-int ssh_scp_integer_mode(const char *mode);
-char *ssh_scp_string_mode(int mode);
-int ssh_scp_response(ssh_scp scp, char **response);
+enum {
+    /** Local client uploads files to the remote side */
+    SSH_SCP_WRITE,
+    /** Local client downloads files from the remote side */
+    SSH_SCP_READ,
+    SSH_SCP_RECURSIVE = 0x10
+};
+
+enum ssh_scp_request_types {
+    /** A new directory is going to be pulled */
+    SSH_SCP_REQUEST_NEWDIR = 1,
+    /** A new file is going to be pulled */
+    SSH_SCP_REQUEST_NEWFILE,
+    /** End of requests */
+    SSH_SCP_REQUEST_EOF,
+    /** End of directory */
+    SSH_SCP_REQUEST_ENDDIR,
+    /** Warning received */
+    SSH_SCP_REQUEST_WARNING
+};
+
+typedef struct ssh_scp_struct *ssh_scp;
+
+SSH_DEPRECATED LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_close(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_deny_request(ssh_scp scp,
+                                                   const char *reason);
+SSH_DEPRECATED LIBSSH_API void ssh_scp_free(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_init(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_leave_directory(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API ssh_scp ssh_scp_new(ssh_session session,
+                                              int mode,
+                                              const char *location);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int
+ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode);
+SSH_DEPRECATED LIBSSH_API int
+ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int perms);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_push_file64(ssh_scp scp,
+                                                  const char *filename,
+                                                  uint64_t size,
+                                                  int perms);
+SSH_DEPRECATED LIBSSH_API int
+ssh_scp_read(ssh_scp scp, void *buffer, size_t size);
+SSH_DEPRECATED LIBSSH_API const char *ssh_scp_request_get_filename(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_request_get_permissions(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API size_t ssh_scp_request_get_size(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API uint64_t ssh_scp_request_get_size64(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API const char *ssh_scp_request_get_warning(ssh_scp scp);
+SSH_DEPRECATED LIBSSH_API int
+ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* _LIBSSH_SCP_H */

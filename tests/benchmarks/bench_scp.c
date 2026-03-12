@@ -22,6 +22,8 @@
 
 #include "benchmarks.h"
 #include <libssh/libssh.h>
+#include <libssh/scp.h>
+
 #include <stdio.h>
 
 #define SCPDIR "/tmp/"

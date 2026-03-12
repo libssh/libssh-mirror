@@ -19,8 +19,9 @@ program.
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <libssh/libssh.h>
 #include "examples_common.h"
+#include <libssh/libssh.h>
+#include <libssh/scp.h>
 
 #ifndef BUF_SIZE
 #define BUF_SIZE 16384

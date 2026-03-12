@@ -40,6 +40,8 @@ struct benchmark benchmarks[] = {
         .fct = benchmarks_raw_down,
         .enabled = 0
     },
+
+#ifdef WITH_SCP
     {
         .name = "benchmark_scp_upload",
         .fct = benchmarks_scp_up,
@@ -50,6 +52,8 @@ struct benchmark benchmarks[] = {
         .fct = benchmarks_scp_down,
         .enabled = 0
     },
+#endif /* WITH_SCP */
+
 #ifdef WITH_SFTP
     {
         .name = "benchmark_sync_sftp_upload",
@@ -62,7 +66,7 @@ struct benchmark benchmarks[] = {
         .enabled = 0
     },
     {
-        .name="benchmark_async_sftp_download",
+        .name = "benchmark_async_sftp_download",
         .fct=benchmarks_async_sftp_down,
         .enabled=0
     },
