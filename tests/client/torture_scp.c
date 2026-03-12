@@ -481,6 +481,68 @@ static void torture_scp_download_recursive(void **state)
     ssh_scp_free(scp);
 }
 
+static void torture_scp_is_closed_null(UNUSED_PARAM(void **state))
+{
+    int rc;
+    rc = ssh_scp_is_closed(NULL);
+    assert_int_equal(rc, SSH_ERROR);
+}
+
+static void torture_scp_is_closed_valid_scp(void **state)
+{
+    struct scp_st *ts = NULL;
+    struct torture_state *s = NULL;
+    ssh_scp scp = NULL;
+    int rc;
+
+    assert_non_null(state);
+    ts = *state;
+    assert_non_null(ts->s);
+    s = ts->s;
+
+    scp = ssh_scp_new(s->ssh.session, SSH_SCP_READ, ".");
+    assert_non_null(scp);
+
+    rc = ssh_scp_is_closed(scp);
+    assert_int_equal(rc, 1);
+
+    ssh_scp_free(scp);
+}
+
+static void torture_scp_is_closed_channel(void **state)
+{
+    struct scp_st *ts = NULL;
+    struct torture_state *s = NULL;
+    ssh_session session = NULL;
+    ssh_scp scp = NULL;
+    int rc;
+
+    assert_non_null(state);
+    ts = *state;
+    assert_non_null(ts->s);
+    s = ts->s;
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    scp = ssh_scp_new(session, SSH_SCP_READ, ".");
+    assert_non_null(scp);
+
+    rc = ssh_scp_init(scp);
+    assert_ssh_return_code(session, rc);
+
+    /* Channel is open */
+    rc = ssh_scp_is_closed(scp);
+    assert_int_equal(rc, 0);
+
+    ssh_scp_close(scp);
+
+    /* ssh_scp_close() frees and nullifies the channel */
+    rc = ssh_scp_is_closed(scp);
+    assert_int_equal(rc, 1);
+
+    ssh_scp_free(scp);
+}
+
 static void torture_scp_upload_newline(void **state)
 {
     struct scp_st *ts = NULL;
@@ -634,6 +696,16 @@ int torture_run_tests(void)
 {
     int rc;
     struct CMUnitTest tests[] = {
+        cmocka_unit_test(torture_scp_is_closed_null),
+
+        cmocka_unit_test_setup_teardown(torture_scp_is_closed_valid_scp,
+                                        session_setup,
+                                        session_teardown),
+
+        cmocka_unit_test_setup_teardown(torture_scp_is_closed_channel,
+                                        session_setup,
+                                        session_teardown),
+
         cmocka_unit_test_setup_teardown(torture_scp_upload,
                                         session_setup,
                                         session_teardown),
@@ -662,3 +734,4 @@ int torture_run_tests(void)
 
     return rc;
 }
+

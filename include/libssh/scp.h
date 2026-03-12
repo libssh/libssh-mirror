@@ -78,6 +78,7 @@ SSH_DEPRECATED LIBSSH_API uint64_t ssh_scp_request_get_size64(ssh_scp scp);
 SSH_DEPRECATED LIBSSH_API const char *ssh_scp_request_get_warning(ssh_scp scp);
 SSH_DEPRECATED LIBSSH_API int
 ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
+SSH_DEPRECATED LIBSSH_API int ssh_scp_is_closed(ssh_scp scp);
 
 #ifdef __cplusplus
 }

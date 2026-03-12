@@ -514,4 +514,5 @@ LIBSSH_AFTER_4_11_0
         ssh_options_get_int;
         ssh_session_kex_is_gss;
         ssh_userauth_gssapi_keyex;
+        ssh_scp_is_closed;
 } LIBSSH_4_11_0;

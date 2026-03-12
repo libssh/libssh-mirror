@@ -22,9 +22,11 @@
  */
 
 #include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "libssh/priv.h"
 #include "libssh/scp_priv.h"
 #include "libssh/misc.h"
@@ -1214,6 +1216,33 @@ const char *ssh_scp_request_get_warning(ssh_scp scp)
     }
 
     return scp->warning;
+}
+
+/**
+ * @deprecated Please use SFTP instead
+ *
+ * @brief Check if the SCP session is not connected to the server.
+ *
+ * Returns 1 if the SCP handle is not connected, irrespective of whether
+ * the connection was never opened, closed by the client, or closed by
+ * the server.
+ *
+ * @param[in]  scp      The scp handle to check.
+ *
+ * @return              1 if not connected, 0 if connected,
+ *                      SSH_ERROR if scp is NULL.
+ */
+int ssh_scp_is_closed(ssh_scp scp)
+{
+    if (scp == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (scp->state == SSH_SCP_TERMINATED || scp->channel == NULL) {
+        return 1;
+    }
+
+    return ssh_channel_is_closed(scp->channel);
 }
 
 /** @} */
