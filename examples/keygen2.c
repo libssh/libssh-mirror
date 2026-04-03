@@ -331,11 +331,32 @@ list_fingerprint(char *file)
     ssh_key_free(key);
 }
 
+static int
+ask_overwrite(const char *filename)
+{
+    char answer[8] = {0};
+    size_t i = 0;
+
+    printf("File \"%s\" exists. Overwrite it? (y|n) ", filename);
+    fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    for (i = 0; answer[i] != '\0'; i++) {
+        if (!isspace((unsigned char)answer[i])) {
+            break;
+        }
+    }
+
+    return tolower((unsigned char)answer[i]) == 'y';
+}
+
 int main(int argc, char *argv[])
 {
     ssh_key key = NULL;
     int rc = 0;
-    char overwrite[1024] = "";
 
     char *pubkey_file = NULL;
 
@@ -371,11 +392,9 @@ int main(int argc, char *argv[])
     rc = open(arguments.file, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR);
     if (rc < 0) {
         if (errno == EEXIST) {
-            printf("File \"%s\" exists. Overwrite it? (y|n) ", arguments.file);
-            rc = scanf("%1023s", overwrite);
-            if (rc > 0 && tolower(overwrite[0]) == 'y') {
+            if (ask_overwrite(arguments.file)) {
                 rc = open(arguments.file, O_WRONLY);
-                if (rc > 0) {
+                if (rc >= 0) {
                     close(rc);
                     errno = 0;
                     rc = chmod(arguments.file, S_IRUSR | S_IWUSR);
@@ -442,11 +461,9 @@ int main(int argc, char *argv[])
               S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (rc < 0) {
         if (errno == EEXIST) {
-            printf("File \"%s\" exists. Overwrite it? (y|n) ", pubkey_file);
-            rc = scanf("%1023s", overwrite);
-            if (rc > 0 && tolower(overwrite[0]) == 'y') {
+            if (ask_overwrite(pubkey_file)) {
                 rc = open(pubkey_file, O_WRONLY);
-                if (rc > 0) {
+                if (rc >= 0) {
                     close(rc);
                     errno = 0;
                     rc = chmod(pubkey_file,
