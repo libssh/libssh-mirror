@@ -1,0 +1,4 @@
+example.com
+# Verifies basic parsing of a single CertificateFile entry without duplicates.
+Host *
+  CertificateFile ~/.ssh/id_rsa-cert.pub

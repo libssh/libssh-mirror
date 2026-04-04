@@ -1195,13 +1195,13 @@ static int ssh_config_parse_line_internal(ssh_session session,
 
   switch (opcode) {
     case SOC_INCLUDE: /* recursive include of other files */
-
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         char *path = ssh_config_make_absolute(session, p, global);
         if (path == NULL) {
-          SSH_LOG(SSH_LOG_WARN, "line %d: Failed to allocate memory "
-                  "for the include path expansion", count);
+          SSH_LOG(SSH_LOG_WARN,
+                  "line %d: Failed to allocate memory for the include path expansion",
+                  count);
           SAFE_FREE(x);
           return -1;
         }
@@ -1614,6 +1614,20 @@ static int ssh_config_parse_line_internal(ssh_session session,
       p = ssh_config_get_path(&s);
       CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
       if (*parsing) {
+          /* OpenSSH does not use default identities if any explicit IdentityFile
+           * is provided in the configuration. Because libssh pre-populates its
+           * defaults early, we must clear them the first time we encounter an
+           * IdentityFile. We use seen[SOC_IDENTITY] as a flag to ensure we only
+           * clear the list once. */
+          if (!seen[SOC_IDENTITY]) {
+              struct ssh_iterator *it = NULL;
+              seen[SOC_IDENTITY] = 1;
+              while ((it = ssh_list_get_iterator(session->opts.identity_non_exp)) != NULL) {
+                  char *id = ssh_iterator_value(char *, it);
+                  ssh_list_remove(session->opts.identity_non_exp, it);
+                  free(id);
+              }
+          }
           ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, p);
       }
       break;

@@ -1,0 +1,4 @@
+target
+# Verifies deduplication when a custom identity file is specified alongside a default identity.
+IdentityFile custom
+IdentityFile ~/.ssh/id_rsa

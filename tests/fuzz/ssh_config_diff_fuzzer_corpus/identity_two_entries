@@ -1,0 +1,4 @@
+testhost
+# Verifies handling of two distinct IdentityFile entries without deduplication.
+IdentityFile /tmp/id_fuzz1
+IdentityFile /tmp/id_fuzz2

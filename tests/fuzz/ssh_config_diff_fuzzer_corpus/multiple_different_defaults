@@ -1,0 +1,4 @@
+target
+# Verifies handling of multiple different default identities (e.g. rsa and ed25519).
+IdentityFile ~/.ssh/id_rsa
+IdentityFile ~/.ssh/id_ed25519

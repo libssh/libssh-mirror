@@ -1,0 +1,7 @@
+example.com
+# Verifies CertificateFile deduplication logic across different Match and Host blocks.
+Match host example.com
+  CertificateFile ~/.ssh/custom-cert.pub
+
+Host *
+  CertificateFile ~/.ssh/default-cert.pub

@@ -1,0 +1,7 @@
+example.com
+# Verifies deduplication logic when both IdentityFile and CertificateFile entries are present.
+Host *
+  IdentityFile ~/.ssh/id_rsa
+  CertificateFile ~/.ssh/id_rsa-cert.pub
+  IdentityFile ~/.ssh/id_ed25519
+  CertificateFile ~/.ssh/id_ed25519-cert.pub

@@ -1,0 +1,5 @@
+example.com
+# Verifies that identical duplicate CertificateFile entries are correctly deduplicated.
+Host *
+  CertificateFile ~/.ssh/id_rsa-cert.pub
+  CertificateFile ~/.ssh/id_rsa-cert.pub

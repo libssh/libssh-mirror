@@ -1,0 +1,6 @@
+testhost
+# Verifies that certificate files are deduplicated correctly when IdentityFile is also specified.
+IdentityFile /tmp/id_r/tmp/iuzz2
+CertificateFile /tmp/id_rsa_fuzz1-cert.pub
+CertificateFile /tmp/id_rsa_fuzz1-cert.pub
+IdentitiesOnly yes

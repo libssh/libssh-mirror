@@ -1,0 +1,3 @@
+testhost
+# Verifies basic parsing of a single IdentityFile entry without duplicates.
+IdentityFile /tmp/id_fuzz1

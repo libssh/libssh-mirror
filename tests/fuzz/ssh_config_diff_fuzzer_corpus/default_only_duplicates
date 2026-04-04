@@ -1,0 +1,4 @@
+target
+# Verifies that duplicate default identity entries are correctly deduplicated.
+IdentityFile ~/.ssh/id_rsa
+IdentityFile ~/.ssh/id_rsa

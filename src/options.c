@@ -1400,7 +1400,9 @@ int ssh_options_set(ssh_session session,
             }
             break;
         case SSH_OPTIONS_IDENTITY:
-        case SSH_OPTIONS_ADD_IDENTITY:
+        case SSH_OPTIONS_ADD_IDENTITY: {
+            struct ssh_iterator *id_it = NULL;
+
             v = value;
             if (v == NULL || v[0] == '\0') {
                 ssh_set_error_invalid(session);
@@ -1410,7 +1412,15 @@ int ssh_options_set(ssh_session session,
             if (q == NULL) {
                 return -1;
             }
-
+            /* Deduplicate: skip if the same path is already in the list */
+            for (id_it = ssh_list_get_iterator(session->opts.identity_non_exp);
+                 id_it != NULL; id_it = id_it->next) {
+                int cmp = strcmp(ssh_iterator_value(char *, id_it), q);
+                if (cmp == 0) {
+                    free(q);
+                    return 0;
+                }
+            }
             if (session->opts.exp_flags & SSH_OPT_EXP_FLAG_IDENTITY) {
                 rc = ssh_list_append(session->opts.identity_non_exp, q);
             } else {
@@ -1421,7 +1431,10 @@ int ssh_options_set(ssh_session session,
                 return -1;
             }
             break;
-        case SSH_OPTIONS_CERTIFICATE:
+        }
+        case SSH_OPTIONS_CERTIFICATE: {
+            struct ssh_iterator *cert_it = NULL;
+
             v = value;
             if (v == NULL || v[0] == '\0') {
                 ssh_set_error_invalid(session);
@@ -1439,12 +1452,23 @@ int ssh_options_set(ssh_session session,
                     return -1;
                 }
             }
+
+            /* Deduplicate: skip if the same path is already in the list */
+            for (cert_it = ssh_list_get_iterator(session->opts.certificate_non_exp);
+                 cert_it != NULL; cert_it = cert_it->next) {
+                int cmp = strcmp(ssh_iterator_value(char *, cert_it), q);
+                if (cmp == 0) {
+                    free(q);
+                    return 0;
+                }
+            }
             rc = ssh_list_append(session->opts.certificate_non_exp, q);
             if (rc < 0) {
                 free(q);
                 return -1;
             }
             break;
+        }
         case SSH_OPTIONS_KNOWNHOSTS:
             v = value;
             SAFE_FREE(session->opts.knownhosts);
@@ -3236,6 +3260,21 @@ int ssh_options_apply(ssh_session session)
         SAFE_FREE(saved_host);
         free(tmp);
         SAFE_FREE(session->opts.config_hostname);
+    }
+
+    /* Expand percent tokens in the username at apply time, matching OpenSSH
+     * which defers User expansion to after all options are resolved.
+     */
+    if ((session->opts.exp_flags & SSH_OPT_EXP_FLAG_USERNAME) == 0 &&
+        session->opts.username != NULL) {
+        tmp = ssh_path_expand_escape(session, session->opts.username);
+        if (tmp != NULL) {
+            free(session->opts.username);
+            session->opts.username = tmp;
+            tmp = NULL;
+        }
+        /* On failure, keep the raw string — best-effort expansion */
+        session->opts.exp_flags |= SSH_OPT_EXP_FLAG_USERNAME;
     }
 
     if ((session->opts.exp_flags & SSH_OPT_EXP_FLAG_KNOWNHOSTS) == 0) {

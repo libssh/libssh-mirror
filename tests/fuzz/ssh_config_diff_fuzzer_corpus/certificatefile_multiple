@@ -1,0 +1,5 @@
+example.com
+# Verifies handling of multiple distinct CertificateFile entries (no deduplication should occur).
+Host *
+  CertificateFile ~/.ssh/id_rsa-cert.pub
+  CertificateFile ~/.ssh/id_ed25519-cert.pub
