@@ -537,22 +537,17 @@ ssh_match_exec(ssh_session session, const char *command, bool negate)
 #endif /* WITH_EXEC */
 
 /*
- * HostName recognizes %% and %h during config parsing. Other %X sequences are
- * left for deferred HostName expansion, and only a trailing bare '%' is
- * rejected here.
+ * HostName recognizes %% and %h during config parsing. Unsupported %X
+ * sequences are strictly rejected as fatal errors here, matching OpenSSH.
  */
 static int ssh_config_scan_hostname_tokens(ssh_session session,
                                            const char *hostname,
-                                           bool *needs_host,
-                                           bool *has_unknown)
+                                           bool *needs_host)
 {
     const char *p = NULL;
 
     if (needs_host != NULL) {
         *needs_host = false;
-    }
-    if (has_unknown != NULL) {
-        *has_unknown = false;
     }
 
     if (hostname == NULL) {
@@ -579,11 +574,8 @@ static int ssh_config_scan_hostname_tokens(ssh_session session,
                 p++;
                 continue;
             default:
-                if (has_unknown != NULL) {
-                    *has_unknown = true;
-                }
-                p++;
-                continue;
+                ssh_set_error(session, SSH_FATAL, "unknown key %%%c", p[1]);
+                return -1;
             }
         }
     }
@@ -1584,19 +1576,16 @@ static int ssh_config_parse_line_internal(ssh_session session,
             int rc;
             bool had_expansion = strchr(p, '%') != NULL;
             bool needs_host = false;
-            bool has_unknown = false;
             rc = ssh_config_scan_hostname_tokens(session,
                                                  p,
-                                                 &needs_host,
-                                                 &has_unknown);
+                                                 &needs_host);
             if (rc < 0) {
                 SAFE_FREE(x);
                 return -1;
             }
             if (had_expansion) {
-                if (!has_unknown &&
-                    (!needs_host || session->opts.host != NULL ||
-                     session->opts.originalhost != NULL)) {
+                if (!needs_host || session->opts.host != NULL ||
+                     session->opts.originalhost != NULL) {
                     char *expanded = ssh_path_expand_hostname(session, p);
                     if (expanded == NULL) {
                         SAFE_FREE(x);

@@ -1222,6 +1222,14 @@ int ssh_options_set(ssh_session session,
             if (v == NULL || v[0] == '\0') {
                 ssh_set_error_invalid(session);
                 return -1;
+            } else if (session->opts.config_hostname_only) {
+                /* HostName values are plain hostnames, not user@host URIs */
+                SAFE_FREE(session->opts.host);
+                session->opts.host = strdup(value);
+                if (session->opts.host == NULL) {
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
             } else {
                 char *username = NULL, *hostname = NULL;
                 char *strict_hostname = NULL;
@@ -1246,13 +1254,9 @@ int ssh_options_set(ssh_session session,
                     SAFE_FREE(session->opts.username);
                     session->opts.username = username;
                 }
-                if (!session->opts.config_hostname_only) {
-                    SAFE_FREE(session->opts.config_hostname);
-                    SAFE_FREE(session->opts.originalhost);
-                    session->opts.originalhost = hostname;
-                } else {
-                    SAFE_FREE(hostname);
-                }
+                SAFE_FREE(session->opts.config_hostname);
+                SAFE_FREE(session->opts.originalhost);
+                session->opts.originalhost = hostname;
 
                 /* Strict parse: set host only if valid hostname or IP */
                 rc = ssh_normalize_loose_ip(value, &normalized);
@@ -1274,11 +1278,6 @@ int ssh_options_set(ssh_session session,
                 if (rc != SSH_OK || strict_hostname == NULL) {
                     SAFE_FREE(session->opts.host);
                     SAFE_FREE(strict_hostname);
-                    if (session->opts.config_hostname_only) {
-                        /* Config path: Hostname must be valid */
-                        ssh_set_error_invalid(session);
-                        return -1;
-                    }
                 } else {
                     SAFE_FREE(session->opts.host);
                     session->opts.host = strict_hostname;

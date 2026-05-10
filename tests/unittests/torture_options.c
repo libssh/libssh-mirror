@@ -1283,7 +1283,7 @@ static void torture_options_config_host(void **state)
     rv = ssh_options_parse_config(session, "test_config");
     assert_int_equal(rv, -1);
 
-    /* Config Hostname with invalid hostname: verify stale host not leaked */
+    /* Config HostName with alias containing underscores: verify it parses successfully */
     torture_write_file("test_config", "Host 192.168.1.1\nHostname my_alias\n");
 
     torture_reset_config(session);
@@ -1292,7 +1292,7 @@ static void torture_options_config_host(void **state)
     assert_string_equal(session->opts.originalhost, "192.168.1.1");
     rv = ssh_options_parse_config(session, "test_config");
     assert_int_equal(rv, 0);
-    assert_null(session->opts.host);
+    assert_string_equal(session->opts.host, "my_alias");
     assert_string_equal(session->opts.originalhost, "192.168.1.1");
 
     /* Calling ssh_options_set(HOST) twice: verify stale host not leaked */
@@ -1300,6 +1300,10 @@ static void torture_options_config_host(void **state)
     assert_string_equal(session->opts.host, "real.server.com");
     assert_string_equal(session->opts.originalhost, "real.server.com");
 
+    /* Note: "my_alias" is intentionally rejected by ssh_options_set() because
+     * it contains an underscore, making it an invalid DNS hostname. The config
+     * parser, however, correctly treats HostName as an opaque string.
+     */
     ssh_options_set(session, SSH_OPTIONS_HOST, "my_alias");
     assert_null(session->opts.host);
     assert_string_equal(session->opts.originalhost, "my_alias");

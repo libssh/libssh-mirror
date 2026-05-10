@@ -4942,36 +4942,29 @@ static void torture_config_hostname(void **state)
     assert_string_equal(session->opts.host, "192.0.2.1.example.com");
     assert_string_equal(session->opts.originalhost, "my-alias");
 
-    /* Hostname with unsupported tokens is ignored without changing the host.
-     * Mixed known/unknown token expansion is covered in
-     * torture_path_expand_hostname_unknown_token().
+    /* Hostname with unsupported tokens is rejected and unknown percent-escape
+     * keys are treated as fatal errors
      */
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "my-alias");
     _parse_config(session,
                   NULL,
                   "Host my-alias\n\tHostName FoO-%p.ExAmPlE.CoM\n",
-                  SSH_OK);
+                  SSH_ERROR);
     assert_string_equal(session->opts.host, "my-alias");
     assert_string_equal(session->opts.originalhost, "my-alias");
-    assert_string_equal(session->opts.config_hostname, "foo-%p.example.com");
-    assert_int_equal(ssh_options_apply(session), SSH_OK);
-    assert_string_equal(session->opts.host, "my-alias");
-    assert_string_equal(session->opts.originalhost, "my-alias");
+    assert_null(session->opts.config_hostname);
 
-    /* Unsupported uppercase escapes remain unsupported after normalization. */
+    /* Unsupported uppercase escapes are also rejected. */
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "my-alias");
     _parse_config(session,
                   NULL,
                   "Host my-alias\n\tHostName FoO-%H.ExAmPlE.CoM\n",
-                  SSH_OK);
+                  SSH_ERROR);
     assert_string_equal(session->opts.host, "my-alias");
     assert_string_equal(session->opts.originalhost, "my-alias");
-    assert_string_equal(session->opts.config_hostname, "foo-%H.example.com");
-    assert_int_equal(ssh_options_apply(session), SSH_OK);
-    assert_string_equal(session->opts.host, "my-alias");
-    assert_string_equal(session->opts.originalhost, "my-alias");
+    assert_null(session->opts.config_hostname);
 
     /* Hostname rejects incomplete tokens such as a trailing % */
     torture_reset_config(session);
@@ -4984,7 +4977,8 @@ static void torture_config_hostname(void **state)
     /* Hostname %% is syntactically valid but still must produce a hostname */
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "my-alias");
-    _parse_config(session, NULL, "Host my-alias\n\tHostName %%\n", SSH_ERROR);
+    _parse_config(session, NULL, "Host my-alias\n\tHostName %%\n", SSH_OK);
+    assert_string_equal(session->opts.host, "%");
 
     /* Match host sees the resolved HostName during parsing */
     torture_reset_config(session);
@@ -5082,15 +5076,12 @@ static void torture_config_hostname_scan_null(void **state)
     ssh_session session = *state;
     int rc;
     bool needs_host = true;
-    bool has_unknown = true;
 
     rc = ssh_config_scan_hostname_tokens(session,
                                          NULL,
-                                         &needs_host,
-                                         &has_unknown);
+                                         &needs_host);
     assert_int_equal(rc, -1);
     assert_false(needs_host);
-    assert_false(has_unknown);
     assert_string_equal(ssh_get_error(session),
                         "Cannot scan HostName tokens from NULL input");
 }
