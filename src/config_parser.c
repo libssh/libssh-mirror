@@ -135,15 +135,14 @@ char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info)
         /* Otherwise terminate on space, equal or newline */
         r = dst = c;
         for (; *c; c++) {
-            /* Treat escaped whitespace outside quotes as part of the current
-             * token, e.g. "tag\ name". The backslash is dropped as the token
-             * is compacted in place through dst.
-             *
-             * Note: there is no general backslash escape; the quoted branch
-             * above only recognizes \", and this branch only recognizes
-             * \<blank>.
+            /* Process backslash escapes matching OpenSSH's argv_split():
+             * \\, \', \", and \<blank> are recognized. The backslash is
+             * dropped and the escaped character is kept. Unrecognized
+             * escapes preserve the backslash literally.
              */
-            if (*c == '\\' && isblank((unsigned char)c[1])) {
+            if (*c == '\\' &&
+                (c[1] == '\\' || c[1] == '\'' || c[1] == '\"' ||
+                 isblank((unsigned char)c[1]))) {
                 c++;
                 *dst++ = *c;
             } else if (isblank((unsigned char)*c) || *c == '=' || *c == '\n') {
