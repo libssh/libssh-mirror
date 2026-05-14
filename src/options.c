@@ -3126,11 +3126,32 @@ out:
     return r;
 }
 
-/** @internal
- * @brief Apply default values for unset session options.
+/**
+ * @internal
  *
- * Sets default SSH directory and username if not already configured,
- * and resolves any remaining option expansions.
+ * @brief Checks if a hostname requires lowercasing.
+ *
+ * This function determines if the given host string is a standard hostname
+ * that should be converted to lowercase for case-insensitive matching.
+ * It returns false for IPv4/IPv6 addresses or strings containing formatting
+ * tokens (e.g., '%'), as these should remain unmodified.
+ *
+ * @param[in]  host  The hostname string to evaluate.
+ *
+ * @return     true if the host should be lowercased, false otherwise.
+ */
+static bool ssh_host_requires_lowercase(const char *host) {
+    if (strchr(host, '%') != NULL || strchr(host, ':') != NULL ||
+        strspn(host, "0123456789.") == strlen(host)) {
+        return false;
+    }
+    return !ssh_is_ipaddr(host);
+}
+
+/**
+ * @internal
+ *
+ * @brief Apply session options defaults and resolve some configuration paths.
  *
  * @param[in] session  The SSH session to apply defaults to.
  *
@@ -3152,8 +3173,8 @@ int ssh_options_apply(ssh_session session)
             session->opts.host = normalized_host;
         } else {
             /* rc == 1: not a loose IP — lowercase if it's not a strict IP */
-            bool is_ip = ssh_is_ipaddr(session->opts.host);
-            if (!is_ip) {
+            bool requires_lowercase = ssh_host_requires_lowercase(session->opts.host);
+            if (requires_lowercase) {
                 char *lower = ssh_lowercase(session->opts.host);
                 if (lower != NULL) {
                     SAFE_FREE(session->opts.host);

@@ -1462,13 +1462,13 @@ static void torture_config_match(void **state,
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example1");
     _parse_config(session, file, string, SSH_OK);
-    assert_string_equal(session->opts.host, "examplen");
+    assert_string_equal(session->opts.host, "exampleN");
     assert_string_equal(session->opts.originalhost, "example1");
 
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example2");
     _parse_config(session, file, string, SSH_OK);
-    assert_string_equal(session->opts.host, "examplen");
+    assert_string_equal(session->opts.host, "exampleN");
     assert_string_equal(session->opts.originalhost, "example2");
 
     /* We can match by originalhost */
@@ -4908,7 +4908,7 @@ static void torture_config_hostname(void **state)
                   NULL,
                   "Host my-alias\n\tHostname %h.ExAmPlE.CoM\n",
                   SSH_OK);
-    assert_string_equal(session->opts.host, "my-alias.example.com");
+    assert_string_equal(session->opts.host, "my-alias.ExAmPlE.CoM");
     assert_string_equal(session->opts.originalhost, "my-alias");
     assert_int_equal(ssh_options_apply(session), SSH_OK);
     assert_string_equal(session->opts.host, "my-alias.example.com");
@@ -4921,7 +4921,7 @@ static void torture_config_hostname(void **state)
     assert_null(session->opts.host);
     assert_null(session->opts.originalhost);
     _parse_config(session, NULL, "HostName MiXeD-%h.ExAmPlE.CoM\n", SSH_OK);
-    assert_string_equal(session->opts.config_hostname, "mixed-%h.example.com");
+    assert_string_equal(session->opts.config_hostname, "MiXeD-%h.ExAmPlE.CoM");
     assert_int_equal(ssh_options_apply(session), SSH_ERROR);
 
     /* Hostname %h uses the current host value, not originalhost */
@@ -5034,6 +5034,8 @@ static void torture_config_hostname(void **state)
                   NULL,
                   "Host my_host\n\tHostname LOCALHOST\n",
                   SSH_OK);
+    assert_string_equal(session->opts.host, "LOCALHOST");
+    assert_int_equal(ssh_options_apply(session), SSH_OK);
     assert_string_equal(session->opts.host, "localhost");
 }
 

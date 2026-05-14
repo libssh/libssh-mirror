@@ -583,36 +583,6 @@ static int ssh_config_scan_hostname_tokens(ssh_session session,
     return 0;
 }
 
-static char *ssh_config_lowercase_hostname_pattern(const char *hostname)
-{
-    char *pattern = NULL;
-    char *p = NULL;
-    bool escape = false;
-
-    if (hostname == NULL) {
-        return NULL;
-    }
-
-    pattern = strdup(hostname);
-    if (pattern == NULL) {
-        return NULL;
-    }
-
-    for (p = pattern; *p != '\0'; p++) {
-        if (escape) {
-            escape = false;
-            continue;
-        }
-        if (*p == '%') {
-            escape = true;
-            continue;
-        }
-        *p = tolower((unsigned char)*p);
-    }
-
-    return pattern;
-}
-
 /**
  * @brief: Parse the ProxyJump configuration line and if parsing,
  * stores the result in the configuration option
@@ -1603,8 +1573,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
                         return -1;
                     }
                 } else {
-                    char *hostname_pattern =
-                        ssh_config_lowercase_hostname_pattern(p);
+                    char *hostname_pattern = strdup(p);
                     if (hostname_pattern == NULL) {
                         ssh_set_error_oom(session);
                         SAFE_FREE(x);
@@ -1614,16 +1583,9 @@ static int ssh_config_parse_line_internal(ssh_session session,
                     session->opts.config_hostname = hostname_pattern;
                 }
             } else {
-                char *lower = ssh_lowercase(p);
-                if (lower == NULL) {
-                    ssh_set_error_oom(session);
-                    SAFE_FREE(x);
-                    return -1;
-                }
                 session->opts.config_hostname_only = true;
-                ssh_options_set(session, SSH_OPTIONS_HOST, lower);
+                ssh_options_set(session, SSH_OPTIONS_HOST, p);
                 session->opts.config_hostname_only = false;
-                free(lower);
             }
         }
         break;

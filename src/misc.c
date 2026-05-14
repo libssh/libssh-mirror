@@ -1506,7 +1506,7 @@ static char *ssh_path_expand_internal(ssh_session session,
 
     for (i = 0; *p != '\0'; p++) {
         if (*p != '%') {
-            buf[i] = hostname_lenient ? tolower((unsigned char)*p) : *p;
+            buf[i] = *p;
             i++;
             if (i >= MAX_BUF_SIZE) {
                 free(buf);
@@ -1581,11 +1581,9 @@ static char *ssh_path_expand_internal(ssh_session session,
             break;
         case 'h':
             if (session->opts.host) {
-                x = hostname_lenient ? ssh_lowercase(session->opts.host)
-                                     : strdup(session->opts.host);
+                x = strdup(session->opts.host);
             } else if (session->opts.originalhost) {
-                x = hostname_lenient ? ssh_lowercase(session->opts.originalhost)
-                                     : strdup(session->opts.originalhost);
+                x = strdup(session->opts.originalhost);
             } else {
                 ssh_set_error(session, SSH_FATAL, "Cannot expand host");
                 free(buf);

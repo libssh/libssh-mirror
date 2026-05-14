@@ -358,12 +358,12 @@ static void torture_path_expand_hostname_unknown_token(void **state)
 
     tmp = ssh_path_expand_hostname(session, "%h-%p.example.com");
     assert_non_null(tmp);
-    assert_string_equal(tmp, "meditation-%p.example.com");
+    assert_string_equal(tmp, "Meditation-%p.example.com");
     free(tmp);
 
     tmp = ssh_path_expand_hostname(session, "%h-%P.ExAmPlE.CoM");
     assert_non_null(tmp);
-    assert_string_equal(tmp, "meditation-%P.example.com");
+    assert_string_equal(tmp, "Meditation-%P.ExAmPlE.CoM");
     free(tmp);
 }
 
