@@ -1275,9 +1275,10 @@ static bool ssh_packet_need_rekey(ssh_session session,
  * is returned. So typically this function needs to be called in a loop until
  * it returns zero to properly handle multiple packets in the buffer.
  *
- * @param user pointer to current ssh_session
- * @param data pointer to the data received
- * @len length of data received. It might not be enough for a complete packet
+ * @param data        pointer to the data received
+ * @param receivedlen length of data received. It might not be enough for a complete packet
+ * @param user        pointer to current ssh_session
+ *
  * @returns number of bytes read and processed. Zero means only partial packet
  * received.
  */
