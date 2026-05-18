@@ -646,7 +646,7 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
     rc = EVP_EncryptFinal(cipher->ctx,
                           NULL,
                           &tmplen);
-    if (rc < 0) {
+    if (rc != 1) {
         SSH_LOG(SSH_LOG_TRACE, "EVP_EncryptFinal failed: Failed to create a tag");
         return;
     }
