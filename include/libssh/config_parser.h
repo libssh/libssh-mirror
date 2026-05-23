@@ -33,6 +33,10 @@ extern "C" {
 #include "libssh/libssh.h"
 #include <stdbool.h>
 
+#ifndef MAX_LINE_SIZE
+#define MAX_LINE_SIZE 1024
+#endif
+
 char *ssh_config_get_cmd(char **str);
 
 struct ssh_config_token_info {

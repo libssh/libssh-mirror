@@ -52,11 +52,6 @@
 #include "libssh/session.h"
 #include "libssh/misc.h"
 #include "libssh/options.h"
-
-#ifndef MAX_LINE_SIZE
-#define MAX_LINE_SIZE 1024
-#endif
-
 struct ssh_config_keyword_table_s {
   const char *name;
   enum ssh_config_opcode_e opcode;
