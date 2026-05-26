@@ -1763,10 +1763,12 @@ int ssh_userauth_publickey_auto(ssh_session session,
                             state->cert = cert;
                             cert = NULL;
                             state->state = SSH_AUTH_AUTO_STATE_CERTIFICATE_OPTION;
+                            state->cert_it = state->cert_it->next;
                             /* try to authenticate with this identity */
                             break; /* try this cert */
                         }
                         /* continue with next identity */
+                        state->cert_it = state->cert_it->next;
                     }
                     if (state->cert != NULL) {
                         continue; /* retry with the certificate */
