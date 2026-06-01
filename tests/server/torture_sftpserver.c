@@ -1277,8 +1277,10 @@ static void torture_server_sftp_handle_overrun(void **state)
     /* Craft an malicious SFTP packet trying to access handle 256
      * (SFTP_HANDLES) */
     buffer = ssh_buffer_new();
-    id = sftp_get_new_id(sftp);
     assert_non_null(buffer);
+
+    rc = sftp_get_new_id(sftp, &id);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_buffer_pack(buffer,
                          "ddPqd",
@@ -1347,8 +1349,10 @@ static void torture_server_sftp_payload_overrun(void **state)
     /* Craft an malicious SFTP packet trying to write to the file with
      * payload_length overrun */
     buffer = ssh_buffer_new();
-    id = sftp_get_new_id(sftp);
     assert_non_null(buffer);
+
+    rc = sftp_get_new_id(sftp, &id);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_buffer_pack(buffer,
                          "dbdSqd",
