@@ -86,14 +86,17 @@ ssize_t sftp_aio_begin_read(sftp_file file, size_t len, sftp_aio *aio)
         return SSH_ERROR;
     }
 
+    rc = sftp_get_new_id(sftp, &id);
+    if (rc != SSH_OK) {
+        return SSH_ERROR;
+    }
+
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
         ssh_set_error_oom(sftp->session);
         sftp_set_error(sftp, SSH_FX_FAILURE);
         return SSH_ERROR;
     }
-
-    id = sftp_get_new_id(sftp);
 
     rc = ssh_buffer_pack(buffer,
                          "dSqd",
@@ -354,6 +357,11 @@ ssize_t sftp_aio_begin_write(sftp_file file,
         return SSH_ERROR;
     }
 
+    rc = sftp_get_new_id(sftp, &id);
+    if (rc != SSH_OK) {
+        return SSH_ERROR;
+    }
+
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
         ssh_set_error_oom(sftp->session);
@@ -361,7 +369,6 @@ ssize_t sftp_aio_begin_write(sftp_file file,
         return SSH_ERROR;
     }
 
-    id = sftp_get_new_id(sftp);
     rc = ssh_buffer_pack(buffer,
                          "dSqdP",
                          id,

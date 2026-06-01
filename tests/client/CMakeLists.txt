@@ -72,6 +72,7 @@ if (WITH_SFTP)
         torture_sftp_home_directory
         torture_sftp_setstat
         torture_sftp_packet_read
+        torture_sftp_request_id
         ${SFTP_BENCHMARK_TESTS})
 endif (WITH_SFTP)
 
