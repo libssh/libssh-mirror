@@ -84,6 +84,7 @@ if (WITH_SFTP)
         torture_sftp_packet_read
         torture_sftp_recv_response_msg
         torture_sftp_get_users_groups_by_id
+        torture_sftp_request_id
         ${SFTP_BENCHMARK_TESTS})
 endif (WITH_SFTP)
 
@@ -98,7 +99,7 @@ foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
     )
 
     if (_CLI_TEST STREQUAL "torture_tinyssh")
-        target_compile_definitions(${_CLI_TEST} PRIVATE 
+        target_compile_definitions(${_CLI_TEST} PRIVATE
             TINYSSH_KEYS_DIR="${TINYSSH_KEY_DIR}"
         )
     endif()
