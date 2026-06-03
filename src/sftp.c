@@ -335,7 +335,7 @@ void sftp_server_free(sftp_session sftp)
 
 void sftp_free(sftp_session sftp)
 {
-    sftp_request_queue ptr;
+    sftp_request_queue ptr = NULL;
     struct ssh_iterator *id_it = NULL;
 
     if (sftp == NULL) {

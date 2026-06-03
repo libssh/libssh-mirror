@@ -131,7 +131,6 @@ static void torture_sftp_request_id_unknown(void **state)
     struct torture_sftp *t = s->ssh.tsftp;
     sftp_session sftp = t->sftp;
     ssh_buffer buffer = NULL;
-    sftp_message msg = NULL;
     uint32_t id = 0;
     int rc;
     size_t count;
@@ -151,7 +150,7 @@ static void torture_sftp_request_id_unknown(void **state)
     SSH_BUFFER_FREE(buffer);
 
     /* An attempt to receive the response should fail */
-    rc = sftp_recv_response_msg(sftp, id, true, &msg);
+    rc = sftp_read_and_dispatch(sftp);
     assert_int_equal(rc, SSH_ERROR);
 }
 
