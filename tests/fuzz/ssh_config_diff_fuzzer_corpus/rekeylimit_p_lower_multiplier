@@ -1,0 +1,4 @@
+example.com
+# Verifies parsing of RekeyLimit with p multiplier
+Host *
+  RekeyLimit 8p

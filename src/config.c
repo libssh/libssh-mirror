@@ -1807,6 +1807,33 @@ static int ssh_config_parse_line_internal(ssh_session session,
                 break;
             }
             switch (*endp) {
+            case 'e':
+            case 'E':
+                if (ll > LLONG_MAX / 1024) {
+                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 1024;
+                FALL_THROUGH;
+            case 'p':
+            case 'P':
+                if (ll > LLONG_MAX / 1024) {
+                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 1024;
+                FALL_THROUGH;
+            case 't':
+            case 'T':
+                if (ll > LLONG_MAX / 1024) {
+                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 1024;
+                FALL_THROUGH;
             case 'g':
             case 'G':
                 if (ll > LLONG_MAX / 1024) {

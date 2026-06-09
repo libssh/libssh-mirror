@@ -1,0 +1,4 @@
+example.com
+# Verifies parsing of RekeyLimit with T multiplier
+Host *
+  RekeyLimit 2T
