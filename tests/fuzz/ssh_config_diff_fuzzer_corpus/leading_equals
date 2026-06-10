@@ -1,0 +1,3 @@
+testhost
+Host testhost
+= HostName real-host-name.com

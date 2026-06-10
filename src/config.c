@@ -1151,6 +1151,12 @@ static int ssh_config_parse_line_internal(ssh_session session,
   }
 
   keyword = ssh_config_get_token(&s);
+  /* OpenSSH treats an optional leading '=' exactly like whitespace before the keyword.
+   * Our tokenizer returns an empty string when it hits an '=', so we should skip exactly
+   * one empty token if there is still content on the line. */
+  if (keyword != NULL && *keyword == '\0' && s != NULL && *s != '\0' && *s != '\n') {
+      keyword = ssh_config_get_token(&s);
+  }
   if (keyword == NULL || *keyword == '#' ||
       *keyword == '\0' || *keyword == '\n') {
     SAFE_FREE(x);
