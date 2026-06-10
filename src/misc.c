@@ -1311,6 +1311,7 @@ char *ssh_path_expand_tilde(const char *d)
     const char *p = NULL;
     size_t ld;
     size_t lh = 0;
+    int add_slash = 0;
 
     if (d[0] != '~') {
         return strdup(d);
@@ -1336,20 +1337,28 @@ char *ssh_path_expand_tilde(const char *d)
         if (pw == NULL) {
             return NULL;
         }
-        ld = strlen(p);
         h = strdup(pw->pw_dir);
 #endif
     } else {
-        ld = strlen(d);
         p = (char *) d;
         h = ssh_get_user_home_dir(NULL);
     }
+
     if (h == NULL) {
         return NULL;
     }
     lh = strlen(h);
 
-    r = malloc(ld + lh + 1);
+    /* Strip all leading slashes from the suffix path */
+    while (*p == '/') {
+        p++;
+    }
+    ld = strlen(p);
+
+    /* Does the home directory path end with a slash? */
+    add_slash = (lh > 0 && h[lh - 1] == '/') ? 0 : 1;
+
+    r = malloc(lh + add_slash + ld + 1);
     if (r == NULL) {
         SAFE_FREE(h);
         return NULL;
@@ -1359,7 +1368,11 @@ char *ssh_path_expand_tilde(const char *d)
         memcpy(r, h, lh);
     }
     SAFE_FREE(h);
-    memcpy(r + lh, p, ld + 1);
+
+    if (add_slash) {
+        r[lh] = '/';
+    }
+    memcpy(r + lh + add_slash, p, ld + 1);
 
     return r;
 }
