@@ -894,6 +894,7 @@ LIBSSH_API void ssh_event_free(ssh_event event);
 LIBSSH_API const char* ssh_get_clientbanner(ssh_session session);
 LIBSSH_API const char* ssh_get_serverbanner(ssh_session session);
 LIBSSH_API const char* ssh_get_kex_algo(ssh_session session);
+LIBSSH_API bool ssh_session_kex_is_gss(ssh_session session);
 LIBSSH_API const char* ssh_get_cipher_in(ssh_session session);
 LIBSSH_API const char* ssh_get_cipher_out(ssh_session session);
 LIBSSH_API const char* ssh_get_hmac_in(ssh_session session);

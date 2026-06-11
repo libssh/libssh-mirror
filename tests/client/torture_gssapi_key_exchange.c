@@ -120,7 +120,7 @@ static void torture_gssapi_key_exchange_no_tgt(void **state)
     rc = ssh_connect(session);
     assert_ssh_return_code(session, rc);
 
-    assert_false(ssh_kex_is_gss(session->current_crypto));
+    assert_false(ssh_session_kex_is_gss(session));
 
     torture_teardown_kdc_server(state);
 }

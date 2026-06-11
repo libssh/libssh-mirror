@@ -1168,7 +1168,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request)
         ssh_buffer buf = NULL;
         ssh_server_callbacks callbacks = session->server_callbacks;
 
-        if (!ssh_kex_is_gss(session->current_crypto)) {
+        if (!ssh_session_kex_is_gss(session)) {
             ssh_set_error(session,
                           SSH_FATAL,
                           "Attempt to authenticate with gssapi-keyex without "
