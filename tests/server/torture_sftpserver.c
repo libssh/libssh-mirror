@@ -1375,6 +1375,47 @@ static void torture_server_sftp_payload_overrun(void **state)
     free(handle);
 }
 
+static void torture_server_sftp_after_channel_close(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    struct torture_sftp *tsftp = NULL;
+    char tmp_file[PATH_MAX] = {0};
+    sftp_session sftp = NULL;
+    sftp_file handle = NULL;
+    struct stat sb;
+    int rc;
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    tsftp = s->ssh.tsftp;
+    assert_non_null(tsftp);
+
+    sftp = tsftp->sftp;
+    assert_non_null(sftp);
+
+    snprintf(tmp_file, sizeof(tmp_file), "%s/newfile", tss->temp_dir);
+
+    /* Close the channel */
+    ssh_channel_close(sftp->channel);
+    /* Reset the flags so the channel looks open for the caller so we do not
+     * have to reimplement sending the message in the test */
+    sftp->channel->local_eof = 0;
+    sftp->channel->state = SSH_CHANNEL_STATE_OPEN;
+    sftp->channel->flags &= ~SSH_CHANNEL_FLAG_CLOSED_LOCAL;
+
+    /* Create a new file */
+    handle = sftp_open(sftp, tmp_file, O_WRONLY | O_CREAT, 0751);
+    assert_null(handle);
+
+    /* Should not be created */
+    rc = stat(tmp_file, &sb);
+    assert_int_equal(rc, -1);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -1415,6 +1456,9 @@ int torture_run_tests(void) {
                                         session_setup_sftp,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_server_sftp_payload_overrun,
+                                        session_setup_sftp,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_server_sftp_after_channel_close,
                                         session_setup_sftp,
                                         session_teardown),
     };
