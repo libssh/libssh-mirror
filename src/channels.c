@@ -660,6 +660,13 @@ SSH_PACKET_CALLBACK(channel_rcv_data)
             channel->local_channel,
             channel->remote_channel);
 
+    if (channel->flags & SSH_CHANNEL_FLAG_CLOSED_REMOTE) {
+        SSH_LOG(SSH_LOG_WARNING, "Received data on (remotely) closed channel");
+        ssh_set_error(session, SSH_FATAL, "Received data on (remotely) closed channel");
+        SSH_STRING_FREE(str);
+        return SSH_PACKET_USED;
+    }
+
     if (len > channel->local_window) {
         SSH_LOG(SSH_LOG_RARE,
                 "Data packet too big for our window(%" PRIu32 " vs %" PRIu32 ")",
