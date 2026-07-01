@@ -213,11 +213,17 @@ if (WITH_COVERAGE)
         NAME "coverage"
         EXECUTABLE make test
         DEPENDENCIES ssh tests)
-    set(GCOVR_ADDITIONAL_ARGS --xml-pretty --exclude-unreachable-branches --print-summary --gcov-ignore-parse-errors)
+    set(GCOVR_COMMON_ARGS --exclude-unreachable-branches --print-summary --gcov-ignore-parse-errors)
+    set(GCOVR_ADDITIONAL_ARGS --xml-pretty ${GCOVR_COMMON_ARGS})
     setup_target_for_coverage_gcovr_xml(
         NAME "coverage_xml"
         EXECUTABLE make test
         DEPENDENCIES ssh tests)
+    add_custom_target(coverage_json
+        COMMAND make test
+        COMMAND gcovr --json coverage.json ${GCOVR_COMMON_ARGS} --root ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS ssh tests)
 endif (WITH_COVERAGE)
 
 add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source DEPENDS ${_SYMBOL_TARGET} VERBATIM)

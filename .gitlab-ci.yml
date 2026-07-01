@@ -276,14 +276,51 @@ fedora/ninja:
 fedora/coverage:
   extends: .fedora
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  parallel:
+    matrix:
+      - COVERAGE_PROFILE:
+        - "openssl"
+        - "libgcrypt"
+        - "mbedtls"
   variables:
     CMAKE_ADDITIONAL_OPTIONS: "-DCMAKE_BUILD_TYPE=Debug -DWITH_COVERAGE=ON"
   script:
-    - cmake $CMAKE_OPTIONS $CMAKE_ADDITIONAL_OPTIONS .. &&
+    - |
+      case "$COVERAGE_PROFILE" in
+        "openssl")
+          EXTRA_CMAKE_OPT="-DWITH_PKCS11_URI=ON -DWITH_PKCS11_PROVIDER=ON"
+          ;;
+        "libgcrypt")
+          EXTRA_CMAKE_OPT="-DWITH_GCRYPT=ON"
+          ;;
+        "mbedtls")
+          EXTRA_CMAKE_OPT="-DWITH_MBEDTLS=ON"
+          ;;
+      esac
+    - cmake $CMAKE_OPTIONS $CMAKE_ADDITIONAL_OPTIONS $EXTRA_CMAKE_OPT .. &&
       make -j$(nproc) &&
-      make coverage_xml
+      make coverage_json &&
+      mv coverage.json coverage-${CI_NODE_INDEX}.json
+  artifacts:
+    when: on_success
+    paths:
+      - obj/coverage-*.json
+    expire_in: 1 day
+
+fedora/coverage_merge:
+  extends: .fedora
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  needs:
+    - job: fedora/coverage
+      artifacts: true
+  dependencies:
+    - fedora/coverage
+  script: # The single-quotes are NEEDED otherwise it will process just the first one!
+    - gcovr --add-tracefile 'coverage-*.json' --xml coverage_xml.xml
+    - gcovr --add-tracefile 'coverage-*.json' --print-summary
   coverage: /^\s*lines:\s*\d+.\d+\%/
   artifacts:
+    when: always
     name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
     expire_in: 1 week
     reports:
