@@ -596,6 +596,9 @@ int ssh_server_gss_kex_process_init(ssh_session session, ssh_buffer packet)
         goto error;
     }
     SSH_STRING_FREE(otoken);
+    if (client_name != GSS_C_NO_NAME) {
+        session->gssapi->canonic_user = ssh_gssapi_name_to_char(client_name);
+    }
     gss_release_name(&min_stat, &client_name);
     if (!(ret_flags & GSS_C_INTEG_FLAG) || !(ret_flags & GSS_C_MUTUAL_FLAG)) {
         SSH_LOG(SSH_LOG_WARN,
