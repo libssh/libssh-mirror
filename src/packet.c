@@ -2133,7 +2133,7 @@ int ssh_packet_send(ssh_session session)
             struct ssh_buffer_struct *next_buffer = NULL;
 
             /* Peek only -- do not remove from queue yet */
-            next_buffer = (struct ssh_buffer_struct *)it->data;
+            next_buffer = ssh_iterator_value(struct ssh_buffer_struct *, it);
             payloadsize = ssh_buffer_get_len(next_buffer);
             if (ssh_packet_need_rekey(session, payloadsize)) {
                 /* Sigh ... we still can not send this packet. Repeat. */

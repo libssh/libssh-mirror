@@ -2388,7 +2388,7 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
     if (session->ssh_message_list) {
       iterator = ssh_list_get_iterator(session->ssh_message_list);
       while (iterator) {
-        msg = (ssh_message)iterator->data;
+        msg = ssh_iterator_value(ssh_message, iterator);
         if (ssh_message_type(msg) == SSH_REQUEST_CHANNEL_OPEN &&
             ssh_message_subtype(msg) == channeltype) {
           ssh_list_remove(session->ssh_message_list, iterator);

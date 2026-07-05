@@ -1238,7 +1238,7 @@ int ssh_userauth_agent(ssh_session session, const char *username)
         }
 
         while (it != NULL && configKeysCount < identityLen) {
-            const char *privkeyFile = it->data;
+            const char *privkeyFile = ssh_iterator_value(const char *, it);
             size_t certPathLen;
             char *certFile = NULL;
             ssh_key pubkey = NULL;
@@ -1300,7 +1300,7 @@ int ssh_userauth_agent(ssh_session session, const char *username)
         /* And now load separately-listed certificates. */
         it = ssh_list_get_iterator(session->opts.certificate);
         while (it != NULL && configCertsCount < certsLen + identityLen) {
-            const char *certFile = it->data;
+            const char *certFile = ssh_iterator_value(const char *, it);
             ssh_key cert = NULL;
 
             rc = ssh_pki_import_cert_file(certFile, &cert);
@@ -1499,7 +1499,7 @@ int ssh_userauth_publickey_auto_get_current_identity(ssh_session session,
 
     if (session->auth.auto_state != NULL &&
         session->auth.auto_state->it != NULL) {
-        id = session->auth.auto_state->it->data;
+        id = ssh_iterator_value(char *, session->auth.auto_state->it);
     }
 
     if (id == NULL) {
@@ -1598,7 +1598,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
     }
 
     while (state->it != NULL) {
-        const char *privkey_file = state->it->data;
+        const char *privkey_file = ssh_iterator_value(const char *, state->it);
         char pubkey_file[PATH_MAX] = {0};
 
         if (state->state == SSH_AUTH_AUTO_STATE_PUBKEY) {
@@ -1744,7 +1744,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
                 if (state->state == SSH_AUTH_AUTO_STATE_CERTIFICATE_OPTION) {
                     SSH_KEY_FREE(state->cert);
                     while (state->cert_it != NULL) {
-                        const char *cert_file = state->cert_it->data;
+                        const char *cert_file = ssh_iterator_value(const char *, state->cert_it);
                         ssh_key cert = NULL;
 
                         SSH_LOG(SSH_LOG_TRACE,

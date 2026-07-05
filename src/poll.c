@@ -1029,7 +1029,7 @@ int ssh_event_add_session(ssh_event event, ssh_session session)
 #ifdef WITH_SERVER
     iterator = ssh_list_get_iterator(event->sessions);
     while (iterator != NULL) {
-        if ((ssh_session)iterator->data == session) {
+        if (ssh_iterator_value(ssh_session, iterator) == session) {
             /* allow only one instance of this session */
             return SSH_OK;
         }
@@ -1184,7 +1184,7 @@ int ssh_event_remove_session(ssh_event event, ssh_session session)
 #ifdef WITH_SERVER
     iterator = ssh_list_get_iterator(event->sessions);
     while (iterator != NULL) {
-        if ((ssh_session)iterator->data == session) {
+        if (ssh_iterator_value(ssh_session, iterator) == session) {
             ssh_list_remove(event->sessions, iterator);
             /* there should be only one instance of this session */
             break;
