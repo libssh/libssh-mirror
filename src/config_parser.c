@@ -44,7 +44,7 @@ char *ssh_config_get_cmd(char **str)
 
     /* Ignore leading spaces */
     for (c = *str; *c; c++) {
-        if (!isblank((unsigned char)*c)) {
+        if (!isspace((unsigned char)*c)) {
             break;
         }
     }
@@ -86,7 +86,7 @@ char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info)
 
     /* Ignore leading spaces */
     for (c = *str; *c; c++) {
-        if (! isblank(*c)) {
+        if (!isspace((unsigned char)*c)) {
             break;
         }
     }
@@ -146,10 +146,10 @@ char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info)
              */
             if (*c == '\\' &&
                 (c[1] == '\\' || c[1] == '\'' || c[1] == '\"' ||
-                 isblank((unsigned char)c[1]))) {
+                 isspace((unsigned char)c[1]))) {
                 c++;
                 *dst++ = *c;
-            } else if (*c == '\n' || (!inquote && (isblank((unsigned char)*c) || *c == '='))) {
+            } else if (*c == '\n' || (!inquote && (isspace((unsigned char)*c) || *c == '='))) {
                 had_equal = (*c == '=');
                 *dst = '\0';
                 c++;
@@ -175,7 +175,7 @@ char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info)
     }
 
     /* Skip any other remaining whitespace */
-    while (isblank((unsigned char)*c) || *c == '\n' ||
+    while (isspace((unsigned char)*c) || *c == '\n' ||
            (!had_equal && *c == '=')) {
         if (*c == '=') {
             had_equal = true;
