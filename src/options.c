@@ -146,14 +146,19 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
          id = ssh_list_pop_head(char *, new->opts.identity_non_exp)) {
         SAFE_FREE(id);
     }
-    /* Copy the new identities from the source list */
+    /*
+     * The new session was created by ssh_new() which always allocates
+     * identity_non_exp and populates it with default identity paths.
+     * So it is guaranteed to be non-NULL here and does not need the
+     * lazy allocation pattern used for other option lists.
+     */
     list = new->opts.identity_non_exp;
     it = ssh_list_get_iterator(src->opts.identity_non_exp);
     for (i = 0; i < 2; i++) {
         while (it) {
             int rc;
 
-            id = strdup((char *)it->data);
+            id = strdup(ssh_iterator_value(char *, it));
             if (id == NULL) {
                 ssh_free(new);
                 return -1;
@@ -165,38 +170,72 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
                 ssh_free(new);
                 return -1;
             }
+            id = NULL;
             it = it->next;
         }
 
-        /* copy the identity list if there is any already */
+        /* Allocate identity list only when the source has entries to copy */
+        if (src->opts.identity == NULL) {
+            break;
+        }
         list = new->opts.identity;
+        if (list == NULL) {
+            list = ssh_list_new();
+            if (list == NULL) {
+                ssh_free(new);
+                return -1;
+            }
+            new->opts.identity = list;
+        }
         it = ssh_list_get_iterator(src->opts.identity);
     }
 
-    list = new->opts.certificate_non_exp;
-    it = ssh_list_get_iterator(src->opts.certificate_non_exp);
-    for (i = 0; i < 2; i++) {
-        while (it) {
-            int rc;
-
-            id = strdup((char *)it->data);
-            if (id == NULL) {
+    if (src->opts.certificate_non_exp != NULL) {
+        list = new->opts.certificate_non_exp;
+        if (list == NULL) {
+            list = ssh_list_new();
+            if (list == NULL) {
                 ssh_free(new);
                 return -1;
             }
-
-            rc = ssh_list_append(list, id);
-            if (rc < 0) {
-                free(id);
-                ssh_free(new);
-                return -1;
-            }
-            it = it->next;
+            new->opts.certificate_non_exp = list;
         }
+        it = ssh_list_get_iterator(src->opts.certificate_non_exp);
+        for (i = 0; i < 2; i++) {
+            while (it) {
+                int rc;
 
-        /* copy the certificate list if there is any already */
-        list = new->opts.certificate;
-        it = ssh_list_get_iterator(src->opts.certificate);
+                id = strdup(ssh_iterator_value(char *, it));
+                if (id == NULL) {
+                    ssh_free(new);
+                    return -1;
+                }
+
+                rc = ssh_list_append(list, id);
+                if (rc < 0) {
+                    free(id);
+                    ssh_free(new);
+                    return -1;
+                }
+                id = NULL;
+                it = it->next;
+            }
+
+            /* copy the certificate list only if the source has one */
+            if (src->opts.certificate == NULL) {
+                break;
+            }
+            list = new->opts.certificate;
+            if (list == NULL) {
+                list = ssh_list_new();
+                if (list == NULL) {
+                    ssh_free(new);
+                    return -1;
+                }
+                new->opts.certificate = list;
+            }
+            it = ssh_list_get_iterator(src->opts.certificate);
+        }
     }
 
     it = ssh_list_get_iterator(src->opts.local_forward);
@@ -207,6 +246,14 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
         if (pattern == NULL) {
             ssh_free(new);
             return -1;
+        }
+        if (new->opts.local_forward == NULL) {
+            new->opts.local_forward = ssh_list_new();
+            if (new->opts.local_forward == NULL) {
+                free(pattern);
+                ssh_free(new);
+                return -1;
+            }
         }
         rc = ssh_list_append(new->opts.local_forward, pattern);
         if (rc < 0) {
@@ -328,11 +375,19 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
     it = ssh_list_get_iterator(src->opts.send_env);
     while (it) {
         int rc = 0;
-        char *pattern = strdup((char *)it->data);
+        char *pattern = strdup(ssh_iterator_value(char *, it));
 
         if (pattern == NULL) {
             ssh_free(new);
             return -1;
+        }
+        if (new->opts.send_env == NULL) {
+            new->opts.send_env = ssh_list_new();
+            if (new->opts.send_env == NULL) {
+                free(pattern);
+                ssh_free(new);
+                return -1;
+            }
         }
         rc = ssh_list_append(new->opts.send_env, pattern);
         if (rc < 0) {
@@ -1279,6 +1334,7 @@ int ssh_options_set(ssh_session session,
             if (q == NULL) {
                 return -1;
             }
+
             if (session->opts.exp_flags & SSH_OPT_EXP_FLAG_IDENTITY) {
                 rc = ssh_list_append(session->opts.identity_non_exp, q);
             } else {
@@ -1298,6 +1354,14 @@ int ssh_options_set(ssh_session session,
             q = strdup(v);
             if (q == NULL) {
                 return -1;
+            }
+            /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+            if (session->opts.certificate_non_exp == NULL) {
+                session->opts.certificate_non_exp = ssh_list_new();
+                if (session->opts.certificate_non_exp == NULL) {
+                    free(q);
+                    return -1;
+                }
             }
             rc = ssh_list_append(session->opts.certificate_non_exp, q);
             if (rc < 0) {
@@ -1645,6 +1709,14 @@ int ssh_options_set(ssh_session session,
                 ssh_set_error_invalid(session);
                 return -1;
             } else {
+                /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+                if (session->opts.proxy_jumps_user_cb == NULL) {
+                    session->opts.proxy_jumps_user_cb = ssh_list_new();
+                    if (session->opts.proxy_jumps_user_cb == NULL) {
+                        ssh_set_error_oom(session);
+                        return SSH_ERROR;
+                    }
+                }
                 rc = ssh_list_prepend(session->opts.proxy_jumps_user_cb, j);
                 if (rc != SSH_OK) {
                     ssh_set_error_oom(session);
@@ -1951,6 +2023,15 @@ int ssh_options_set(ssh_session session,
                 ssh_set_error_oom(session);
                 return -1;
             }
+            /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+            if (session->opts.local_forward == NULL) {
+                session->opts.local_forward = ssh_list_new();
+                if (session->opts.local_forward == NULL) {
+                    free(q);
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
+            }
             rc = ssh_list_append(session->opts.local_forward, q);
             if (rc < 0) {
                 free(q);
@@ -2062,6 +2143,15 @@ int ssh_options_set(ssh_session session,
                 if (q == NULL) {
                     ssh_set_error_oom(session);
                     return -1;
+                }
+                /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+                if (session->opts.send_env == NULL) {
+                    session->opts.send_env = ssh_list_new();
+                    if (session->opts.send_env == NULL) {
+                        free(q);
+                        ssh_set_error_oom(session);
+                        return -1;
+                    }
                 }
                 rc = ssh_list_append(session->opts.send_env, q);
                 if (rc < 0) {
@@ -3044,6 +3134,14 @@ int ssh_options_apply(ssh_session session)
         }
     }
 
+    /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+    if (session->opts.identity == NULL) {
+        session->opts.identity = ssh_list_new();
+        if (session->opts.identity == NULL) {
+            return -1;
+        }
+    }
+
     for (tmp = ssh_list_pop_head(char *, session->opts.identity_non_exp);
          tmp != NULL;
          tmp = ssh_list_pop_head(char *, session->opts.identity_non_exp)) {
@@ -3072,6 +3170,14 @@ int ssh_options_apply(ssh_session session)
         }
     }
     session->opts.exp_flags |= SSH_OPT_EXP_FLAG_IDENTITY;
+
+    /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+    if (session->opts.certificate == NULL) {
+        session->opts.certificate = ssh_list_new();
+        if (session->opts.certificate == NULL) {
+            return -1;
+        }
+    }
 
     for (tmp = ssh_list_pop_head(char *, session->opts.certificate_non_exp);
          tmp != NULL;

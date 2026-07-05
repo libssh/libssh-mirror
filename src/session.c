@@ -133,46 +133,6 @@ ssh_session ssh_new(void)
 
     session->opts.exp_flags = 0;
 
-    session->opts.identity = ssh_list_new();
-    if (session->opts.identity == NULL) {
-        goto err;
-    }
-    session->opts.identity_non_exp = ssh_list_new();
-    if (session->opts.identity_non_exp == NULL) {
-        goto err;
-    }
-
-    session->opts.certificate = ssh_list_new();
-    if (session->opts.certificate == NULL) {
-        goto err;
-    }
-    session->opts.certificate_non_exp = ssh_list_new();
-    if (session->opts.certificate_non_exp == NULL) {
-        goto err;
-    }
-    /* the default certificates are loaded automatically from the default
-     * identities later */
-
-    session->opts.local_forward = ssh_list_new();
-    if (session->opts.local_forward == NULL) {
-        goto err;
-    }
-
-    session->opts.proxy_jumps = ssh_list_new();
-    if (session->opts.proxy_jumps == NULL) {
-        goto err;
-    }
-
-    session->opts.send_env = ssh_list_new();
-    if (session->opts.send_env == NULL) {
-        goto err;
-    }
-
-    session->opts.proxy_jumps_user_cb = ssh_list_new();
-    if (session->opts.proxy_jumps_user_cb == NULL) {
-        goto err;
-    }
-
 #ifdef WITH_GSSAPI
     session->opts.gssapi_key_exchange_algs =
         strdup(GSSAPI_KEY_EXCHANGE_SUPPORTED);
@@ -180,6 +140,14 @@ ssh_session ssh_new(void)
         goto err;
     }
 #endif /* WITH_GSSAPI */
+
+    /* Lazy allocation for identity_non_exp before populating the defaults */
+    if (session->opts.identity_non_exp == NULL) {
+        session->opts.identity_non_exp = ssh_list_new();
+        if (session->opts.identity_non_exp == NULL) {
+            goto err;
+        }
+    }
 
     id = strdup("%d/.ssh/id_ed25519");
     if (id == NULL) {

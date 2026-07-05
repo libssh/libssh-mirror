@@ -709,6 +709,17 @@ ssh_config_parse_proxy_jump(ssh_session session, const char *s, bool do_parsing)
                 SAFE_FREE(port);
             }
 
+            /* Allocate on first use (no longer pre-allocated in ssh_new()) */
+            if (session->opts.proxy_jumps == NULL) {
+                session->opts.proxy_jumps = ssh_list_new();
+                if (session->opts.proxy_jumps == NULL) {
+                    ssh_set_error_oom(session);
+                    SAFE_FREE(jump_host);
+                    rv = SSH_ERROR;
+                    goto out;
+                }
+            }
+
             /* Prepend because we will recursively proxy jump */
             rv = ssh_list_prepend(session->opts.proxy_jumps, jump_host);
             if (rv != SSH_OK) {
