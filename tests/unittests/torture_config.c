@@ -787,7 +787,9 @@ helper_proxy_jump_check(struct ssh_iterator *jump,
         int iport = strtol(port, NULL, 10);
         assert_int_equal(jis->port, iport);
     } else {
-        assert_int_equal(jis->port, 22);
+        /* No port in the ProxyJump spec: left unset for the jump host's own
+         * configuration to supply. */
+        assert_int_equal(jis->port, 0);
     }
 }
 
