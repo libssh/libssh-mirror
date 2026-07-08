@@ -82,7 +82,11 @@ struct ssh_jump_info_struct {
     char *hostname;
     /** Username to authenticate with on the jump host. */
     char *username;
-    /** Port number of the jump host. */
+    /**
+     * Port number of the jump host, in the range 1-65535. Zero means the
+     * ProxyJump specification did not give a port, in which case the jump
+     * host's own configuration (or the connection default) supplies it.
+     */
     int port;
 };
 
