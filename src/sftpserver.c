@@ -1403,9 +1403,8 @@ process_opendir(sftp_client_message client_msg)
 static int
 readdir_long_name(char *z_file_name, struct stat *z_st, char *z_long_name)
 {
-    char tmpbuf[MAX_LONG_NAME_LEN];
     char time[50];
-    char *ptr = z_long_name;
+    char *ptr = z_long_name, *nl = NULL;
     int mode = z_st->st_mode;
 
     *ptr = '\0';
@@ -1469,16 +1468,19 @@ readdir_long_name(char *z_file_name, struct stat *z_st, char *z_long_name)
     *ptr++ = ' ';
     *ptr = '\0';
 
-    snprintf(tmpbuf, sizeof(tmpbuf), "%3d %d %d %d", (int)z_st->st_nlink,
-             (int)z_st->st_uid, (int)z_st->st_gid, (int)z_st->st_size);
-    strcat(z_long_name, tmpbuf);
-
     ctime_r(&z_st->st_mtime, time);
-    if ((ptr = strchr(time, '\n'))) {
-        *ptr = '\0';
+    if ((nl = strchr(time, '\n'))) {
+        *nl = '\0';
     }
-    snprintf(tmpbuf, sizeof(tmpbuf), " %s %s", time + 4, z_file_name);
-    strcat(z_long_name, tmpbuf);
+    snprintf(ptr,
+             MAX_LONG_NAME_LEN - strlen(z_long_name),
+             "%3d %d %d %d %s %s",
+             (int)z_st->st_nlink,
+             (int)z_st->st_uid,
+             (int)z_st->st_gid,
+             (int)z_st->st_size,
+             time + 4,
+             z_file_name);
 
     return SSH_OK;
 }
