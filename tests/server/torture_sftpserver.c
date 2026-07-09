@@ -1162,6 +1162,93 @@ torture_server_sftp_setstat(void **state)
     sftp_attributes_free(tmp_attr);
 }
 
+static void
+torture_server_sftp_readdir(void **state)
+{
+
+    char name[128] = {0};
+    char data[10] = "0123456789";
+    int rc;
+    size_t len;
+    int atime = 10676, mtime = 13467;
+    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP;
+    int num_files = 0;
+    sftp_dir dir;
+    sftp_attributes a = NULL;
+
+    struct passwd *pwd = NULL;
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    struct torture_sftp *tsftp = NULL;
+    struct sftp_attributes_struct attr;
+
+    sftp_session sftp = NULL;
+    ssh_session session = NULL;
+    sftp_file new_file = NULL;
+
+    pwd = getpwnam("alice");
+    assert_non_null(pwd);
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    tsftp = s->ssh.tsftp;
+    assert_non_null(tsftp);
+
+    sftp = tsftp->sftp;
+    assert_non_null(sftp);
+    assert_non_null(tsftp->testdir);
+    snprintf(name, sizeof(name), "%s/server_setstat_test", tsftp->testdir);
+    new_file = sftp_open(sftp, name, O_WRONLY | O_CREAT, 0700);
+    assert_non_null(new_file);
+    len = sftp_write(new_file, data, sizeof(data));
+    assert_int_equal(len, sizeof(data));
+    rc = sftp_close(new_file);
+    assert_int_equal(rc, SSH_OK);
+
+    ZERO_STRUCT(attr);
+    attr.flags = SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_PERMISSIONS |
+                 SSH_FILEXFER_ATTR_UIDGID | SSH_FILEXFER_ATTR_ACMODTIME;
+
+    attr.size = len;
+    attr.uid = pwd->pw_uid;
+    attr.gid = pwd->pw_gid;
+    attr.permissions = mode;
+    attr.atime = atime;
+    attr.mtime = mtime;
+
+    rc = sftp_setstat(sftp, name, &attr);
+    assert_int_equal(rc, SSH_OK);
+
+    dir = sftp_opendir(sftp, tsftp->testdir);
+    assert_non_null(dir);
+    while ((a = sftp_readdir(sftp, dir))) {
+        if (strcmp(a->name, "server_setstat_test") == 0) {
+            /* verify long name is in the expected format */
+            assert_string_equal(a->longname,
+                "-rw-r-----   1 5001 9000 10 Jan  1 03:44:27 1970 server_setstat_test");
+        } else if (strcmp(a->name, ".") != 0 &&
+            strcmp(a->name, "..") != 0) {
+            /* There is a file we did not create */
+            assert_true(false);
+        }
+
+        num_files++;
+        sftp_attributes_free(a);
+    }
+    assert_int_equal(num_files, 3);
+    rc = sftp_dir_eof(dir);
+    assert_int_equal(rc, 1);
+    rc = sftp_closedir(dir);
+    assert_ssh_return_code(session, rc);
+}
+
+
 /* The max number of handles is 256 in sftpserver.h -- keep in sync! */
 #define SFTP_HANDLES 256
 static void torture_server_sftp_handles_exhaustion(void **state)
@@ -1718,6 +1805,9 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_server_sftp_setstat,
                                         session_setup_sftp,
                                         session_teardown),
+        cmocka_unit_test_setup_teardown(torture_server_sftp_readdir,
+                                        session_setup_sftp,
+                                        session_teardown),
         cmocka_unit_test_setup_teardown(torture_server_sftp_handles_exhaustion,
                                         session_setup_sftp,
                                         session_teardown),
@@ -1757,6 +1847,8 @@ int torture_run_tests(void) {
             session_setup_sftp,
             session_teardown),
     };
+
+    setenv("TZ", "UTC", 1);
 
     ssh_init();
 
