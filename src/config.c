@@ -2032,8 +2032,9 @@ static int ssh_config_parse_line_internal(ssh_session session,
 
             if (strcasecmp(p, "none") == 0) {
                 value = -1;
-            } else if (p[0] == '^' && p[2] == '\0' &&
-                      (unsigned char)p[1] >= 64 && (unsigned char)p[1] < 128) {
+            } else if (p[0] == '^' &&
+                       (unsigned char)p[1] >= 64 && (unsigned char)p[1] < 128 &&
+                       p[2] == '\0') {
                 /* Control character notation like ^C for Ctrl-C */
                 value = (unsigned char)p[1] & 31;
             } else if (p[0] != '\0' && p[1] == '\0') {
