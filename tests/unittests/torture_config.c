@@ -62,6 +62,7 @@ extern LIBSSH_THREAD int ssh_log_level;
  * intentionally skipped when adding new test configuration files.
  */
 #define LIBSSH_TESTCONFIG27 "libssh_testconfig27.tmp"
+#define LIBSSH_TESTCONFIG28 "libssh_testconfig28.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 #define LIBSSH_TEST_PUBKEYTYPES "libssh_test_PubkeyAcceptedKeyTypes.tmp"
 #define LIBSSH_TEST_PUBKEYALGORITHMS "libssh_test_PubkeyAcceptedAlgorithms.tmp"
@@ -318,6 +319,14 @@ extern LIBSSH_THREAD int ssh_log_level;
     "Host nofwd\n"                                      \
     "\tHostName example.com\n"
 
+#define LIBSSH_TESTCONFIG_STRING28                      \
+    "Host withrfwd\n"                                   \
+    "\tRemoteForward 8080 web:80\n"                     \
+    "\tRemoteForward 0.0.0.0:9090 db:3306\n"            \
+    "\tRemoteForward /tmp/remote.sock /tmp/local.sock\n"\
+    "Host norfwd\n"                                     \
+    "\tHostName example.com\n"
+
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
 
@@ -413,6 +422,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG24);
     unlink(LIBSSH_TESTCONFIG25);
     unlink(LIBSSH_TESTCONFIG27);
+    unlink(LIBSSH_TESTCONFIG28);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -496,6 +506,9 @@ static int setup_config_files(void **state)
     /* LocalForward */
     torture_write_file(LIBSSH_TESTCONFIG27,
                        LIBSSH_TESTCONFIG_STRING27);
+    /* RemoteForward */
+    torture_write_file(LIBSSH_TESTCONFIG28,
+                       LIBSSH_TESTCONFIG_STRING28);
     /* SendEnv */
     torture_write_file(LIBSSH_TESTCONFIG25,
                        LIBSSH_TESTCONFIG_STRING25);
@@ -554,6 +567,7 @@ static int teardown_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG24);
     unlink(LIBSSH_TESTCONFIG25);
     unlink(LIBSSH_TESTCONFIG27);
+    unlink(LIBSSH_TESTCONFIG28);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -2799,6 +2813,71 @@ static void torture_config_local_forward_file(void **state)
 }
 
 /**
+ * @brief Verify we can parse RemoteForward configuration option
+ */
+static void torture_config_remote_forward(void **state,
+                                          const char *file,
+                                          const char *string)
+{
+    ssh_session session = *state;
+    char *value = NULL;
+    int rc = 0;
+
+    /* Host withrfwd: three RemoteForward entries should be parsed */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "withrfwd");
+    _parse_config(session, file, string, SSH_OK);
+
+    /* First entry: "8080 web:80" */
+    rc = ssh_options_get(session, SSH_OPTIONS_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(value, "8080 web:80");
+    ssh_string_free_char(value);
+    value = NULL;
+
+    /* Second entry: "0.0.0.0:9090 db:3306" */
+    rc = ssh_options_get(session, SSH_OPTIONS_NEXT_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(value, "0.0.0.0:9090 db:3306");
+    ssh_string_free_char(value);
+    value = NULL;
+
+    /* Third entry: "/tmp/remote.sock /tmp/local.sock" (Unix domain socket) */
+    rc = ssh_options_get(session, SSH_OPTIONS_NEXT_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(value, "/tmp/remote.sock /tmp/local.sock");
+    ssh_string_free_char(value);
+    value = NULL;
+
+    /* Iterator should be exhausted after three entries */
+    rc = ssh_options_get(session, SSH_OPTIONS_NEXT_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_EOF);
+
+    /* Host norfwd: no RemoteForward lines so list should be empty */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "norfwd");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get(session, SSH_OPTIONS_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_ERROR);
+}
+
+/**
+ * @brief Verify we can parse RemoteForward configuration option from string
+ */
+static void torture_config_remote_forward_string(void **state)
+{
+    torture_config_remote_forward(state, NULL, LIBSSH_TESTCONFIG_STRING28);
+}
+
+/**
+ * @brief Verify we can parse RemoteForward configuration option from file
+ */
+static void torture_config_remote_forward_file(void **state)
+{
+    torture_config_remote_forward(state, LIBSSH_TESTCONFIG28, NULL);
+}
+
+/**
  * @brief Verify we can parse SendEnv configuration option
  */
 static void torture_config_send_env(void **state,
@@ -4965,6 +5044,12 @@ int torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_local_forward_string,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_remote_forward_file,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_remote_forward_string,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_send_env_file,

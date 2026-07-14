@@ -217,6 +217,32 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
         it = it->next;
     }
 
+    it = ssh_list_get_iterator(src->opts.remote_forward);
+    while (it) {
+        int rc = 0;
+        char *pattern = strdup(ssh_iterator_value(char *, it));
+
+        if (pattern == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+        if (new->opts.remote_forward == NULL) {
+            new->opts.remote_forward = ssh_list_new();
+            if (new->opts.remote_forward == NULL) {
+                free(pattern);
+                ssh_free(new);
+                return -1;
+            }
+        }
+        rc = ssh_list_append(new->opts.remote_forward, pattern);
+        if (rc < 0) {
+            free(pattern);
+            ssh_free(new);
+            return -1;
+        }
+        it = it->next;
+    }
+
     if (src->opts.sshdir != NULL) {
         new->opts.sshdir = strdup(src->opts.sshdir);
         if (new->opts.sshdir == NULL) {
@@ -513,6 +539,7 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
     case SSH_OPTIONS_CERTIFICATE:
     case SSH_OPTIONS_PROXYJUMP_CB_LIST_APPEND:
     case SSH_OPTIONS_LOCAL_FORWARD:
+    case SSH_OPTIONS_REMOTE_FORWARD:
     case SSH_OPTIONS_SEND_ENV:
     /*
      * SSH_OPTIONS_HOST carries the destination as given by the application,
@@ -551,6 +578,7 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
      */
     case SSH_OPTIONS_NEXT_IDENTITY:
     case SSH_OPTIONS_NEXT_LOCAL_FORWARD:
+    case SSH_OPTIONS_NEXT_REMOTE_FORWARD:
     case SSH_OPTIONS_NEXT_SEND_ENV:
         return SOC_UNKNOWN;
     }
@@ -1002,6 +1030,19 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
  *                Note that this value is parsed from the configuration
  *                file and stored for the calling application to read;
  *                libssh does not automatically set up local forwarding
+ *                based on this setting.
+ *                (const char *)
+ *
+ *              - SSH_OPTIONS_REMOTE_FORWARD
+ *                Append one remote forwarding specification to the list.
+ *                The format is "<bind_spec> <target_spec>", for example,
+ *                "8080 localhost:3000" or "0.0.0.0:9090 db:3306". Multiple
+ *                calls accumulate entries. To iterate the list, use
+ *                SSH_OPTIONS_REMOTE_FORWARD followed by
+ *                SSH_OPTIONS_NEXT_REMOTE_FORWARD in ssh_options_get().
+ *                Note that this value is parsed from the configuration
+ *                file and stored for the calling application to read;
+ *                libssh does not automatically set up remote forwarding
  *                based on this setting.
  *                (const char *)
  *
@@ -1917,6 +1958,33 @@ int ssh_options_set(ssh_session session,
                 return -1;
             }
             break;
+        case SSH_OPTIONS_REMOTE_FORWARD:
+            v = value;
+            if (v == NULL || v[0] == '\0') {
+                ssh_set_error_invalid(session);
+                return -1;
+            }
+            q = strdup(v);
+            if (q == NULL) {
+                ssh_set_error_oom(session);
+                return -1;
+            }
+            /* Lazy allocation: allocate list on first use */
+            if (session->opts.remote_forward == NULL) {
+                session->opts.remote_forward = ssh_list_new();
+                if (session->opts.remote_forward == NULL) {
+                    free(q);
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
+            }
+            rc = ssh_list_append(session->opts.remote_forward, q);
+            if (rc < 0) {
+                free(q);
+                ssh_set_error_oom(session);
+                return -1;
+            }
+            break;
         case SSH_OPTIONS_PREFERRED_AUTHENTICATIONS:
             v = value;
             SAFE_FREE(session->opts.preferred_authentications);
@@ -2243,6 +2311,19 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *                Repeat calls to get all entries. SSH_EOF is returned when
  *                the end of list is reached.
  *
+ *              - SSH_OPTIONS_REMOTE_FORWARD:
+ *                Get the first remote forwarding specification from the
+ *                remote_forward list (const char *).\n
+ *                \n
+ *                Returns SSH_ERROR if the list is empty.
+ *
+ *              - SSH_OPTIONS_NEXT_REMOTE_FORWARD:
+ *                Get the next remote forwarding specification from the
+ *                remote_forward list (const char *).\n
+ *                \n
+ *                Repeat calls to get all entries. SSH_EOF is returned when
+ *                the end of list is reached.
+ *
  *              - SSH_OPTIONS_SEND_ENV:
  *                Get the first environment variable name pattern from the
  *                send_env list (const char *).\n
@@ -2402,6 +2483,31 @@ int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
                 return SSH_ERROR;
             }
             src = ssh_iterator_value(char *, session->opts.local_forward_it);
+            break;
+
+        case SSH_OPTIONS_REMOTE_FORWARD: {
+            struct ssh_iterator *it = NULL;
+            it = ssh_list_get_iterator(session->opts.remote_forward);
+            if (it == NULL) {
+                return SSH_ERROR;
+            }
+            session->opts.remote_forward_it = it;
+            src = ssh_iterator_value(char *, it);
+            break;
+        }
+
+        case SSH_OPTIONS_NEXT_REMOTE_FORWARD:
+            if (session->opts.remote_forward_it != NULL) {
+                session->opts.remote_forward_it =
+                    session->opts.remote_forward_it->next;
+                if (session->opts.remote_forward_it == NULL) {
+                    *value = NULL;
+                    return SSH_EOF;
+                }
+            } else {
+                return SSH_ERROR;
+            }
+            src = ssh_iterator_value(char *, session->opts.remote_forward_it);
             break;
 
         case SSH_OPTIONS_SEND_ENV: {

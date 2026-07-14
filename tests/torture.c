@@ -2107,6 +2107,14 @@ void torture_reset_config(ssh_session session)
             SAFE_FREE(entry);
         }
     }
+    if (session->opts.remote_forward) {
+        char *entry = NULL;
+        for (entry = ssh_list_pop_head(char *, session->opts.remote_forward);
+             entry != NULL;
+             entry = ssh_list_pop_head(char *, session->opts.remote_forward)) {
+            SAFE_FREE(entry);
+        }
+    }
     if (session->opts.send_env) {
         char *pat = NULL;
         for (pat = ssh_list_pop_head(char *, session->opts.send_env);

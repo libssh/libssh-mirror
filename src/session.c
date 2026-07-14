@@ -455,6 +455,17 @@ void ssh_free(ssh_session session)
       ssh_list_free(session->opts.local_forward);
   }
 
+  if (session->opts.remote_forward) {
+      char *entry = NULL;
+
+      for (entry = ssh_list_pop_head(char *, session->opts.remote_forward);
+           entry != NULL;
+           entry = ssh_list_pop_head(char *, session->opts.remote_forward)) {
+          SAFE_FREE(entry);
+      }
+      ssh_list_free(session->opts.remote_forward);
+  }
+
   for (i = 0; i < SSH_KEX_METHODS; i++) {
       if (session->opts.wanted_methods[i]) {
           SAFE_FREE(session->opts.wanted_methods[i]);

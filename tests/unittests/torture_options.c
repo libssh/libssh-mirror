@@ -1843,6 +1843,7 @@ static void torture_options_copy(void **state)
           "AddressFamily inet6\n"
           "Tag copied-tag\n"
           "LocalForward 8080 web:80\n"
+          "RemoteForward 9090 db:3306\n"
           "SendEnv LANG LC_*\n"
           "SendEnv TZ\n"
           "",
@@ -1889,6 +1890,20 @@ static void torture_options_copy(void **state)
     assert_non_null(it2);
     while (it != NULL && it2 != NULL) {
         assert_string_equal(it->data, it2->data);
+        it = it->next;
+        it2 = it2->next;
+    }
+    assert_null(it);
+    assert_null(it2);
+
+    /* Check the remote forwards match */
+    it = ssh_list_get_iterator(session->opts.remote_forward);
+    assert_non_null(it);
+    it2 = ssh_list_get_iterator(new->opts.remote_forward);
+    assert_non_null(it2);
+    while (it != NULL && it2 != NULL) {
+        assert_string_equal(ssh_iterator_value(const char *, it),
+                            ssh_iterator_value(const char *, it2));
         it = it->next;
         it2 = it2->next;
     }
@@ -2970,6 +2985,56 @@ static void torture_options_local_forward(void **state)
 
     /* Iterator exhausted */
     rc = ssh_options_get(session, SSH_OPTIONS_NEXT_LOCAL_FORWARD, &value);
+    assert_int_equal(rc, SSH_EOF);
+    assert_null(value);
+}
+
+static void torture_options_remote_forward(void **state)
+{
+    ssh_session session = *state;
+    char *value = NULL;
+    int rc;
+
+    /* Getting an unset option will fail */
+    rc = ssh_options_get(session, SSH_OPTIONS_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_ERROR);
+
+    /* NEXT_REMOTE_FORWARD without prior REMOTE_FORWARD will return SSH_ERROR */
+    rc = ssh_options_get(session, SSH_OPTIONS_NEXT_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_ERROR);
+    assert_null(value);
+
+    /* NULL pattern will be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_REMOTE_FORWARD, NULL);
+    assert_int_equal(rc, -1);
+
+    /* Empty pattern will be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_REMOTE_FORWARD, "");
+    assert_int_equal(rc, -1);
+
+    /* Adding two forwarding specs */
+    rc = ssh_options_set(session, SSH_OPTIONS_REMOTE_FORWARD, "8080 web:80");
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_REMOTE_FORWARD, "0.0.0.0:9090 db:3306");
+    assert_ssh_return_code(session, rc);
+
+    /* First entry */
+    rc = ssh_options_get(session, SSH_OPTIONS_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(value, "8080 web:80");
+    ssh_string_free_char(value);
+    value = NULL;
+
+    /* Second entry */
+    rc = ssh_options_get(session, SSH_OPTIONS_NEXT_REMOTE_FORWARD, &value);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(value, "0.0.0.0:9090 db:3306");
+    ssh_string_free_char(value);
+    value = NULL;
+
+    /* Iterator exhausted */
+    rc = ssh_options_get(session, SSH_OPTIONS_NEXT_REMOTE_FORWARD, &value);
     assert_int_equal(rc, SSH_EOF);
     assert_null(value);
 }
@@ -4672,6 +4737,9 @@ torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_local_forward,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_options_remote_forward,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_preferred_authentications,
