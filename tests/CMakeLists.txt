@@ -282,17 +282,22 @@ find_program(SSHD_EXECUTABLE
                 /usr/local/sbin)
 
 if (WITH_PKCS11_URI)
+    find_package(kryoptic)
     find_package(softhsm)
-    if (NOT SOFTHSM_FOUND)
-        message(SEND_ERROR "Could not find softhsm module!")
-    endif (NOT SOFTHSM_FOUND)
+    if (KRYOPTIC_FOUND)
+        set(SOFT_TOKEN_MODULE ${KRYOPTIC_LIBRARY})
+    elseif(SOFTHSM_FOUND)
+        set(SOFT_TOKEN_MODULE ${SOFTHSM2_LIBRARY})
+    else()
+        message(SEND_ERROR "Could not find any PKCS#11 soft token module!")
+    endif ()
     find_library(PKCS11SPY
         NAMES
             pkcs11-spy.so
     )
 
     #Copy the script to setup PKCS11 tokens
-    file(COPY pkcs11/setup-softhsm-tokens.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/pkcs11 FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+    file(COPY pkcs11/setup-soft-tokens.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/pkcs11 FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 endif (WITH_PKCS11_URI)
 
 if (CLIENT_TESTING OR SERVER_TESTING)

@@ -1715,32 +1715,35 @@ void torture_setup_tokens(const char *temp_dir,
 
     rc = snprintf(token_setup_start_cmd,
                   sizeof(token_setup_start_cmd),
-                  "%s/tests/pkcs11/setup-softhsm-tokens.sh %s %s %s %s %s",
+                  "%s/tests/pkcs11/setup-soft-tokens.sh %s %s %s %s %s",
                   BINARYDIR,
                   temp_dir,
                   filename,
                   object_name,
                   load_public,
-                  SOFTHSM2_LIBRARY);
+                  SOFT_TOKEN_MODULE);
     assert_int_not_equal(rc, sizeof(token_setup_start_cmd));
 
     rc = system(token_setup_start_cmd);
     assert_return_code(rc, errno);
 
 #ifdef WITH_PKCS11_PROVIDER
-    setenv("PKCS11_PROVIDER_MODULE", SOFTHSM2_LIBRARY, 1);
+    setenv("PKCS11_PROVIDER_MODULE", SOFT_TOKEN_MODULE, 1);
 
     /* This is useful for debugging PKCS#11 calls */
     env = getenv("TORTURE_PKCS11");
     if (env != NULL && env[0] != '\0') {
 #ifdef PKCS11SPY
-        setenv("PKCS11SPY", SOFTHSM2_LIBRARY, 1);
+        setenv("PKCS11SPY", SOFT_TOKEN_MODULE, 1);
         setenv("PKCS11_PROVIDER_MODULE", PKCS11SPY, 1);
 #else
         fprintf(stderr, "[ TORTURE  ] >>> pkcs11-spy not found\n");
 #endif /* PKCS11SPY */
     }
 #endif /* WITH_PKCS11_PROVIDER */
+
+    snprintf(conf_path, sizeof(conf_path), "%s/kryoptic.conf", temp_dir);
+    setenv("KRYOPTIC_CONF", conf_path, 1);
 
     snprintf(conf_path, sizeof(conf_path), "%s/softhsm.conf", temp_dir);
     setenv("SOFTHSM2_CONF", conf_path, 1);
@@ -1749,6 +1752,7 @@ void torture_setup_tokens(const char *temp_dir,
 void torture_cleanup_tokens(const char *temp_dir)
 {
     unsetenv("SOFTHSM2_CONF");
+    unsetenv("KRYOPTIC_CONF");
 }
 #endif /* WITH_PKCS11_URI */
 
