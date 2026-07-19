@@ -1971,7 +1971,7 @@ int ssh_options_set(ssh_session session,
                 return -1;
             } else {
                 uint32_t *x = (uint32_t *)value;
-                if ((*x * 1000) < *x) {
+                if (*x > UINT32_MAX / 1000) {
                     ssh_set_error(session, SSH_REQUEST_DENIED,
                                   "The provided value (%" PRIu32 ") for rekey"
                                   " time is too large", *x);
