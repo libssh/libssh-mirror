@@ -2008,7 +2008,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
         goto reply_with_failure;
     }
 
-    SAFE_FREE(msg);
+    SSH_MESSAGE_FREE(msg);
     SAFE_FREE(request);
     return rc;
 
@@ -2033,7 +2033,7 @@ reply_with_failure:
     /* Consume the message to avoid sending UNIMPLEMENTED later */
     rc = SSH_PACKET_USED;
 error:
-    SAFE_FREE(msg);
+    SSH_MESSAGE_FREE(msg);
     SAFE_FREE(request);
     SSH_LOG(SSH_LOG_TRACE, "Invalid SSH_MSG_GLOBAL_REQUEST packet");
     return rc;
