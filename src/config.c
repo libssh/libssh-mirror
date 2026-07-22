@@ -2055,10 +2055,9 @@ static int ssh_config_parse_line_internal(ssh_session session,
         CHECK_COND_OR_FAIL(p2 == NULL, "Missing remote destination");
         if (*parsing) {
             char buf[MAX_LINE_SIZE] = {0};
-            int value = 0;
 
-            value = snprintf(buf, sizeof(buf), "%s %s", p, p2);
-            CHECK_COND_OR_FAIL(value >= (int)sizeof(buf), "Forwarding specification too long");
+            len = snprintf(buf, sizeof(buf), "%s %s", p, p2);
+            CHECK_COND_OR_FAIL(len >= (int)sizeof(buf), "Forwarding specification too long");
             ssh_options_set(session, SSH_OPTIONS_LOCAL_FORWARD, buf);
         }
         break;
