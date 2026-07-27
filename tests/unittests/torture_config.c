@@ -76,6 +76,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG_TIMEOUT_SUFFIX   "libssh_test_timeout_suffix.tmp"
 #define LIBSSH_TESTCONFIG_BOOLEAN_INVALID  "libssh_test_boolean_invalid.tmp"
 #define LIBSSH_TESTCONFIG_BOOLEAN_COMPAT   "libssh_test_boolean_compat.tmp"
+#define LIBSSH_TESTCONFIG29 "libssh_testconfig29.tmp"
 
 #define LIBSSH_TESTCONFIG_STRING1 \
     "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n"
@@ -327,6 +328,12 @@ extern LIBSSH_THREAD int ssh_log_level;
     "Host norfwd\n"                                     \
     "\tHostName example.com\n"
 
+#define LIBSSH_TESTCONFIG_STRING29 \
+    "Host exit_fwd_no\n"            \
+    "\tExitOnForwardFailure no\n"   \
+    "Host exit_fwd_yes\n"           \
+    "\tExitOnForwardFailure yes\n"
+
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
 
@@ -423,6 +430,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG25);
     unlink(LIBSSH_TESTCONFIG27);
     unlink(LIBSSH_TESTCONFIG28);
+    unlink(LIBSSH_TESTCONFIG29);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -509,6 +517,9 @@ static int setup_config_files(void **state)
     /* RemoteForward */
     torture_write_file(LIBSSH_TESTCONFIG28,
                        LIBSSH_TESTCONFIG_STRING28);
+    /* ExitOnForwardFailure */
+    torture_write_file(LIBSSH_TESTCONFIG29,
+                       LIBSSH_TESTCONFIG_STRING29);
     /* SendEnv */
     torture_write_file(LIBSSH_TESTCONFIG25,
                        LIBSSH_TESTCONFIG_STRING25);
@@ -568,6 +579,7 @@ static int teardown_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG25);
     unlink(LIBSSH_TESTCONFIG27);
     unlink(LIBSSH_TESTCONFIG28);
+    unlink(LIBSSH_TESTCONFIG29);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -2585,6 +2597,51 @@ static void torture_config_preferred_authentications_file(void **state)
 static void torture_config_batch_mode_file(void **state)
 {
     torture_config_batch_mode(state, LIBSSH_TESTCONFIG19, NULL);
+}
+
+/**
+ * @brief Verify we can parse ExitOnForwardFailure configuration option
+ */
+static void torture_config_exit_on_forward_failure(void **state,
+                                                   const char *file,
+                                                   const char *string)
+{
+    ssh_session session = *state;
+
+    int exit_on_forward_failure = -1;
+    int rc = SSH_OK;
+
+    /* ExitOnForwardFailure no: exit_on_forward_failure should be 0 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "exit_fwd_no");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &exit_on_forward_failure);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(exit_on_forward_failure, 0);
+
+    /* ExitOnForwardFailure yes: exit_on_forward_failure should be 1 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "exit_fwd_yes");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &exit_on_forward_failure);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(exit_on_forward_failure, 1);
+}
+
+/**
+ * @brief Verify we can parse ExitOnForwardFailure configuration option from string
+ */
+static void torture_config_exit_on_forward_failure_string(void **state)
+{
+    torture_config_exit_on_forward_failure(state, NULL, LIBSSH_TESTCONFIG_STRING29);
+}
+
+/**
+ * @brief Verify we can parse ExitOnForwardFailure configuration option from file
+ */
+static void torture_config_exit_on_forward_failure_file(void **state)
+{
+    torture_config_exit_on_forward_failure(state, LIBSSH_TESTCONFIG29, NULL);
 }
 
 /**
@@ -5012,6 +5069,14 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_config_batch_mode_string,
                                         setup,
                                         teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_config_exit_on_forward_failure_file,
+            setup,
+            teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_config_exit_on_forward_failure_string,
+            setup,
+            teardown),
         cmocka_unit_test_setup_teardown(
             torture_config_preferred_authentications_file,
             setup,

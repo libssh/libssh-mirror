@@ -305,6 +305,7 @@ struct ssh_session_struct {
                                       not originalhost */
         char *tag;                 /* configuration tag for Match tagged */
         int pubkey_auth;
+        bool exit_on_forward_failure;
     } opts;
 
     /* server options */

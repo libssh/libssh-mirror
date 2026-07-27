@@ -2893,6 +2893,32 @@ static void torture_options_set_batch_mode(void **state)
     assert_true(session->opts.batch_mode);
 }
 
+static void torture_options_set_exit_on_forward_failure(void **state)
+{
+    ssh_session session = *state;
+    bool val = false;
+    int rc = SSH_OK;
+
+    /* Default value after setup() should be false */
+    assert_false(session->opts.exit_on_forward_failure);
+
+    /* NULL value must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, NULL);
+    assert_int_equal(rc, -1);
+
+    /* ExitOnForwardFailure will be disabled */
+    val = false;
+    rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &val);
+    assert_ssh_return_code(session, rc);
+    assert_false(session->opts.exit_on_forward_failure);
+
+    /* ExitOnForwardFailure will be enabled */
+    val = true;
+    rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &val);
+    assert_ssh_return_code(session, rc);
+    assert_true(session->opts.exit_on_forward_failure);
+}
+
 static void torture_options_escape_char(void **state)
 {
     ssh_session session = *state;
@@ -3629,6 +3655,27 @@ static void torture_options_get_int(void **state)
     rc = ssh_options_get_int(session, SSH_OPTIONS_REQUEST_TTY, &result);
     assert_int_equal(rc, SSH_OK);
     assert_int_equal(result, SSH_REQUEST_TTY_NO);
+
+    /* SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE: default should be 0 */
+    rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* After enabling, getter should return 1 */
+    bval = true;
+    rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &bval);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 1);
+
+    /* After disabling, getter should return 0 */
+    bval = false;
+    rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &bval);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
 }
 
 static void torture_options_set_rsa_min_size(void **state)
@@ -4733,6 +4780,10 @@ torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_options_set_batch_mode,
                                         setup,
                                         teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_options_set_exit_on_forward_failure,
+            setup,
+            teardown),
         cmocka_unit_test_setup_teardown(torture_options_escape_char,
                                         setup,
                                         teardown),

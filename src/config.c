@@ -138,7 +138,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
     {"controlpath", SOC_NA, true},
     {"dynamicforward", SOC_NA, true},
     {"escapechar", SOC_ESCAPE_CHAR, true},
-    {"exitonforwardfailure", SOC_NA, true},
+    {"exitonforwardfailure", SOC_EXIT_ON_FORWARD_FAILURE, true},
     {"forwardx11", SOC_NA, true},
     {"forwardx11timeout", SOC_NA, true},
     {"forwardx11trusted", SOC_NA, true},
@@ -2083,6 +2083,14 @@ static int ssh_config_parse_line_internal(ssh_session session,
             len = snprintf(buf, sizeof(buf), "%s %s", p, p2);
             CHECK_COND_OR_FAIL(len >= (int)sizeof(buf), "Forwarding specification too long");
             ssh_options_set(session, SSH_OPTIONS_REMOTE_FORWARD, buf);
+        }
+        break;
+    case SOC_EXIT_ON_FORWARD_FAILURE:
+        i = ssh_config_get_yesno(&s, -1);
+        CHECK_COND_OR_FAIL(i < 0, "Invalid argument");
+        if (*parsing) {
+            bool b = (i == 1) ? true : false;
+            ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &b);
         }
         break;
     case SOC_SEND_ENV:

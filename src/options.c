@@ -417,6 +417,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
     new->opts.request_tty           = src->opts.request_tty;
     new->opts.escape_char           = src->opts.escape_char;
     new->opts.address_family        = src->opts.address_family;
+    new->opts.exit_on_forward_failure = src->opts.exit_on_forward_failure;
     new->common.log_verbosity       = src->common.log_verbosity;
     new->common.callbacks           = src->common.callbacks;
 
@@ -584,6 +585,8 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
         return SOC_REQUEST_TTY;
     case SSH_OPTIONS_ESCAPE_CHAR:
         return SOC_ESCAPE_CHAR;
+    case SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE:
+        return SOC_EXIT_ON_FORWARD_FAILURE;
     /*
      * Accumulative options append to a list instead of replacing a value, so
      * the "first value wins" precedence between config and the application does
@@ -1060,6 +1063,18 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
  *                libssh does not automatically change the escape
  *                character based on this setting.
  *                (int)
+ *              - SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE
+ *                If set to true, indicates that the SSH session should
+ *                terminate if it cannot set up all requested local and remote
+ *                port forwardings, for example if the client or server is
+ *                unable to bind and listen on a specified port. Note that
+ *                this does not apply to connections made over port forwardings
+ *                and will not cause the session to exit if TCP connections to
+ *                the ultimate forwarding destination fail.
+ *                This value is parsed from the configuration file and stored
+ *                for the calling application to read; libssh does not
+ *                automatically terminate the session based on this setting.
+ *                (bool)
  *              - SSH_OPTIONS_SEND_ENV
  *                Append one environment variable name pattern to the list of
  *                patterns to send to the server. Multiple calls accumulate
@@ -2161,6 +2176,15 @@ int ssh_options_set(ssh_session session,
                 }
             }
             break;
+        case SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                bool *x = (bool *)value;
+                session->opts.exit_on_forward_failure = *x;
+            }
+            break;
         default:
             ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
             return -1;
@@ -2319,6 +2343,9 @@ int ssh_options_get_int(ssh_session session,
         *value = session->opts.gssapi_key_exchange ? 1 : 0;
         break;
 #endif
+    case SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE:
+        *value = session->opts.exit_on_forward_failure ? 1 : 0;
+        break;
     default:
         ssh_set_error_invalid(session);
         return SSH_ERROR;
