@@ -511,4 +511,5 @@ LIBSSH_AFTER_4_11_0
 {
     global:
         ssh_session_kex_is_gss;
+        ssh_userauth_gssapi_keyex;
 } LIBSSH_4_11_0;
