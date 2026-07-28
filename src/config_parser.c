@@ -77,6 +77,7 @@ char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info)
     bool found = false;
     bool invalid = false;
     char *r = NULL;
+    char inquote = '\0';
 
     if (info != NULL) {
         info->found = false;
@@ -108,70 +109,44 @@ char *ssh_config_get_token_info(char **str, struct ssh_config_token_info *info)
 
     found = true;
 
-    /* If we start with quote, return the whole quoted block */
-    if (*c == '\"') {
-        bool closed_quote = false;
-
-        r = dst = ++c;
-        while (*c != '\0' && *c != '\n') {
-            if (*c == '\\' && c[1] == '\"') {
-                c++;
-            } else if (*c == '\"') {
-                *dst = '\0';
-                c++;
-                closed_quote = true;
-                break;
-            }
-            *dst++ = *c++;
-        }
-        if (!closed_quote) {
-            invalid = true;
-            *dst = '\0';
-            if (*c == '\n') {
-                c++;
-            }
-        }
-    } else {
-        /* Otherwise terminate on space, equal or newline.
-         * Embedded quotes are stripped and used to protect spaces from being
-         * seen as delimiters.
+    /* Terminate on space, equal or newline.
+     * Embedded quotes are stripped and used to protect spaces from being
+     * seen as delimiters.
+     */
+    r = dst = c;
+    for (; *c; c++) {
+        /* Process backslash escapes matching OpenSSH's argv_split():
+         * \\, \', \", and \<blank> are recognized. The backslash is
+         * dropped and the escaped character is kept. Unrecognized
+         * escapes preserve the backslash literally.
          */
-        char inquote = '\0';
-        r = dst = c;
-        for (; *c; c++) {
-            /* Process backslash escapes matching OpenSSH's argv_split():
-             * \\, \', \", and \<blank> are recognized. The backslash is
-             * dropped and the escaped character is kept. Unrecognized
-             * escapes preserve the backslash literally.
-             */
-            if (*c == '\\' &&
-                (c[1] == '\\' || c[1] == '\'' || c[1] == '\"' ||
-                 isspace((unsigned char)c[1]))) {
-                c++;
-                *dst++ = *c;
-            } else if (*c == '\n' || (!inquote && (isspace((unsigned char)*c) || *c == '='))) {
-                had_equal = (*c == '=');
-                *dst = '\0';
-                c++;
-                break;
-            } else if (inquote) {
-                if (*c == inquote) {
-                    inquote = '\0';
-                } else {
-                    *dst++ = *c;
-                }
-            } else if (*c == '\'' || *c == '\"') {
-                inquote = *c;
+        if (*c == '\\' &&
+            (c[1] == '\\' || c[1] == '\'' || c[1] == '\"' ||
+             isspace((unsigned char)c[1]))) {
+            c++;
+            *dst++ = *c;
+        } else if (*c == '\n' || (!inquote && (isspace((unsigned char)*c) || *c == '='))) {
+            had_equal = (*c == '=');
+            *dst = '\0';
+            c++;
+            break;
+        } else if (inquote) {
+            if (*c == inquote) {
+                inquote = '\0';
             } else {
                 *dst++ = *c;
             }
+        } else if (*c == '\'' || *c == '\"') {
+            inquote = *c;
+        } else {
+            *dst++ = *c;
         }
-        if (inquote) {
-            invalid = true;
-        }
-        if (*c == '\0') {
-            *dst = '\0';
-        }
+    }
+    if (inquote) {
+        invalid = true;
+    }
+    if (*c == '\0') {
+        *dst = '\0';
     }
 
     /* Skip any other remaining whitespace */
