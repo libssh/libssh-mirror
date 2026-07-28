@@ -316,8 +316,9 @@ fedora/coverage_merge:
   dependencies:
     - fedora/coverage
   script: # The single-quotes are NEEDED otherwise it will process just the first one!
-    - gcovr --add-tracefile 'coverage-*.json' --xml coverage_xml.xml
-    - gcovr --add-tracefile 'coverage-*.json' --print-summary
+    - gcovr --root ../ --add-tracefile 'coverage-*.json' --xml coverage_xml.xml
+    - gcovr --root ../ --add-tracefile 'coverage-*.json' --print-summary
+    - python3 ../.gitlab-ci/split-coverage.py coverage_xml.xml .
   coverage: /^\s*lines:\s*\d+.\d+\%/
   artifacts:
     when: always
@@ -326,7 +327,7 @@ fedora/coverage_merge:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: obj/coverage_xml.xml
+        path: obj/cobertura-*.xml
 
 fedora/openssl_3.x/x86_64:
   extends: .fedora
