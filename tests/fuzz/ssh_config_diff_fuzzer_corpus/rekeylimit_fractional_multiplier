@@ -1,0 +1,4 @@
+example.com
+# Verifies parsing of RekeyLimit with fractional multiplier
+Host *
+  RekeyLimit 1.5G 1h

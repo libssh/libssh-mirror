@@ -1801,65 +1801,54 @@ static int ssh_config_parse_line_internal(ssh_session session,
             ll = 0;
         } else {
             char *endp = NULL;
+            double divisor;
+            double val;
+
+            /* We parse decimals manually instead of using strtod() to match
+             * OpenSSH's strict behavior. This avoids locale issues (such as
+             * expecting commas instead of dots) and prevents the accidental
+             * parsing of exponential or scientific notation.
+             */
             ll = strtoll(p, &endp, 10);
             if (p == endp || ll < 0) {
                 CHECK_COND_OR_FAIL(1, "Invalid data limit");
                 break;
             }
+            
+            val = (double)ll;
+            if (*endp == '.') {
+                endp++;
+                divisor = 10.0;
+                while (isdigit((unsigned char)*endp)) {
+                    val += (*endp - '0') / divisor;
+                    divisor *= 10.0;
+                    endp++;
+                }
+            }
             switch (*endp) {
             case 'e':
             case 'E':
-                if (ll > LLONG_MAX / 1024) {
-                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
-                    ll = -1;
-                    break;
-                }
-                ll = ll * 1024;
+                val *= 1024.0;
                 FALL_THROUGH;
             case 'p':
             case 'P':
-                if (ll > LLONG_MAX / 1024) {
-                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
-                    ll = -1;
-                    break;
-                }
-                ll = ll * 1024;
+                val *= 1024.0;
                 FALL_THROUGH;
             case 't':
             case 'T':
-                if (ll > LLONG_MAX / 1024) {
-                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
-                    ll = -1;
-                    break;
-                }
-                ll = ll * 1024;
+                val *= 1024.0;
                 FALL_THROUGH;
             case 'g':
             case 'G':
-                if (ll > LLONG_MAX / 1024) {
-                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
-                    ll = -1;
-                    break;
-                }
-                ll = ll * 1024;
+                val *= 1024.0;
                 FALL_THROUGH;
             case 'm':
             case 'M':
-                if (ll > LLONG_MAX / 1024) {
-                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
-                    ll = -1;
-                    break;
-                }
-                ll = ll * 1024;
+                val *= 1024.0;
                 FALL_THROUGH;
             case 'k':
             case 'K':
-                if (ll > LLONG_MAX / 1024) {
-                    SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
-                    ll = -1;
-                    break;
-                }
-                ll = ll * 1024;
+                val *= 1024.0;
                 endp++;
                 FALL_THROUGH;
             case '\0':
@@ -1869,6 +1858,12 @@ static int ssh_config_parse_line_internal(ssh_session session,
                 /* Ignore invalid suffix and trailing garbage */
                 SSH_LOG(SSH_LOG_TRACE, "Ignoring invalid suffix");
                 break;
+            }
+            if (val > (double)LLONG_MAX) {
+                SSH_LOG(SSH_LOG_TRACE, "Possible overflow of rekey limit");
+                ll = -1;
+            } else {
+                ll = (long long)val;
             }
         }
         CHECK_COND_OR_FAIL(ll < 0, "Invalid data limit");
