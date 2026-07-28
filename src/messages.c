@@ -82,17 +82,25 @@ static ssh_message ssh_message_new(ssh_session session)
 /* Reduced version of the reply default that only replies with
  * SSH_MSG_UNIMPLEMENTED
  */
-static int ssh_message_reply_default(ssh_message msg) {
-  SSH_LOG(SSH_LOG_FUNCTIONS, "Reporting unknown packet");
+static int ssh_message_reply_default(ssh_message msg)
+{
+    int rc;
 
-  if (ssh_buffer_add_u8(msg->session->out_buffer, SSH2_MSG_UNIMPLEMENTED) < 0)
-    goto error;
-  if (ssh_buffer_add_u32(msg->session->out_buffer,
-      htonl(msg->session->recv_seq-1)) < 0)
-    goto error;
-  return ssh_packet_send(msg->session);
-  error:
-  return SSH_ERROR;
+    SSH_LOG(SSH_LOG_FUNCTIONS, "Reporting unknown packet");
+
+    rc = ssh_buffer_add_u8(msg->session->out_buffer, SSH2_MSG_UNIMPLEMENTED);
+    if (rc < 0) {
+        goto error;
+    }
+    rc = ssh_buffer_add_u32(msg->session->out_buffer,
+                            htonl(msg->session->recv_seq - 1));
+    if (rc < 0) {
+        goto error;
+    }
+    return ssh_packet_send(msg->session);
+
+error:
+    return SSH_ERROR;
 }
 
 #endif
@@ -139,254 +147,274 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
     ssh_channel channel = NULL;
     int rc;
 
-    switch(msg->type) {
-        case SSH_REQUEST_AUTH:
-            if (msg->auth_request.method == SSH_AUTH_METHOD_PASSWORD &&
-                ssh_callbacks_exists(session->server_callbacks, auth_password_function)) {
-                rc = session->server_callbacks->auth_password_function(session,
-                        msg->auth_request.username, msg->auth_request.password,
-                        session->server_callbacks->userdata);
-                if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
-                    ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
-                } else {
-                    ssh_message_reply_default(msg);
-                }
-
-                return SSH_OK;
-            } else if(msg->auth_request.method == SSH_AUTH_METHOD_PUBLICKEY &&
-                      ssh_callbacks_exists(session->server_callbacks, auth_pubkey_function)) {
-               rc = session->server_callbacks->auth_pubkey_function(session,
-                       msg->auth_request.username, msg->auth_request.pubkey,
-                       msg->auth_request.signature_state,
-                       session->server_callbacks->userdata);
-               if (msg->auth_request.signature_state != SSH_PUBLICKEY_STATE_NONE) {
-                 if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
-                   ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
-                 } else {
-                   ssh_message_reply_default(msg);
-                 }
-               } else {
-                 if (rc == SSH_AUTH_SUCCESS) {
-                   ssh_message_auth_reply_pk_ok_simple(msg);
-                 } else {
-                   ssh_message_reply_default(msg);
-                 }
-               }
-
-               return SSH_OK;
-            } else if (msg->auth_request.method == SSH_AUTH_METHOD_NONE &&
-                       ssh_callbacks_exists(session->server_callbacks, auth_none_function)) {
-                rc = session->server_callbacks->auth_none_function(session,
-                    msg->auth_request.username, session->server_callbacks->userdata);
-                if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL){
-                    ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
-                } else {
-                    ssh_message_reply_default(msg);
-                }
-
-                return SSH_OK;
-            } else if (msg->auth_request.method == SSH_AUTH_METHOD_INTERACTIVE &&
-                       ssh_callbacks_exists(session->server_callbacks, auth_kbdint_function)) {
-                rc = session->server_callbacks->auth_kbdint_function(msg,
-                                                                     session,
-                                                                     session->server_callbacks->userdata);
-                if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
-                    ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
-                } else if (rc == SSH_AUTH_INFO) {
-                    return SSH_OK;
-                } else {
-                    ssh_message_reply_default(msg);
-                }
-                return SSH_OK;
+    switch (msg->type) {
+    case SSH_REQUEST_AUTH:
+        if (msg->auth_request.method == SSH_AUTH_METHOD_PASSWORD &&
+            ssh_callbacks_exists(session->server_callbacks,
+                                 auth_password_function)) {
+            rc = session->server_callbacks->auth_password_function(
+                session,
+                msg->auth_request.username,
+                msg->auth_request.password,
+                session->server_callbacks->userdata);
+            if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
+                ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
+            } else {
+                ssh_message_reply_default(msg);
             }
-            break;
-        case SSH_REQUEST_CHANNEL_OPEN:
-            if (msg->channel_request_open.type == SSH_CHANNEL_SESSION &&
-                ssh_callbacks_exists(session->server_callbacks, channel_open_request_session_function)) {
-                channel = session->server_callbacks->channel_open_request_session_function(session,
-                        session->server_callbacks->userdata);
-                if (channel != NULL) {
-                    rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
-                    if (rc != SSH_OK) {
-                        SSH_LOG(SSH_LOG_TRACE,
-                                "Failed to send reply for accepting a channel "
-                                "open");
-                    }
-                    return SSH_OK;
+
+            return SSH_OK;
+        } else if (msg->auth_request.method == SSH_AUTH_METHOD_PUBLICKEY &&
+                   ssh_callbacks_exists(session->server_callbacks,
+                                        auth_pubkey_function)) {
+            rc = session->server_callbacks->auth_pubkey_function(
+                session,
+                msg->auth_request.username,
+                msg->auth_request.pubkey,
+                msg->auth_request.signature_state,
+                session->server_callbacks->userdata);
+            if (msg->auth_request.signature_state != SSH_PUBLICKEY_STATE_NONE) {
+                if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
+                    ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
                 } else {
                     ssh_message_reply_default(msg);
                 }
+            } else {
+                if (rc == SSH_AUTH_SUCCESS) {
+                    ssh_message_auth_reply_pk_ok_simple(msg);
+                } else {
+                    ssh_message_reply_default(msg);
+                }
+            }
 
+            return SSH_OK;
+        } else if (msg->auth_request.method == SSH_AUTH_METHOD_NONE &&
+                   ssh_callbacks_exists(session->server_callbacks,
+                                        auth_none_function)) {
+            rc = session->server_callbacks->auth_none_function(
+                session,
+                msg->auth_request.username,
+                session->server_callbacks->userdata);
+            if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
+                ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
+            } else {
+                ssh_message_reply_default(msg);
+            }
+
+            return SSH_OK;
+        } else if (msg->auth_request.method == SSH_AUTH_METHOD_INTERACTIVE &&
+                   ssh_callbacks_exists(session->server_callbacks,
+                                        auth_kbdint_function)) {
+            rc = session->server_callbacks->auth_kbdint_function(
+                msg,
+                session,
+                session->server_callbacks->userdata);
+            if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL) {
+                ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
+            } else if (rc == SSH_AUTH_INFO) {
                 return SSH_OK;
-#define CB channel_open_request_direct_tcpip_function
-            } else if (msg->channel_request_open.type == SSH_CHANNEL_DIRECT_TCPIP &&
-                       ssh_callbacks_exists(session->server_callbacks, CB)) {
-                struct ssh_channel_request_open *rq = &msg->channel_request_open;
-                channel = session->server_callbacks->CB(session,
-                                                        rq->destination,
-                                                        rq->destination_port,
-                                                        rq->originator,
-                                                        rq->originator_port,
-                                                        session->server_callbacks->userdata);
+            } else {
+                ssh_message_reply_default(msg);
+            }
+            return SSH_OK;
+        }
+        break;
+    case SSH_REQUEST_CHANNEL_OPEN:
+#define CB channel_open_request_session_function
+        if (msg->channel_request_open.type == SSH_CHANNEL_SESSION &&
+            ssh_callbacks_exists(session->server_callbacks, CB)) {
+            channel = session->server_callbacks->CB(
+                session,
+                session->server_callbacks->userdata);
 #undef CB
-                if (channel != NULL) {
-                    rc = ssh_message_channel_request_open_reply_accept_channel(
-                        msg,
-                        channel);
-                    if (rc != SSH_OK) {
-                        SSH_LOG(SSH_LOG_TRACE,
-                                "Failed to send reply for accepting a channel "
-                                "open");
-                    }
-                    return SSH_OK;
-                } else {
-                    ssh_message_reply_default(msg);
+            if (channel != NULL) {
+                rc = ssh_message_channel_request_open_reply_accept_channel(
+                    msg,
+                    channel);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_TRACE,
+                            "Failed to send reply for accepting a channel "
+                            "open");
                 }
-
                 return SSH_OK;
+            } else {
+                ssh_message_reply_default(msg);
             }
 
-            break;
-        case SSH_REQUEST_CHANNEL:
-            channel = msg->channel_request.channel;
-
-            if (msg->channel_request.type == SSH_CHANNEL_REQUEST_PTY){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_pty_request_function) {
-                    rc = ssh_callbacks_iterate_exec(channel_pty_request_function,
-                                                    session,
-                                                    channel,
-                                                    msg->channel_request.TERM,
-                                                    msg->channel_request.width,
-                                                    msg->channel_request.height,
-                                                    msg->channel_request.pxwidth,
-                                                    msg->channel_request.pxheight);
-                    if (rc == 0) {
-                        ssh_message_channel_request_reply_success(msg);
-                    } else {
-                        ssh_message_reply_default(msg);
-                    }
-                    return SSH_OK;
+            return SSH_OK;
+#define CB channel_open_request_direct_tcpip_function
+        } else if (msg->channel_request_open.type == SSH_CHANNEL_DIRECT_TCPIP &&
+                   ssh_callbacks_exists(session->server_callbacks, CB)) {
+            struct ssh_channel_request_open *rq = &msg->channel_request_open;
+            channel = session->server_callbacks->CB(session,
+                                                    rq->destination,
+                                                    rq->destination_port,
+                                                    rq->originator,
+                                                    rq->originator_port,
+                                                    session->server_callbacks->userdata);
+#undef CB
+            if (channel != NULL) {
+                rc = ssh_message_channel_request_open_reply_accept_channel(
+                    msg,
+                    channel);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_TRACE,
+                            "Failed to send reply for accepting a channel "
+                            "open");
                 }
-                ssh_callbacks_iterate_end();
-            } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_SHELL){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_shell_request_function) {
-                    rc = ssh_callbacks_iterate_exec(channel_shell_request_function,
-                                                    session,
-                                                    channel);
-                    if (rc == 0) {
-                        ssh_message_channel_request_reply_success(msg);
-                    } else {
-                        ssh_message_reply_default(msg);
-                    }
-                    return SSH_OK;
-                }
-                ssh_callbacks_iterate_end();
-            } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_X11){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_x11_req_function) {
-                    ssh_callbacks_iterate_exec(channel_x11_req_function,
-                                               session,
-                                               channel,
-                                               msg->channel_request.x11_single_connection,
-                                               msg->channel_request.x11_auth_protocol,
-                                               msg->channel_request.x11_auth_cookie,
-                                               msg->channel_request.x11_screen_number);
-                    ssh_message_channel_request_reply_success(msg);
-                    return SSH_OK;
-                }
-                ssh_callbacks_iterate_end();
-            } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_WINDOW_CHANGE){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_pty_window_change_function) {
-                    rc = ssh_callbacks_iterate_exec(channel_pty_window_change_function,
-                                                    session,
-                                                    channel,
-                                                    msg->channel_request.width,
-                                                    msg->channel_request.height,
-                                                    msg->channel_request.pxwidth,
-                                                    msg->channel_request.pxheight);
-                    if (rc != SSH_OK) {
-                        SSH_LOG(SSH_LOG_TRACE,
-                                "Failed to iterate callbacks for window change");
-                    }
-                    return SSH_OK;
-                }
-                ssh_callbacks_iterate_end();
-            } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_EXEC){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_exec_request_function) {
-                    rc = ssh_callbacks_iterate_exec(channel_exec_request_function,
-                                                    session,
-                                                    channel,
-                                                    msg->channel_request.command);
-                    if (rc == 0) {
-                        ssh_message_channel_request_reply_success(msg);
-                    } else {
-                        ssh_message_reply_default(msg);
-                    }
-
-                    return SSH_OK;
-                }
-                ssh_callbacks_iterate_end();
-            } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_ENV){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_env_request_function) {
-                    rc = ssh_callbacks_iterate_exec(channel_env_request_function,
-                                                    session,
-                                                    channel,
-                                                    msg->channel_request.var_name,
-                                                    msg->channel_request.var_value);
-                    if (rc == 0) {
-                        ssh_message_channel_request_reply_success(msg);
-                    } else {
-                        ssh_message_reply_default(msg);
-                    }
-                    return SSH_OK;
-                }
-                ssh_callbacks_iterate_end();
-            } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_SUBSYSTEM){
-                ssh_callbacks_iterate(channel->callbacks,
-                                      ssh_channel_callbacks,
-                                      channel_subsystem_request_function) {
-                    rc = ssh_callbacks_iterate_exec(channel_subsystem_request_function,
-                                                    session,
-                                                    channel,
-                                                    msg->channel_request.subsystem);
-                    if (rc == 0) {
-                        ssh_message_channel_request_reply_success(msg);
-                    } else {
-                        ssh_message_reply_default(msg);
-                    }
-
-                    return SSH_OK;
-                }
-                ssh_callbacks_iterate_end();
+                return SSH_OK;
+            } else {
+                ssh_message_reply_default(msg);
             }
-            break;
-        case SSH_REQUEST_SERVICE:
-            if (ssh_callbacks_exists(session->server_callbacks, service_request_function)) {
-                rc = session->server_callbacks->service_request_function(session,
-                        msg->service_request.service, session->server_callbacks->userdata);
+
+            return SSH_OK;
+        }
+
+        break;
+    case SSH_REQUEST_CHANNEL:
+        channel = msg->channel_request.channel;
+
+        if (msg->channel_request.type == SSH_CHANNEL_REQUEST_PTY) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_pty_request_function) {
+                rc = ssh_callbacks_iterate_exec(channel_pty_request_function,
+                                                session,
+                                                channel,
+                                                msg->channel_request.TERM,
+                                                msg->channel_request.width,
+                                                msg->channel_request.height,
+                                                msg->channel_request.pxwidth,
+                                                msg->channel_request.pxheight);
                 if (rc == 0) {
-                    ssh_message_reply_default(msg);
+                    ssh_message_channel_request_reply_success(msg);
                 } else {
-                    ssh_send_disconnect(session);
+                    ssh_message_reply_default(msg);
+                }
+                return SSH_OK;
+            }
+            ssh_callbacks_iterate_end();
+        } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_SHELL) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_shell_request_function) {
+                rc = ssh_callbacks_iterate_exec(channel_shell_request_function,
+                                                session,
+                                                channel);
+                if (rc == 0) {
+                    ssh_message_channel_request_reply_success(msg);
+                } else {
+                    ssh_message_reply_default(msg);
+                }
+                return SSH_OK;
+            }
+            ssh_callbacks_iterate_end();
+        } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_X11) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_x11_req_function) {
+                ssh_callbacks_iterate_exec(channel_x11_req_function,
+                                           session,
+                                           channel,
+                                           msg->channel_request.x11_single_connection,
+                                           msg->channel_request.x11_auth_protocol,
+                                           msg->channel_request.x11_auth_cookie,
+                                           msg->channel_request.x11_screen_number);
+                ssh_message_channel_request_reply_success(msg);
+                return SSH_OK;
+            }
+            ssh_callbacks_iterate_end();
+        } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_WINDOW_CHANGE) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_pty_window_change_function) {
+                rc = ssh_callbacks_iterate_exec(channel_pty_window_change_function,
+                                                session,
+                                                channel,
+                                                msg->channel_request.width,
+                                                msg->channel_request.height,
+                                                msg->channel_request.pxwidth,
+                                                msg->channel_request.pxheight);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_TRACE,
+                            "Failed to iterate callbacks for window change");
+                }
+                return SSH_OK;
+            }
+            ssh_callbacks_iterate_end();
+        } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_EXEC) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_exec_request_function) {
+                rc = ssh_callbacks_iterate_exec(channel_exec_request_function,
+                                                session,
+                                                channel,
+                                                msg->channel_request.command);
+                if (rc == 0) {
+                    ssh_message_channel_request_reply_success(msg);
+                } else {
+                    ssh_message_reply_default(msg);
                 }
 
                 return SSH_OK;
             }
+            ssh_callbacks_iterate_end();
+        } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_ENV) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_env_request_function) {
+                rc = ssh_callbacks_iterate_exec(channel_env_request_function,
+                                                session,
+                                                channel,
+                                                msg->channel_request.var_name,
+                                                msg->channel_request.var_value);
+                if (rc == 0) {
+                    ssh_message_channel_request_reply_success(msg);
+                } else {
+                    ssh_message_reply_default(msg);
+                }
+                return SSH_OK;
+            }
+            ssh_callbacks_iterate_end();
+        } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_SUBSYSTEM) {
+            ssh_callbacks_iterate (channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_subsystem_request_function) {
+                rc = ssh_callbacks_iterate_exec(
+                    channel_subsystem_request_function,
+                    session,
+                    channel,
+                    msg->channel_request.subsystem);
+                if (rc == 0) {
+                    ssh_message_channel_request_reply_success(msg);
+                } else {
+                    ssh_message_reply_default(msg);
+                }
 
-            return SSH_AGAIN;
-        case SSH_REQUEST_GLOBAL:
-            break;
+                return SSH_OK;
+            }
+            ssh_callbacks_iterate_end();
+        }
+        break;
+    case SSH_REQUEST_SERVICE:
+        if (ssh_callbacks_exists(session->server_callbacks,
+                                 service_request_function)) {
+            rc = session->server_callbacks->service_request_function(
+                session,
+                msg->service_request.service,
+                session->server_callbacks->userdata);
+            if (rc == 0) {
+                ssh_message_reply_default(msg);
+            } else {
+                ssh_send_disconnect(session);
+            }
+
+            return SSH_OK;
+        }
+
+        return SSH_AGAIN;
+    case SSH_REQUEST_GLOBAL:
+        break;
     }
 
     return SSH_AGAIN;
@@ -408,31 +436,40 @@ static int ssh_execute_client_request(ssh_session session, ssh_message msg)
     ssh_channel channel = NULL;
     int rc = SSH_AGAIN;
 
-    if (msg->type == SSH_REQUEST_CHANNEL_OPEN
-        && msg->channel_request_open.type == SSH_CHANNEL_X11
-        && ssh_callbacks_exists(session->common.callbacks, channel_open_request_x11_function)) {
-        channel = session->common.callbacks->channel_open_request_x11_function (session,
-                msg->channel_request_open.originator,
-                msg->channel_request_open.originator_port,
-                session->common.callbacks->userdata);
+#define CB channel_open_request_x11_function
+    if (msg->type == SSH_REQUEST_CHANNEL_OPEN &&
+        msg->channel_request_open.type == SSH_CHANNEL_X11 &&
+        ssh_callbacks_exists(session->common.callbacks, CB)) {
+        channel = session->common.callbacks->CB(
+            session,
+            msg->channel_request_open.originator,
+            msg->channel_request_open.originator_port,
+            session->common.callbacks->userdata);
+#undef CB
 
         return ssh_reply_channel_open_request(msg, channel);
-    } else if (msg->type == SSH_REQUEST_CHANNEL_OPEN
-               && msg->channel_request_open.type == SSH_CHANNEL_AUTH_AGENT
-               && ssh_callbacks_exists(session->common.callbacks, channel_open_request_auth_agent_function)) {
-        channel = session->common.callbacks->channel_open_request_auth_agent_function (session,
-                session->common.callbacks->userdata);
+#define CB channel_open_request_auth_agent_function
+    } else if (msg->type == SSH_REQUEST_CHANNEL_OPEN &&
+               msg->channel_request_open.type == SSH_CHANNEL_AUTH_AGENT &&
+               ssh_callbacks_exists(session->common.callbacks, CB)) {
+        channel = session->common.callbacks->CB(
+            session,
+            session->common.callbacks->userdata);
+#undef CB
 
         return ssh_reply_channel_open_request(msg, channel);
-    } else if (msg->type == SSH_REQUEST_CHANNEL_OPEN
-               && msg->channel_request_open.type == SSH_CHANNEL_FORWARDED_TCPIP
-               && ssh_callbacks_exists(session->common.callbacks, channel_open_request_forwarded_tcpip_function)) {
-        channel = session->common.callbacks->channel_open_request_forwarded_tcpip_function(session,
-                msg->channel_request_open.destination,
-                msg->channel_request_open.destination_port,
-                msg->channel_request_open.originator,
-                msg->channel_request_open.originator_port,
-                session->common.callbacks->userdata);
+#define CB channel_open_request_forwarded_tcpip_function
+    } else if (msg->type == SSH_REQUEST_CHANNEL_OPEN &&
+               msg->channel_request_open.type == SSH_CHANNEL_FORWARDED_TCPIP &&
+               ssh_callbacks_exists(session->common.callbacks, CB)) {
+        channel = session->common.callbacks->CB(
+            session,
+            msg->channel_request_open.destination,
+            msg->channel_request_open.destination_port,
+            msg->channel_request_open.originator,
+            msg->channel_request_open.originator_port,
+            session->common.callbacks->userdata);
+#undef CB
 
         return ssh_reply_channel_open_request(msg, channel);
     }
@@ -445,10 +482,11 @@ static int ssh_execute_client_request(ssh_session session, ssh_message msg)
  * I don't like ssh_message interface but it works.
  * @returns SSH_OK if the message has been handled, or SSH_AGAIN otherwise.
  */
-static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
+static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg)
+{
     int rc = SSH_AGAIN;
 
-    if (session->server_callbacks != NULL){
+    if (session->server_callbacks != NULL) {
         rc = ssh_execute_server_request(session, msg);
     } else if (session->common.callbacks != NULL) {
         /* This one is in fact a client callback... */
@@ -460,12 +498,15 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 
 #endif /* WITH_SERVER */
 
-static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
-	int ret;
-    if(session->ssh_message_callback != NULL) {
-        ret = session->ssh_message_callback(session, msg,
-                session->ssh_message_callback_data);
-        if(ret == 1) {
+static int ssh_execute_message_callback(ssh_session session, ssh_message msg)
+{
+    int ret;
+
+    if (session->ssh_message_callback != NULL) {
+        ret = session->ssh_message_callback(session,
+                                            msg,
+                                            session->ssh_message_callback_data);
+        if (ret == 1) {
             ret = ssh_message_reply_default(msg);
             SSH_MESSAGE_FREE(msg);
             if(ret != SSH_OK) {
@@ -564,8 +605,9 @@ ssh_message ssh_message_pop_head(ssh_session session)
     ssh_message msg = NULL;
     struct ssh_iterator *i = NULL;
 
-    if (session->ssh_message_list == NULL)
+    if (session->ssh_message_list == NULL) {
         return NULL;
+    }
 
     i = ssh_list_get_iterator(session->ssh_message_list);
     if (i != NULL) {
@@ -585,10 +627,11 @@ static int ssh_message_termination(void *s)
         return 1;
 
     it = ssh_list_get_iterator(session->ssh_message_list);
-    if (!it)
+    if (!it) {
         return 0;
-    else
+    } else {
         return 1;
+    }
 }
 /**
  * @brief Retrieve a SSH message from a SSH session.
@@ -617,8 +660,10 @@ ssh_message ssh_message_get(ssh_session session)
             return NULL;
         }
     }
-    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
-                                        ssh_message_termination, session);
+    rc = ssh_handle_packets_termination(session,
+                                        SSH_TIMEOUT_USER,
+                                        ssh_message_termination,
+                                        session);
     if (rc || session->session_state == SSH_SESSION_STATE_ERROR) {
         return NULL;
     }
@@ -634,12 +679,13 @@ ssh_message ssh_message_get(ssh_session session)
  *
  * @return              The message type or -1 on error.
  */
-int ssh_message_type(ssh_message msg) {
-  if (msg == NULL) {
-    return -1;
-  }
+int ssh_message_type(ssh_message msg)
+{
+    if (msg == NULL) {
+        return -1;
+    }
 
-  return msg->type;
+    return msg->type;
 }
 
 /**
@@ -649,23 +695,24 @@ int ssh_message_type(ssh_message msg) {
  *
  * @return              The message type or -1 on error.
  */
-int ssh_message_subtype(ssh_message msg) {
-  if (msg == NULL) {
-    return -1;
-  }
+int ssh_message_subtype(ssh_message msg)
+{
+    if (msg == NULL) {
+        return -1;
+    }
 
-  switch(msg->type) {
+    switch (msg->type) {
     case SSH_REQUEST_AUTH:
-      return msg->auth_request.method;
+        return msg->auth_request.method;
     case SSH_REQUEST_CHANNEL_OPEN:
-      return msg->channel_request_open.type;
+        return msg->channel_request_open.type;
     case SSH_REQUEST_CHANNEL:
-      return msg->channel_request.type;
+        return msg->channel_request.type;
     case SSH_REQUEST_GLOBAL:
-      return msg->global_request.type;
-  }
+        return msg->global_request.type;
+    }
 
-  return -1;
+    return -1;
 }
 
 /**
@@ -673,63 +720,64 @@ int ssh_message_subtype(ssh_message msg) {
  *
  * @param[in] msg       The message to release the memory.
  */
-void ssh_message_free(ssh_message msg){
-  if (msg == NULL) {
-    return;
-  }
+void ssh_message_free(ssh_message msg)
+{
+    if (msg == NULL) {
+        return;
+    }
 
-  switch(msg->type) {
+    switch (msg->type) {
     case SSH_REQUEST_AUTH:
-      SAFE_FREE(msg->auth_request.username);
-      SAFE_FREE(msg->auth_request.sigtype);
-      if (msg->auth_request.password) {
-          ssh_burn(msg->auth_request.password,
-                   strlen(msg->auth_request.password));
-          SAFE_FREE(msg->auth_request.password);
-      }
-      ssh_key_free(msg->auth_request.pubkey);
-      ssh_key_free(msg->auth_request.server_pubkey);
-      break;
+        SAFE_FREE(msg->auth_request.username);
+        SAFE_FREE(msg->auth_request.sigtype);
+        if (msg->auth_request.password) {
+            ssh_burn(msg->auth_request.password,
+                     strlen(msg->auth_request.password));
+            SAFE_FREE(msg->auth_request.password);
+        }
+        ssh_key_free(msg->auth_request.pubkey);
+        ssh_key_free(msg->auth_request.server_pubkey);
+        break;
     case SSH_REQUEST_CHANNEL_OPEN:
-      SAFE_FREE(msg->channel_request_open.originator);
-      SAFE_FREE(msg->channel_request_open.destination);
-      break;
+        SAFE_FREE(msg->channel_request_open.originator);
+        SAFE_FREE(msg->channel_request_open.destination);
+        break;
     case SSH_REQUEST_CHANNEL:
-      SAFE_FREE(msg->channel_request.TERM);
-      SAFE_FREE(msg->channel_request.modes);
-      SAFE_FREE(msg->channel_request.var_name);
-      SAFE_FREE(msg->channel_request.var_value);
-      SAFE_FREE(msg->channel_request.command);
-      SAFE_FREE(msg->channel_request.subsystem);
-      switch (msg->channel_request.type) {
-      case SSH_CHANNEL_REQUEST_EXEC:
-          SAFE_FREE(msg->channel_request.command);
-          break;
-      case SSH_CHANNEL_REQUEST_ENV:
-          SAFE_FREE(msg->channel_request.var_name);
-          SAFE_FREE(msg->channel_request.var_value);
-          break;
-      case SSH_CHANNEL_REQUEST_PTY:
-          SAFE_FREE(msg->channel_request.TERM);
-          break;
-      case SSH_CHANNEL_REQUEST_SUBSYSTEM:
-          SAFE_FREE(msg->channel_request.subsystem);
-          break;
-      case SSH_CHANNEL_REQUEST_X11:
-          SAFE_FREE(msg->channel_request.x11_auth_protocol);
-          SAFE_FREE(msg->channel_request.x11_auth_cookie);
-          break;
-      }
-      break;
+        SAFE_FREE(msg->channel_request.TERM);
+        SAFE_FREE(msg->channel_request.modes);
+        SAFE_FREE(msg->channel_request.var_name);
+        SAFE_FREE(msg->channel_request.var_value);
+        SAFE_FREE(msg->channel_request.command);
+        SAFE_FREE(msg->channel_request.subsystem);
+        switch (msg->channel_request.type) {
+        case SSH_CHANNEL_REQUEST_EXEC:
+            SAFE_FREE(msg->channel_request.command);
+            break;
+        case SSH_CHANNEL_REQUEST_ENV:
+            SAFE_FREE(msg->channel_request.var_name);
+            SAFE_FREE(msg->channel_request.var_value);
+            break;
+        case SSH_CHANNEL_REQUEST_PTY:
+            SAFE_FREE(msg->channel_request.TERM);
+            break;
+        case SSH_CHANNEL_REQUEST_SUBSYSTEM:
+            SAFE_FREE(msg->channel_request.subsystem);
+            break;
+        case SSH_CHANNEL_REQUEST_X11:
+            SAFE_FREE(msg->channel_request.x11_auth_protocol);
+            SAFE_FREE(msg->channel_request.x11_auth_cookie);
+            break;
+        }
+        break;
     case SSH_REQUEST_SERVICE:
-      SAFE_FREE(msg->service_request.service);
-      break;
+        SAFE_FREE(msg->service_request.service);
+        break;
     case SSH_REQUEST_GLOBAL:
-      SAFE_FREE(msg->global_request.bind_address);
-      break;
-  }
-  ZERO_STRUCTP(msg);
-  SAFE_FREE(msg);
+        SAFE_FREE(msg->global_request.bind_address);
+        break;
+    }
+    ZERO_STRUCTP(msg);
+    SAFE_FREE(msg);
 }
 
 #ifdef WITH_SERVER
@@ -1275,7 +1323,8 @@ end:
  * SSH Message
  */
 #ifndef WITH_SERVER
-SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response)
+{
     (void)session;
     (void)type;
     (void)packet;
@@ -1283,124 +1332,132 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     return SSH_PACKET_USED;
 }
 #else /* WITH_SERVER */
-SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
-  uint32_t nanswers;
-  uint32_t i;
-  ssh_string tmp = NULL;
-  int rc;
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response)
+{
+    uint32_t nanswers;
+    uint32_t i;
+    ssh_string tmp = NULL;
+    int rc;
 
-  ssh_message msg = NULL;
+    ssh_message msg = NULL;
 
-  /* GSSAPI_TOKEN has same packed number. XXX fix this */
+    /* GSSAPI_TOKEN has same packed number. XXX fix this */
 #ifdef WITH_GSSAPI
-  if (session->gssapi != NULL) {
-      return ssh_packet_userauth_gssapi_token(session, type, packet, user);
-  }
+    if (session->gssapi != NULL) {
+        return ssh_packet_userauth_gssapi_token(session, type, packet, user);
+    }
 #endif
-  (void)user;
-  (void)type;
+    (void)user;
+    (void)type;
 
-  msg = ssh_message_new(session);
-  if (msg == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
+    msg = ssh_message_new(session);
+    if (msg == NULL) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
 
-  /* HACK: we forge a message to be able to handle it in the
-   * same switch() as other auth methods */
-  msg->type = SSH_REQUEST_AUTH;
-  msg->auth_request.method = SSH_AUTH_METHOD_INTERACTIVE;
-  msg->auth_request.kbdint_response = 1;
+    /* HACK: we forge a message to be able to handle it in the
+     * same switch() as other auth methods */
+    msg->type = SSH_REQUEST_AUTH;
+    msg->auth_request.method = SSH_AUTH_METHOD_INTERACTIVE;
+    msg->auth_request.kbdint_response = 1;
 #if 0 // should we wipe the username ?
-  msg->auth_request.username = NULL;
+    msg->auth_request.username = NULL;
 #endif
 
-  rc = ssh_buffer_unpack(packet, "d", &nanswers);
-  if (rc != SSH_OK) {
-      ssh_set_error_invalid(session);
-      goto error;
-  }
+    rc = ssh_buffer_unpack(packet, "d", &nanswers);
+    if (rc != SSH_OK) {
+        ssh_set_error_invalid(session);
+        goto error;
+    }
 
-  if (session->kbdint == NULL) {
-    SSH_LOG(SSH_LOG_DEBUG, "Warning: Got a keyboard-interactive "
-                        "response but it seems we didn't send the request.");
-
-    session->kbdint = ssh_kbdint_new();
     if (session->kbdint == NULL) {
-      ssh_set_error_oom(session);
+        SSH_LOG(SSH_LOG_DEBUG,
+                "Warning: Got a keyboard-interactive response but it seems"
+                " we didn't send the request.");
 
-      goto error;
+        session->kbdint = ssh_kbdint_new();
+        if (session->kbdint == NULL) {
+            ssh_set_error_oom(session);
+
+            goto error;
+        }
+    } else if (session->kbdint->answers != NULL) {
+        uint32_t n;
+
+        for (n = 0; n < session->kbdint->nanswers; n++) {
+            ssh_burn(session->kbdint->answers[n],
+                     strlen(session->kbdint->answers[n]));
+            SAFE_FREE(session->kbdint->answers[n]);
+        }
+        SAFE_FREE(session->kbdint->answers);
+        session->kbdint->nanswers = 0;
     }
-  } else if (session->kbdint->answers != NULL) {
-      uint32_t n;
 
-      for (n = 0; n < session->kbdint->nanswers; n++) {
-          ssh_burn(session->kbdint->answers[n],
-                   strlen(session->kbdint->answers[n]));
-          SAFE_FREE(session->kbdint->answers[n]);
-      }
-      SAFE_FREE(session->kbdint->answers);
-      session->kbdint->nanswers = 0;
-  }
+    SSH_LOG(SSH_LOG_PACKET, "kbdint: %" PRIu32 " answers", nanswers);
+    if (nanswers > KBDINT_MAX_PROMPT) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Too much answers received from client: %" PRIu32
+                      " (0x%.4" PRIx32 ")",
+                      nanswers,
+                      nanswers);
+        ssh_kbdint_free(session->kbdint);
+        session->kbdint = NULL;
 
-  SSH_LOG(SSH_LOG_PACKET,"kbdint: %" PRIu32 " answers", nanswers);
-  if (nanswers > KBDINT_MAX_PROMPT) {
-    ssh_set_error(session, SSH_FATAL,
-        "Too much answers received from client: %" PRIu32 " (0x%.4" PRIx32 ")",
-        nanswers, nanswers);
-    ssh_kbdint_free(session->kbdint);
-    session->kbdint = NULL;
-
-    goto error;
-  }
-
-  if(nanswers != session->kbdint->nprompts) {
-    /* warn but let the application handle this case */
-    SSH_LOG(SSH_LOG_DEBUG, "Warning: Number of prompts and answers"
-                " mismatch: p=%" PRIu32 " a=%" PRIu32, session->kbdint->nprompts, nanswers);
-  }
-  session->kbdint->nanswers = nanswers;
-
-  session->kbdint->answers = calloc(nanswers, sizeof(char *));
-  if (session->kbdint->answers == NULL) {
-    session->kbdint->nanswers = 0;
-    ssh_set_error_oom(session);
-    ssh_kbdint_free(session->kbdint);
-    session->kbdint = NULL;
-
-    goto error;
-  }
-
-  for (i = 0; i < nanswers; i++) {
-    tmp = ssh_buffer_get_ssh_string(packet);
-    if (tmp == NULL) {
-      ssh_set_error(session, SSH_FATAL, "Short INFO_RESPONSE packet");
-      session->kbdint->nanswers = i;
-      ssh_kbdint_free(session->kbdint);
-      session->kbdint = NULL;
-
-      goto error;
+        goto error;
     }
-    session->kbdint->answers[i] = ssh_string_to_char(tmp);
-    SSH_STRING_FREE(tmp);
-    if (session->kbdint->answers[i] == NULL) {
-      ssh_set_error_oom(session);
-      session->kbdint->nanswers = i;
-      ssh_kbdint_free(session->kbdint);
-      session->kbdint = NULL;
 
-      goto error;
+    if (nanswers != session->kbdint->nprompts) {
+        /* warn but let the application handle this case */
+        SSH_LOG(SSH_LOG_DEBUG,
+                "Warning: Number of prompts and answers  mismatch: p=%" PRIu32
+                " a=%" PRIu32,
+                session->kbdint->nprompts,
+                nanswers);
     }
-  }
+    session->kbdint->nanswers = nanswers;
 
-  ssh_message_queue(session,msg);
+    session->kbdint->answers = calloc(nanswers, sizeof(char *));
+    if (session->kbdint->answers == NULL) {
+        session->kbdint->nanswers = 0;
+        ssh_set_error_oom(session);
+        ssh_kbdint_free(session->kbdint);
+        session->kbdint = NULL;
 
-  return SSH_PACKET_USED;
+        goto error;
+    }
+
+    for (i = 0; i < nanswers; i++) {
+        tmp = ssh_buffer_get_ssh_string(packet);
+        if (tmp == NULL) {
+            ssh_set_error(session, SSH_FATAL, "Short INFO_RESPONSE packet");
+            session->kbdint->nanswers = i;
+            ssh_kbdint_free(session->kbdint);
+            session->kbdint = NULL;
+
+            goto error;
+        }
+        session->kbdint->answers[i] = ssh_string_to_char(tmp);
+        SSH_STRING_FREE(tmp);
+        if (session->kbdint->answers[i] == NULL) {
+            ssh_set_error_oom(session);
+            session->kbdint->nanswers = i;
+            ssh_kbdint_free(session->kbdint);
+            session->kbdint = NULL;
+
+            goto error;
+        }
+    }
+
+    ssh_message_queue(session, msg);
+
+    return SSH_PACKET_USED;
 
 error:
-  SSH_MESSAGE_FREE(msg);
+    SSH_MESSAGE_FREE(msg);
 
-  return SSH_PACKET_USED;
+    return SSH_PACKET_USED;
 }
 #endif /* WITH_SERVER */
 
@@ -1815,7 +1872,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
 
     SSH_LOG(SSH_LOG_DEBUG,"Received SSH_MSG_GLOBAL_REQUEST packet");
     r = ssh_buffer_unpack(packet, "sb", &request, &want_reply);
-    if (r != SSH_OK){
+    if (r != SSH_OK) {
         goto error;
     }
 
@@ -1837,7 +1894,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
                               "sd",
                               &msg->global_request.bind_address,
                               &msg->global_request.bind_port);
-        if (r != SSH_OK){
+        if (r != SSH_OK) {
             goto reply_with_failure;
         }
         msg->global_request.type = SSH_GLOBAL_REQUEST_TCPIP_FORWARD;
@@ -1878,7 +1935,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
                               "sd",
                               &msg->global_request.bind_address,
                               &msg->global_request.bind_port);
-        if (r != SSH_OK){
+        if (r != SSH_OK) {
             goto reply_with_failure;
         }
         msg->global_request.type = SSH_GLOBAL_REQUEST_CANCEL_TCPIP_FORWARD;
