@@ -1487,7 +1487,8 @@ err:
  */
 static char *ssh_path_expand_internal(ssh_session session,
                                       const char *s,
-                                      bool hostname_lenient)
+                                      bool hostname_lenient,
+                                      bool expand_tilde)
 {
     char *buf = NULL;
     char *r = NULL;
@@ -1495,7 +1496,11 @@ static char *ssh_path_expand_internal(ssh_session session,
     const char *p = NULL;
     size_t i, l;
 
-    r = ssh_path_expand_tilde(s);
+    if (expand_tilde) {
+        r = ssh_path_expand_tilde(s);
+    } else {
+        r = strdup(s);
+    }
     if (r == NULL) {
         ssh_set_error_oom(session);
         return NULL;
@@ -1708,7 +1713,12 @@ static char *ssh_path_expand_internal(ssh_session session,
  */
 char *ssh_path_expand_escape(ssh_session session, const char *s)
 {
-    return ssh_path_expand_internal(session, s, false);
+    return ssh_path_expand_internal(session, s, false, true);
+}
+
+char *ssh_string_expand_escape(ssh_session session, const char *s)
+{
+    return ssh_path_expand_internal(session, s, false, false);
 }
 
 /**
@@ -1726,7 +1736,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s)
  */
 char *ssh_path_expand_hostname(ssh_session session, const char *s)
 {
-    return ssh_path_expand_internal(session, s, true);
+    return ssh_path_expand_internal(session, s, true, false);
 }
 
 /**

@@ -3267,7 +3267,7 @@ int ssh_options_apply(ssh_session session)
      */
     if ((session->opts.exp_flags & SSH_OPT_EXP_FLAG_USERNAME) == 0 &&
         session->opts.username != NULL) {
-        tmp = ssh_path_expand_escape(session, session->opts.username);
+        tmp = ssh_string_expand_escape(session, session->opts.username);
         if (tmp != NULL) {
             free(session->opts.username);
             session->opts.username = tmp;
