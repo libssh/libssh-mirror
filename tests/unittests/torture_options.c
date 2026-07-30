@@ -2956,6 +2956,43 @@ static void torture_options_set_server_alive_interval(void **state)
     assert_int_equal(session->opts.server_alive_interval, 0);
 }
 
+static void torture_options_set_server_alive_count_max(void **state)
+{
+    ssh_session session = *state;
+    int val = 0;
+    int rc;
+
+    /* Default value after setup() should be 3 */
+    assert_int_equal(session->opts.server_alive_count_max, 3);
+
+    /* NULL value must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX, NULL);
+    assert_int_equal(rc, -1);
+
+    /* Negative value must be rejected */
+    val = -1;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX, &val);
+    assert_int_equal(rc, -1);
+
+    /* Set to 1 */
+    val = 1;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX, &val);
+    assert_ssh_return_code(session, rc);
+    assert_int_equal(session->opts.server_alive_count_max, 1);
+
+    /* Set to 10 */
+    val = 10;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX, &val);
+    assert_ssh_return_code(session, rc);
+    assert_int_equal(session->opts.server_alive_count_max, 10);
+
+    /* Reset to 0 (no tolerance) */
+    val = 0;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX, &val);
+    assert_ssh_return_code(session, rc);
+    assert_int_equal(session->opts.server_alive_count_max, 0);
+}
+
 static void torture_options_escape_char(void **state)
 {
     ssh_session session = *state;
@@ -3734,6 +3771,35 @@ static void torture_options_get_int(void **state)
     rc = ssh_options_get_int(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &result);
     assert_int_equal(rc, SSH_OK);
     assert_int_equal(result, 0);
+
+    /* SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX default should be 3 */
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                             &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 3);
+
+    /* After setting to 10, getter should return 10 */
+    ival = 10;
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                         &ival);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                             &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 10);
+
+    /* After resetting to 0, getter should return 0 */
+    ival = 0;
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                         &ival);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                             &result);
     assert_int_equal(rc, SSH_OK);
     assert_int_equal(result, 0);
 }
@@ -4848,6 +4914,9 @@ torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_server_alive_interval,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_server_alive_count_max,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_local_forward,

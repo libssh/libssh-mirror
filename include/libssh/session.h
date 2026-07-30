@@ -289,6 +289,7 @@ struct ssh_session_struct {
         char *control_path;
         int address_family;
         int server_alive_interval;
+        int server_alive_count_max;
         bool batch_mode;
         char *preferred_authentications;
         int number_of_password_prompts;

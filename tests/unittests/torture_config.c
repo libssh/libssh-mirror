@@ -64,6 +64,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG27 "libssh_testconfig27.tmp"
 #define LIBSSH_TESTCONFIG28 "libssh_testconfig28.tmp"
 #define LIBSSH_TESTCONFIG30 "libssh_testconfig30.tmp"
+#define LIBSSH_TESTCONFIG31 "libssh_testconfig31.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 #define LIBSSH_TEST_PUBKEYTYPES "libssh_test_PubkeyAcceptedKeyTypes.tmp"
 #define LIBSSH_TEST_PUBKEYALGORITHMS "libssh_test_PubkeyAcceptedAlgorithms.tmp"
@@ -343,6 +344,14 @@ extern LIBSSH_THREAD int ssh_log_level;
     "Host defaultinterval\n"       \
     "\tHostName example.com\n"
 
+#define LIBSSH_TESTCONFIG_STRING31 \
+    "Host lowcount\n"              \
+    "\tServerAliveCountMax 1\n"    \
+    "Host highcount\n"             \
+    "\tServerAliveCountMax 10\n"   \
+    "Host defaultcount\n"          \
+    "\tHostName example.com\n"
+
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
 
@@ -441,6 +450,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG28);
     unlink(LIBSSH_TESTCONFIG29);
     unlink(LIBSSH_TESTCONFIG30);
+    unlink(LIBSSH_TESTCONFIG31);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -524,6 +534,9 @@ static int setup_config_files(void **state)
     /* ServerAliveInterval */
     torture_write_file(LIBSSH_TESTCONFIG30,
                        LIBSSH_TESTCONFIG_STRING30);
+    /* ServerAliveCountMax */
+    torture_write_file(LIBSSH_TESTCONFIG31,
+                       LIBSSH_TESTCONFIG_STRING31);
     /* LocalForward */
     torture_write_file(LIBSSH_TESTCONFIG27,
                        LIBSSH_TESTCONFIG_STRING27);
@@ -594,6 +607,7 @@ static int teardown_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG28);
     unlink(LIBSSH_TESTCONFIG29);
     unlink(LIBSSH_TESTCONFIG30);
+    unlink(LIBSSH_TESTCONFIG31);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -2722,6 +2736,72 @@ static void torture_config_server_alive_interval_file(void **state)
     torture_config_server_alive_interval(state,
                                          LIBSSH_TESTCONFIG30,
                                          NULL);
+}
+
+/**
+ * @brief Verify we can parse ServerAliveCountMax configuration option
+ */
+static void torture_config_server_alive_count_max(void **state,
+                                                   const char *file,
+                                                   const char *string)
+{
+    ssh_session session = *state;
+
+    int count_max = -1;
+    int rc;
+
+    /* Host with ServerAliveCountMax 1: count_max should be 1 */
+    torture_reset_config(session);
+    session->opts.server_alive_count_max = 0;
+    ssh_options_set(session, SSH_OPTIONS_HOST, "lowcount");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                             &count_max);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(count_max, 1);
+
+    /* Host with ServerAliveCountMax 10: count_max should be 10 */
+    torture_reset_config(session);
+    session->opts.server_alive_count_max = 0;
+    ssh_options_set(session, SSH_OPTIONS_HOST, "highcount");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                             &count_max);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(count_max, 10);
+
+    /* Host without ServerAliveCountMax: count_max should remain 0 */
+    torture_reset_config(session);
+    session->opts.server_alive_count_max = 0;
+    ssh_options_set(session, SSH_OPTIONS_HOST, "defaultcount");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
+                             &count_max);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(count_max, 0);
+}
+
+/**
+ * @brief Verify we can parse ServerAliveCountMax from string
+ */
+static void torture_config_server_alive_count_max_string(void **state)
+{
+    torture_config_server_alive_count_max(state,
+                                          NULL,
+                                          LIBSSH_TESTCONFIG_STRING31);
+}
+
+/**
+ * @brief Verify we can parse ServerAliveCountMax from file
+ */
+static void torture_config_server_alive_count_max_file(void **state)
+{
+    torture_config_server_alive_count_max(state,
+                                          LIBSSH_TESTCONFIG31,
+                                          NULL);
 }
 
 /**
@@ -5163,6 +5243,14 @@ int torture_run_tests(void)
             teardown),
         cmocka_unit_test_setup_teardown(
             torture_config_server_alive_interval_string,
+            setup,
+            teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_config_server_alive_count_max_file,
+            setup,
+            teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_config_server_alive_count_max_string,
             setup,
             teardown),
         cmocka_unit_test_setup_teardown(

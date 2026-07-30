@@ -123,7 +123,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
     {"rekeylimit", SOC_REKEYLIMIT, true},
     {"remotecommand", SOC_UNSUPPORTED, true},
     {"revokedhostkeys", SOC_UNSUPPORTED, true},
-    {"serveralivecountmax", SOC_UNSUPPORTED, true},
+    {"serveralivecountmax", SOC_SERVERALIVECOUNTMAX, true},
     {"serveraliveinterval", SOC_SERVERALIVEINTERVAL, true},
     {"streamlocalbindmask", SOC_UNSUPPORTED, true},
     {"streamlocalbindunlink", SOC_UNSUPPORTED, true},
@@ -2012,6 +2012,14 @@ static int ssh_config_parse_line_internal(ssh_session session,
         if (*parsing) {
             i = (int)l;
             ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &i);
+        }
+        break;
+    case SOC_SERVERALIVECOUNTMAX:
+        l = ssh_config_get_long(&s, -1);
+        CHECK_COND_OR_FAIL(l < 0 || l > INT_MAX, "Invalid argument");
+        if (*parsing) {
+            i = (int)l;
+            ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX, &i);
         }
         break;
     case SOC_PREFERRED_AUTHENTICATIONS:
