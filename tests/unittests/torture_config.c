@@ -63,6 +63,7 @@ extern LIBSSH_THREAD int ssh_log_level;
  */
 #define LIBSSH_TESTCONFIG27 "libssh_testconfig27.tmp"
 #define LIBSSH_TESTCONFIG28 "libssh_testconfig28.tmp"
+#define LIBSSH_TESTCONFIG30 "libssh_testconfig30.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 #define LIBSSH_TEST_PUBKEYTYPES "libssh_test_PubkeyAcceptedKeyTypes.tmp"
 #define LIBSSH_TEST_PUBKEYALGORITHMS "libssh_test_PubkeyAcceptedAlgorithms.tmp"
@@ -334,6 +335,14 @@ extern LIBSSH_THREAD int ssh_log_level;
     "Host exit_fwd_yes\n"           \
     "\tExitOnForwardFailure yes\n"
 
+#define LIBSSH_TESTCONFIG_STRING30 \
+    "Host shortinterval\n"         \
+    "\tServerAliveInterval 10\n"   \
+    "Host longinterval\n"          \
+    "\tServerAliveInterval 300\n"  \
+    "Host defaultinterval\n"       \
+    "\tHostName example.com\n"
+
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
 
@@ -431,6 +440,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG27);
     unlink(LIBSSH_TESTCONFIG28);
     unlink(LIBSSH_TESTCONFIG29);
+    unlink(LIBSSH_TESTCONFIG30);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -511,6 +521,9 @@ static int setup_config_files(void **state)
     /* EscapeChar */
     torture_write_file(LIBSSH_TESTCONFIG24,
                        LIBSSH_TESTCONFIG_STRING24);
+    /* ServerAliveInterval */
+    torture_write_file(LIBSSH_TESTCONFIG30,
+                       LIBSSH_TESTCONFIG_STRING30);
     /* LocalForward */
     torture_write_file(LIBSSH_TESTCONFIG27,
                        LIBSSH_TESTCONFIG_STRING27);
@@ -580,6 +593,7 @@ static int teardown_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG27);
     unlink(LIBSSH_TESTCONFIG28);
     unlink(LIBSSH_TESTCONFIG29);
+    unlink(LIBSSH_TESTCONFIG30);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -2642,6 +2656,72 @@ static void torture_config_exit_on_forward_failure_string(void **state)
 static void torture_config_exit_on_forward_failure_file(void **state)
 {
     torture_config_exit_on_forward_failure(state, LIBSSH_TESTCONFIG29, NULL);
+}
+
+/**
+ * @brief Verify we can parse ServerAliveInterval configuration option
+ */
+static void torture_config_server_alive_interval(void **state,
+                                                 const char *file,
+                                                 const char *string)
+{
+    ssh_session session = *state;
+
+    int interval = -1;
+    int rc;
+
+    /* Host with ServerAliveInterval 10: interval should be 10 */
+    torture_reset_config(session);
+    session->opts.server_alive_interval = 0;
+    ssh_options_set(session, SSH_OPTIONS_HOST, "shortinterval");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_INTERVAL,
+                             &interval);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(interval, 10);
+
+    /* Host with ServerAliveInterval 300: interval should be 300 */
+    torture_reset_config(session);
+    session->opts.server_alive_interval = 0;
+    ssh_options_set(session, SSH_OPTIONS_HOST, "longinterval");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_INTERVAL,
+                             &interval);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(interval, 300);
+
+    /* Host without ServerAliveInterval: interval should remain 0 */
+    torture_reset_config(session);
+    session->opts.server_alive_interval = 0;
+    ssh_options_set(session, SSH_OPTIONS_HOST, "defaultinterval");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session,
+                             SSH_OPTIONS_SERVER_ALIVE_INTERVAL,
+                             &interval);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(interval, 0);
+}
+
+/**
+ * @brief Verify we can parse ServerAliveInterval from string
+ */
+static void torture_config_server_alive_interval_string(void **state)
+{
+    torture_config_server_alive_interval(state,
+                                         NULL,
+                                         LIBSSH_TESTCONFIG_STRING30);
+}
+
+/**
+ * @brief Verify we can parse ServerAliveInterval from file
+ */
+static void torture_config_server_alive_interval_file(void **state)
+{
+    torture_config_server_alive_interval(state,
+                                         LIBSSH_TESTCONFIG30,
+                                         NULL);
 }
 
 /**
@@ -5075,6 +5155,14 @@ int torture_run_tests(void)
             teardown),
         cmocka_unit_test_setup_teardown(
             torture_config_exit_on_forward_failure_string,
+            setup,
+            teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_config_server_alive_interval_file,
+            setup,
+            teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_config_server_alive_interval_string,
             setup,
             teardown),
         cmocka_unit_test_setup_teardown(

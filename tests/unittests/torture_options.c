@@ -2919,6 +2919,43 @@ static void torture_options_set_exit_on_forward_failure(void **state)
     assert_true(session->opts.exit_on_forward_failure);
 }
 
+static void torture_options_set_server_alive_interval(void **state)
+{
+    ssh_session session = *state;
+    int val = 0;
+    int rc;
+
+    /* Default value after setup() should be 0 */
+    assert_int_equal(session->opts.server_alive_interval, 0);
+
+    /* NULL value must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, NULL);
+    assert_int_equal(rc, -1);
+
+    /* Negative value must be rejected */
+    val = -1;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &val);
+    assert_int_equal(rc, -1);
+
+    /* Set to 10 seconds */
+    val = 10;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &val);
+    assert_ssh_return_code(session, rc);
+    assert_int_equal(session->opts.server_alive_interval, 10);
+
+    /* Set to 300 seconds */
+    val = 300;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &val);
+    assert_ssh_return_code(session, rc);
+    assert_int_equal(session->opts.server_alive_interval, 300);
+
+    /* Reset to 0 (disabled) */
+    val = 0;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &val);
+    assert_ssh_return_code(session, rc);
+    assert_int_equal(session->opts.server_alive_interval, 0);
+}
+
 static void torture_options_escape_char(void **state)
 {
     ssh_session session = *state;
@@ -3674,6 +3711,29 @@ static void torture_options_get_int(void **state)
     rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &bval);
     assert_ssh_return_code(session, rc);
     rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* SSH_OPTIONS_SERVER_ALIVE_INTERVAL default should be 0 */
+    rc = ssh_options_get_int(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* After setting to 10, getter should return 10 */
+    ival = 10;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &ival);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 10);
+
+    /* After resetting to 0, getter should return 0 */
+    ival = 0;
+    rc = ssh_options_set(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &ival);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_SERVER_ALIVE_INTERVAL, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
     assert_int_equal(rc, SSH_OK);
     assert_int_equal(result, 0);
 }
@@ -4785,6 +4845,9 @@ torture_run_tests(void)
             setup,
             teardown),
         cmocka_unit_test_setup_teardown(torture_options_escape_char,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_server_alive_interval,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_local_forward,

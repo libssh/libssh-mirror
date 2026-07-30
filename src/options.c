@@ -418,6 +418,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
     new->opts.escape_char           = src->opts.escape_char;
     new->opts.address_family        = src->opts.address_family;
     new->opts.exit_on_forward_failure = src->opts.exit_on_forward_failure;
+    new->opts.server_alive_interval = src->opts.server_alive_interval;
     new->common.log_verbosity       = src->common.log_verbosity;
     new->common.callbacks           = src->common.callbacks;
 
@@ -577,6 +578,8 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
         return SOC_CONTROLPATH;
     case SSH_OPTIONS_ADDRESS_FAMILY:
         return SOC_ADDRESSFAMILY;
+    case SSH_OPTIONS_SERVER_ALIVE_INTERVAL:
+        return SOC_SERVERALIVEINTERVAL;
     case SSH_OPTIONS_BATCH_MODE:
         return SOC_BATCHMODE;
     case SSH_OPTIONS_NUMBER_OF_PASSWORD_PROMPTS:
@@ -1021,6 +1024,17 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
  *                and stored for the calling application to read; libssh does
  *                not automatically change its behavior based on this setting.
  *                (bool)
+ *
+ *              - SSH_OPTIONS_SERVER_ALIVE_INTERVAL
+ *                Set the time in seconds after which the client will send a
+ *                keepalive message to the server if no data has been received.
+ *                OpenSSH default is 0 (disabled). The value must be a
+ *                non-negative integer. Setting 0 disables the keepalive
+ *                mechanism. Note that this value is parsed from the
+ *                configuration file and stored for the calling application to
+ *                read; libssh does not automatically send keepalive messages
+ *                based on this setting.
+ *                (int)
  *
  *              - SSH_OPTIONS_NUMBER_OF_PASSWORD_PROMPTS
  *                Set the maximum number of password prompts before giving up.
@@ -2014,6 +2028,19 @@ int ssh_options_set(ssh_session session,
                 session->opts.batch_mode = *x;
             }
             break;
+        case SSH_OPTIONS_SERVER_ALIVE_INTERVAL:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                int *x = (int *)value;
+                if (*x < 0) {
+                    ssh_set_error_invalid(session);
+                    return -1;
+                }
+                session->opts.server_alive_interval = *x;
+            }
+            break;
         case SSH_OPTIONS_ESCAPE_CHAR:
             if (value == NULL) {
                 ssh_set_error_invalid(session);
@@ -2266,6 +2293,7 @@ char *ssh_options_get_algo(ssh_session session,
  *                  - SSH_OPTIONS_NODELAY
  *                  - SSH_OPTIONS_NUMBER_OF_PASSWORD_PROMPTS
  *                  - SSH_OPTIONS_ESCAPE_CHAR
+ *                  - SSH_OPTIONS_SERVER_ALIVE_INTERVAL
  *                  - SSH_OPTIONS_RSA_MIN_SIZE
  *                  - SSH_OPTIONS_PASSWORD_AUTH
  *                  - SSH_OPTIONS_PUBKEY_AUTH
@@ -2295,6 +2323,9 @@ int ssh_options_get_int(ssh_session session,
         break;
     case SSH_OPTIONS_BATCH_MODE:
         *value = session->opts.batch_mode ? 1 : 0;
+        break;
+    case SSH_OPTIONS_SERVER_ALIVE_INTERVAL:
+        *value = session->opts.server_alive_interval;
         break;
     case SSH_OPTIONS_NUMBER_OF_PASSWORD_PROMPTS:
         *value = session->opts.number_of_password_prompts;
