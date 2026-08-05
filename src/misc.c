@@ -2616,7 +2616,8 @@ int ssh_check_username_syntax(const char *username)
         return SSH_ERROR;
     }
     for (size_t i = 0; i < username_len; i++) {
-        if (isspace(username[i]) != 0 && username[i + 1] == '-') {
+        unsigned char c = (unsigned char)username[i];
+        if (iscntrl(c) != 0 || (isspace(c) != 0 && username[i + 1] == '-')) {
             return SSH_ERROR;
         }
     }
