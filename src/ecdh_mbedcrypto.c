@@ -162,7 +162,11 @@ int ecdh_build_k(ssh_session session)
     mbedtls_ecp_point pubkey;
     int rc;
     mbedtls_ecp_group_id curve;
-    mbedtls_ecp_keypair *ecdh_privkey = NULL;
+    mbedtls_ecp_keypair *ecdh_privkey = session->next_crypto->ecdh_privkey;
+
+    if (ecdh_privkey == NULL) {
+        return SSH_ERROR;
+    }
 
     curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
     if (curve == MBEDTLS_ECP_DP_NONE) {
@@ -201,7 +205,6 @@ int ecdh_build_k(ssh_session session)
 
     mbedtls_mpi_init(session->next_crypto->shared_secret);
 
-    ecdh_privkey = session->next_crypto->ecdh_privkey;
     rc = ssh_mbedtls_ecdh_compute_shared(&grp,
                                          session->next_crypto->shared_secret,
                                          &pubkey,
