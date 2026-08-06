@@ -79,6 +79,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG_BOOLEAN_INVALID  "libssh_test_boolean_invalid.tmp"
 #define LIBSSH_TESTCONFIG_BOOLEAN_COMPAT   "libssh_test_boolean_compat.tmp"
 #define LIBSSH_TESTCONFIG29 "libssh_testconfig29.tmp"
+#define LIBSSH_TESTCONFIG32 "libssh_testconfig32.tmp"
 
 #define LIBSSH_TESTCONFIG_STRING1 \
     "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n"
@@ -352,6 +353,20 @@ extern LIBSSH_THREAD int ssh_log_level;
     "Host defaultcount\n"          \
     "\tHostName example.com\n"
 
+#define LIBSSH_TESTCONFIG_STRING32     \
+    "Host fwd_no\n"                    \
+    "\tForwardAgent no\n"              \
+    "Host fwd_yes\n"                   \
+    "\tForwardAgent yes\n"             \
+    "Host fwd_sock\n"                  \
+    "\tForwardAgent /tmp/agent.sock\n" \
+    "Host fwd_env\n"                   \
+    "\tForwardAgent $SSH_AUTH_SOCK\n"  \
+    "Host fwd_true\n"                  \
+    "\tForwardAgent true\n"            \
+    "Host fwd_false\n"                 \
+    "\tForwardAgent false\n"
+
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
 
@@ -451,6 +466,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG29);
     unlink(LIBSSH_TESTCONFIG30);
     unlink(LIBSSH_TESTCONFIG31);
+    unlink(LIBSSH_TESTCONFIG32);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -546,6 +562,9 @@ static int setup_config_files(void **state)
     /* ExitOnForwardFailure */
     torture_write_file(LIBSSH_TESTCONFIG29,
                        LIBSSH_TESTCONFIG_STRING29);
+    /* ForwardAgent */
+    torture_write_file(LIBSSH_TESTCONFIG32,
+                       LIBSSH_TESTCONFIG_STRING32);
     /* SendEnv */
     torture_write_file(LIBSSH_TESTCONFIG25,
                        LIBSSH_TESTCONFIG_STRING25);
@@ -608,6 +627,7 @@ static int teardown_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG29);
     unlink(LIBSSH_TESTCONFIG30);
     unlink(LIBSSH_TESTCONFIG31);
+    unlink(LIBSSH_TESTCONFIG32);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -2802,6 +2822,94 @@ static void torture_config_server_alive_count_max_file(void **state)
     torture_config_server_alive_count_max(state,
                                           LIBSSH_TESTCONFIG31,
                                           NULL);
+}
+
+/**
+ * @brief Verify we can parse ForwardAgent configuration option
+ */
+static void torture_config_forward_agent(void **state,
+                                         const char *file,
+                                         const char *string)
+{
+    ssh_session session = *state;
+
+    int forward_agent = -1;
+    char *sock_path = NULL;
+    int rc = SSH_OK;
+
+    /* ForwardAgent no: forward_agent should be 0 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "fwd_no");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &forward_agent);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(forward_agent, 0);
+
+    /* ForwardAgent yes: forward_agent should be 1 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "fwd_yes");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &forward_agent);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(forward_agent, 1);
+
+    /* ForwardAgent /tmp/agent.sock: forwarding enabled and socket path stored */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "fwd_sock");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &forward_agent);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(forward_agent, 1);
+    rc = ssh_options_get(session, SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH, &sock_path);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(sock_path, "/tmp/agent.sock");
+    ssh_string_free_char(sock_path);
+    sock_path = NULL;
+
+    /* ForwardAgent $SSH_AUTH_SOCK: enabled and the literal $VAR stored */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "fwd_env");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &forward_agent);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(forward_agent, 1);
+    rc = ssh_options_get(session, SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH, &sock_path);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(sock_path, "$SSH_AUTH_SOCK");
+    ssh_string_free_char(sock_path);
+    sock_path = NULL;
+
+    /* ForwardAgent true: forward_agent should be 1 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "fwd_true");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &forward_agent);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(forward_agent, 1);
+
+    /* ForwardAgent false: forward_agent should be 0 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "fwd_false");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &forward_agent);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(forward_agent, 0);
+}
+
+/**
+ * @brief Verify we can parse ForwardAgent configuration option from string
+ */
+static void torture_config_forward_agent_string(void **state)
+{
+    torture_config_forward_agent(state, NULL, LIBSSH_TESTCONFIG_STRING32);
+}
+
+/**
+ * @brief Verify we can parse ForwardAgent configuration option from file
+ */
+static void torture_config_forward_agent_file(void **state)
+{
+    torture_config_forward_agent(state, LIBSSH_TESTCONFIG32, NULL);
 }
 
 /**
@@ -5227,6 +5335,12 @@ int torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_batch_mode_string,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_forward_agent_file,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_forward_agent_string,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(

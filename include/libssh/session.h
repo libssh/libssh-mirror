@@ -308,6 +308,8 @@ struct ssh_session_struct {
         char *tag;                 /* configuration tag for Match tagged */
         int pubkey_auth;
         bool exit_on_forward_failure;
+        bool forward_agent;
+        char *forward_agent_sock_path;
     } opts;
 
     /* server options */

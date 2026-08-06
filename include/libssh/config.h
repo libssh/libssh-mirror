@@ -83,6 +83,7 @@ enum ssh_config_opcode_e {
     SOC_SEND_ENV,
     SOC_REMOTE_FORWARD,
     SOC_EXIT_ON_FORWARD_FAILURE,
+    SOC_FORWARD_AGENT,
 
     SOC_MAX /* Keep this one last in the list */
 };

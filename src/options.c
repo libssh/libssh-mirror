@@ -364,6 +364,14 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
         }
     }
 
+    if (src->opts.forward_agent_sock_path != NULL) {
+        new->opts.forward_agent_sock_path = strdup(src->opts.forward_agent_sock_path);
+        if (new->opts.forward_agent_sock_path == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
+
     if (src->opts.preferred_authentications != NULL) {
         new->opts.preferred_authentications = strdup(src->opts.preferred_authentications);
         if (new->opts.preferred_authentications == NULL) {
@@ -420,6 +428,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
     new->opts.exit_on_forward_failure = src->opts.exit_on_forward_failure;
     new->opts.server_alive_interval = src->opts.server_alive_interval;
     new->opts.server_alive_count_max = src->opts.server_alive_count_max;
+    new->opts.forward_agent         = src->opts.forward_agent;
     new->common.log_verbosity       = src->common.log_verbosity;
     new->common.callbacks           = src->common.callbacks;
 
@@ -593,6 +602,9 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
         return SOC_ESCAPE_CHAR;
     case SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE:
         return SOC_EXIT_ON_FORWARD_FAILURE;
+    case SSH_OPTIONS_FORWARD_AGENT:
+    case SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH:
+        return SOC_FORWARD_AGENT;
     /*
      * Accumulative options append to a list instead of replacing a value, so
      * the "first value wins" precedence between config and the application does
@@ -1103,6 +1115,28 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
  *                for the calling application to read; libssh does not
  *                automatically terminate the session based on this setting.
  *                (bool)
+ *              - SSH_OPTIONS_FORWARD_AGENT
+ *                If set to true, indicates that the local SSH agent
+ *                connection should be forwarded to the remote machine.
+ *                This value is parsed from the configuration file and stored
+ *                for the calling application to read; libssh does not
+ *                automatically request agent forwarding based on this
+ *                setting.
+ *                (bool)
+ *              - SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH
+ *                Set the path to the local SSH agent socket to use for
+ *                agent forwarding. The value may be a literal socket path or
+ *                the name of an environment variable (starting with '$') that
+ *                holds the path. If unset, the SSH_AUTH_SOCK environment is
+ *                consulted. The socket path is only used when agent
+ *                forwarding is enabled; a "$VAR" reference is stored verbatim
+ *                at config-parse time and expanded only after login, at
+ *                session time.
+ *                This value is parsed from the configuration file and stored
+ *                for the calling application to read; libssh does not
+ *                automatically use this socket for agent forwarding based on
+ *                this setting.
+ *                (const char *)
  *              - SSH_OPTIONS_SEND_ENV
  *                Append one environment variable name pattern to the list of
  *                patterns to send to the server. Multiple calls accumulate
@@ -2239,6 +2273,30 @@ int ssh_options_set(ssh_session session,
                 session->opts.exit_on_forward_failure = *x;
             }
             break;
+        case SSH_OPTIONS_FORWARD_AGENT:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                bool *x = (bool *)value;
+                session->opts.forward_agent = *x;
+            }
+            break;
+        case SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH:
+            v = value;
+            SAFE_FREE(session->opts.forward_agent_sock_path);
+            if (v == NULL || v[0] == '\0') {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                session->opts.forward_agent_sock_path =
+                    ssh_path_expand_tilde(v);
+                if (session->opts.forward_agent_sock_path == NULL) {
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
+            }
+            break;
         default:
             ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
             return -1;
@@ -2322,6 +2380,7 @@ char *ssh_options_get_algo(ssh_session session,
  *                  - SSH_OPTIONS_ESCAPE_CHAR
  *                  - SSH_OPTIONS_SERVER_ALIVE_INTERVAL
  *                  - SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX
+ *                  - SSH_OPTIONS_FORWARD_AGENT
  *                  - SSH_OPTIONS_RSA_MIN_SIZE
  *                  - SSH_OPTIONS_PASSWORD_AUTH
  *                  - SSH_OPTIONS_PUBKEY_AUTH
@@ -2407,6 +2466,9 @@ int ssh_options_get_int(ssh_session session,
 #endif
     case SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE:
         *value = session->opts.exit_on_forward_failure ? 1 : 0;
+        break;
+    case SSH_OPTIONS_FORWARD_AGENT:
+        *value = session->opts.forward_agent ? 1 : 0;
         break;
     default:
         ssh_set_error_invalid(session);
@@ -2515,6 +2577,10 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *                \n
  *                Repeat calls to get all patterns. SSH_EOF is returned when
  *                the end of list is reached.
+ *
+ *              - SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH:
+ *                Get the path to the local SSH agent socket used for agent
+ *                forwarding.
  *
  *              - SSH_OPTIONS_PROXYCOMMAND:
  *                Get the proxycommand necessary to log into the
@@ -2726,6 +2792,10 @@ int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
             break;
         case SSH_OPTIONS_CONTROL_PATH:
             src = session->opts.control_path;
+            break;
+
+        case SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH:
+            src = session->opts.forward_agent_sock_path;
             break;
 
         case SSH_OPTIONS_CIPHERS_C_S:

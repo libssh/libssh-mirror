@@ -104,7 +104,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
     {"connectionattempts", SOC_UNSUPPORTED, true},
     {"enablesshkeysign", SOC_UNSUPPORTED, true},
     {"fingerprinthash", SOC_UNSUPPORTED, true},
-    {"forwardagent", SOC_UNSUPPORTED, true},
+    {"forwardagent", SOC_FORWARD_AGENT, true},
     {"hashknownhosts", SOC_UNSUPPORTED, true},
     {"hostbasedauthentication", SOC_UNSUPPORTED, true},
     {"hostbasedacceptedalgorithms", SOC_UNSUPPORTED, true},
@@ -2107,6 +2107,28 @@ static int ssh_config_parse_line_internal(ssh_session session,
         if (*parsing) {
             bool b = (i == 1) ? true : false;
             ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &b);
+        }
+        break;
+    case SOC_FORWARD_AGENT:
+        p = ssh_config_get_str_tok(&s, NULL);
+        CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
+        if (*parsing) {
+            /* Accept a boolean, an explicit socket path, or a $VAR reference.
+             * A non-boolean value enables forwarding and sets the socket path.
+             * The value may be a literal path or an environment variable name
+             * (starting with '$'); a $VAR reference is kept verbatim here and
+             * is expanded only after login, at session time. */
+            if (strcasecmp(p, "yes") == 0 || strcasecmp(p, "true") == 0) {
+                bool b = true;
+                ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &b);
+            } else if (strcasecmp(p, "no") == 0 || strcasecmp(p, "false") == 0) {
+                bool b = false;
+                ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &b);
+            } else {
+                bool b = true;
+                ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &b);
+                ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH, p);
+            }
         }
         break;
     case SOC_SEND_ENV:

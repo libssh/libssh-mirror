@@ -413,6 +413,7 @@ void ssh_free(ssh_session session)
   SAFE_FREE(session->opts.pubkey_accepted_types);
   SAFE_FREE(session->opts.control_path);
   SAFE_FREE(session->opts.preferred_authentications);
+  SAFE_FREE(session->opts.forward_agent_sock_path);
 
   if (session->opts.local_forward) {
       char *entry = NULL;

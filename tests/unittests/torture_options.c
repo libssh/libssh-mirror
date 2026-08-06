@@ -1846,6 +1846,7 @@ static void torture_options_copy(void **state)
           "RemoteForward 9090 db:3306\n"
           "SendEnv LANG LC_*\n"
           "SendEnv TZ\n"
+          "ForwardAgent /tmp/copied.sock\n"
           "",
           config);
     fclose(config);
@@ -1973,6 +1974,14 @@ static void torture_options_copy(void **state)
                         sizeof(session->opts.options_seen));
     assert_int_equal(session->opts.address_family, new->opts.address_family);
 
+    /* Check the forward_agent option and its socket path are copied */
+    assert_true(session->opts.forward_agent);
+    assert_true(new->opts.forward_agent);
+    assert_non_null(session->opts.forward_agent_sock_path);
+    assert_non_null(new->opts.forward_agent_sock_path);
+    assert_string_equal(new->opts.forward_agent_sock_path,
+                        session->opts.forward_agent_sock_path);
+
     ssh_free(new);
 
     /* test if ssh_options_apply was called before ssh_options_copy
@@ -2002,6 +2011,32 @@ static void torture_options_copy(void **state)
     assert_null(it2);
 
     ssh_free(new);
+
+    /* Verify that a session without a socket path copies with a NULL path */
+    {
+        ssh_session no_path = ssh_new();
+        ssh_session copied_no_path = NULL;
+        bool val = true;
+
+        assert_non_null(no_path);
+
+        /* Enable ForwardAgent without an explicit socket path */
+        rv = ssh_options_set(no_path, SSH_OPTIONS_FORWARD_AGENT, &val);
+        assert_ssh_return_code(no_path, rv);
+        assert_true(no_path->opts.forward_agent);
+        assert_null(no_path->opts.forward_agent_sock_path);
+
+        /* The copied session must preserve the NULL socket path */
+        rv = ssh_options_copy(no_path, &copied_no_path);
+        assert_ssh_return_code(no_path, rv);
+        assert_non_null(copied_no_path);
+        assert_true(copied_no_path->opts.forward_agent);
+        assert_null(copied_no_path->opts.forward_agent_sock_path);
+
+        /* Free the temporary sessions */
+        ssh_free(copied_no_path);
+        ssh_free(no_path);
+    }
 }
 
 static void torture_options_legacy_integer_values(void **state)
@@ -2993,6 +3028,58 @@ static void torture_options_set_server_alive_count_max(void **state)
     assert_int_equal(session->opts.server_alive_count_max, 0);
 }
 
+static void torture_options_set_forward_agent(void **state)
+{
+    ssh_session session = *state;
+    bool val = false;
+    char *sock_path = NULL;
+    int rc = SSH_OK;
+
+    /* Default value after setup() should be false */
+    assert_false(session->opts.forward_agent);
+    assert_null(session->opts.forward_agent_sock_path);
+
+    /* NULL value must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, NULL);
+    assert_int_equal(rc, -1);
+
+    /* ForwardAgent will be disabled */
+    val = false;
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &val);
+    assert_ssh_return_code(session, rc);
+    assert_false(session->opts.forward_agent);
+
+    /* ForwardAgent will be enabled */
+    val = true;
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &val);
+    assert_ssh_return_code(session, rc);
+    assert_true(session->opts.forward_agent);
+
+    /* NULL socket path must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH, NULL);
+    assert_int_equal(rc, -1);
+
+    /* Empty socket path must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH, "");
+    assert_int_equal(rc, -1);
+
+    /* Setting an explicit socket path */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH,
+                         "/tmp/agent.sock");
+    assert_ssh_return_code(session, rc);
+    assert_non_null(session->opts.forward_agent_sock_path);
+
+    /* The socket path can be read back */
+    rc = ssh_options_get(session,
+                         SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH,
+                         &sock_path);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(sock_path, "/tmp/agent.sock");
+    ssh_string_free_char(sock_path);
+    sock_path = NULL;
+}
+
 static void torture_options_escape_char(void **state)
 {
     ssh_session session = *state;
@@ -3800,6 +3887,27 @@ static void torture_options_get_int(void **state)
     rc = ssh_options_get_int(session,
                              SSH_OPTIONS_SERVER_ALIVE_COUNT_MAX,
                              &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* SSH_OPTIONS_FORWARD_AGENT: default should be 0 */
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* After enabling, getter should return 1 */
+    bval = true;
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &bval);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 1);
+
+    /* After disabling, getter should return 0 */
+    bval = false;
+    rc = ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &bval);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_FORWARD_AGENT, &result);
     assert_int_equal(rc, SSH_OK);
     assert_int_equal(result, 0);
 }
@@ -4904,6 +5012,9 @@ torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_batch_mode,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_forward_agent,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(
