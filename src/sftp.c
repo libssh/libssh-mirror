@@ -521,6 +521,7 @@ int sftp_init(sftp_session sftp)
 
         rc = ssh_buffer_unpack(packet->payload, "s", &ext_data);
         if (rc == SSH_ERROR) {
+            SAFE_FREE(ext_name);
             break;
         }
 
