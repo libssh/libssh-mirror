@@ -43,6 +43,8 @@
 #define chdir _chdir
 #endif
 
+#include "libssh/buffer.h"
+#include "libssh/channels.h"
 #include "libssh/libssh.h"
 #include "libssh/misc.h"
 #include "libssh/token.h"
@@ -682,6 +684,40 @@ void torture_sftp_close(struct torture_sftp *t)
 
     free(t->testdir);
     free(t);
+}
+
+/**
+ * @brief Append a fabricated SFTP packet to a channel's stdout buffer
+ *
+ * The packet is framed [uint32 length][uint8 type][payload], the same framing
+ * sftp_packet_write() applies to outgoing packets. The SFTP read path returns
+ * buffered channel data before polling the socket.
+ *
+ * @param[in] sftp     The SFTP session
+ * @param[in] type     The SFTP message type, one of the SSH_FXP_* constants
+ * @param[in] payload  The message body, without the length and type fields
+ *
+ * @return             SSH_OK on success, SSH_ERROR on error
+ */
+int torture_sftp_feed_packet(sftp_session sftp,
+                             uint8_t type,
+                             ssh_buffer payload)
+{
+    uint32_t len;
+
+    if (sftp == NULL || sftp->channel == NULL ||
+        sftp->channel->stdout_buffer == NULL || payload == NULL) {
+        return SSH_ERROR;
+    }
+
+    len = (uint32_t)(ssh_buffer_get_len(payload) + sizeof(uint8_t));
+
+    return ssh_buffer_pack(sftp->channel->stdout_buffer,
+                           "dbP",
+                           len,
+                           type,
+                           (size_t)ssh_buffer_get_len(payload),
+                           ssh_buffer_get(payload));
 }
 #endif /* WITH_SFTP */
 

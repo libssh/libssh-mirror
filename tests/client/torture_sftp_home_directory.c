@@ -123,6 +123,170 @@ torture_sftp_home_directory(void **state)
     SSH_STRING_FREE_CHAR(home_path);
 }
 
+/* A missing-path NAME reply should fail without leaking the reply message. */
+static void torture_sftp_home_directory_missing_path(void **state)
+{
+    struct torture_state *s = *state;
+    struct torture_sftp *t = s->ssh.tsftp;
+    sftp_session sftp = t->sftp;
+    ssh_buffer payload = NULL;
+    char *home_path = NULL;
+    int rc;
+
+    payload = ssh_buffer_new();
+    assert_non_null(payload);
+
+    /* Replies are matched by id. The next request will use id_counter + 1. */
+    rc = ssh_buffer_pack(payload,
+                         "dd",
+                         sftp->id_counter + 1, /* request id */
+                         (uint32_t)1);         /* count; no path */
+    assert_int_equal(rc, SSH_OK);
+
+    rc = torture_sftp_feed_packet(sftp, SSH_FXP_NAME, payload);
+    assert_int_equal(rc, SSH_OK);
+    SSH_BUFFER_FREE(payload);
+
+    /* The request adds an id to this list, and a matching reply removes it. */
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+
+    home_path = sftp_home_directory(sftp, TORTURE_SSH_USER_ALICE);
+    assert_null(home_path);
+    assert_int_equal(sftp_get_error(sftp), SSH_FX_FAILURE);
+
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+}
+
+/* A truncated-attributes NAME reply should fail without leaking the reply
+ * message, path or longname. */
+static void torture_sftp_home_directory_truncated_attributes(void **state)
+{
+    struct torture_state *s = *state;
+    struct torture_sftp *t = s->ssh.tsftp;
+    sftp_session sftp = t->sftp;
+    ssh_buffer payload = NULL;
+    char *home_path = NULL;
+    int rc;
+
+    payload = ssh_buffer_new();
+    assert_non_null(payload);
+
+    /* Replies are matched by id. The next request will use id_counter + 1. */
+    rc = ssh_buffer_pack(payload,
+                         "dds",
+                         sftp->id_counter + 1, /* request id */
+                         (uint32_t)1,          /* count */
+                         "/home/victim");      /* path */
+    assert_int_equal(rc, SSH_OK);
+
+    /* A longname field follows the path only through version 3. */
+    if (sftp->version <= 3) {
+        rc = ssh_buffer_pack(payload, "s", "drwxr-xr-x  home"); /* longname */
+        assert_int_equal(rc, SSH_OK);
+    }
+
+    /* The size flag promises a field that is not appended. */
+    rc = ssh_buffer_pack(payload, "d", (uint32_t)SSH_FILEXFER_ATTR_SIZE);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = torture_sftp_feed_packet(sftp, SSH_FXP_NAME, payload);
+    assert_int_equal(rc, SSH_OK);
+    SSH_BUFFER_FREE(payload);
+
+    /* The request adds an id to this list, and a matching reply removes it. */
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+
+    home_path = sftp_home_directory(sftp, TORTURE_SSH_USER_ALICE);
+    assert_null(home_path);
+    assert_int_equal(ssh_get_error_code(sftp->session), SSH_FATAL);
+
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+}
+
+/* A bad-count NAME reply should fail without leaking the reply message, path,
+ * longname or attributes. */
+static void torture_sftp_home_directory_bad_count(void **state)
+{
+    struct torture_state *s = *state;
+    struct torture_sftp *t = s->ssh.tsftp;
+    sftp_session sftp = t->sftp;
+    ssh_buffer payload = NULL;
+    char *home_path = NULL;
+    int rc;
+
+    payload = ssh_buffer_new();
+    assert_non_null(payload);
+
+    /* Replies are matched by id. The next request will use id_counter + 1. */
+    rc = ssh_buffer_pack(payload,
+                         "dds",
+                         sftp->id_counter + 1, /* request id */
+                         (uint32_t)2,          /* count; one name follows */
+                         "/home/victim");      /* path */
+    assert_int_equal(rc, SSH_OK);
+
+    /* A longname field follows the path only through version 3. */
+    if (sftp->version <= 3) {
+        rc = ssh_buffer_pack(payload, "s", "drwxr-xr-x  home"); /* longname */
+        assert_int_equal(rc, SSH_OK);
+    }
+
+    /* count is checked after the attributes are parsed. */
+    rc = ssh_buffer_pack(payload, "d", (uint32_t)0); /* attribute flags */
+    assert_int_equal(rc, SSH_OK);
+
+    rc = torture_sftp_feed_packet(sftp, SSH_FXP_NAME, payload);
+    assert_int_equal(rc, SSH_OK);
+    SSH_BUFFER_FREE(payload);
+
+    /* The request adds an id to this list, and a matching reply removes it. */
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+
+    home_path = sftp_home_directory(sftp, TORTURE_SSH_USER_ALICE);
+    assert_null(home_path);
+    assert_int_equal(sftp_get_error(sftp), SSH_FX_FAILURE);
+    assert_int_equal(ssh_get_error_code(sftp->session), SSH_ERROR);
+
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+}
+
+/* An error STATUS reply should fail without leaking the reply message or the
+ * status message. */
+static void torture_sftp_home_directory_error_status(void **state)
+{
+    struct torture_state *s = *state;
+    struct torture_sftp *t = s->ssh.tsftp;
+    sftp_session sftp = t->sftp;
+    ssh_buffer payload = NULL;
+    char *home_path = NULL;
+    int rc;
+
+    payload = ssh_buffer_new();
+    assert_non_null(payload);
+
+    /* Replies are matched by id. The next request will use id_counter + 1. */
+    rc = ssh_buffer_pack(payload,
+                         "ddss",
+                         sftp->id_counter + 1,               /* request id */
+                         (uint32_t)SSH_FX_PERMISSION_DENIED, /* status */
+                         "permission denied",                /* message */
+                         "en");                              /* language tag */
+    assert_int_equal(rc, SSH_OK);
+
+    rc = torture_sftp_feed_packet(sftp, SSH_FXP_STATUS, payload);
+    assert_int_equal(rc, SSH_OK);
+    SSH_BUFFER_FREE(payload);
+
+    /* The request adds an id to this list, and a matching reply removes it. */
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+
+    home_path = sftp_home_directory(sftp, TORTURE_SSH_USER_ALICE);
+    assert_null(home_path);
+    assert_int_equal(sftp_get_error(sftp), SSH_FX_PERMISSION_DENIED);
+
+    assert_int_equal(ssh_list_count(sftp->outstanding_ids), 0);
+}
+
 int
 torture_run_tests(void)
 {
@@ -130,7 +294,23 @@ torture_run_tests(void)
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_sftp_home_directory,
                                         session_setup,
-                                        session_teardown)};
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_sftp_home_directory_missing_path,
+            session_setup,
+            session_teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_sftp_home_directory_truncated_attributes,
+            session_setup,
+            session_teardown),
+        cmocka_unit_test_setup_teardown(torture_sftp_home_directory_bad_count,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_sftp_home_directory_error_status,
+            session_setup,
+            session_teardown),
+    };
 
     ssh_init();
 

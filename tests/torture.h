@@ -139,6 +139,9 @@ struct torture_sftp *torture_sftp_session(ssh_session session);
 struct torture_sftp *torture_sftp_session_channel(ssh_session session,
                                                   ssh_channel channel);
 void torture_sftp_close(struct torture_sftp *t);
+int torture_sftp_feed_packet(sftp_session sftp,
+                             uint8_t type,
+                             ssh_buffer payload);
 
 void torture_write_file(const char *filename, const char *data);
 
