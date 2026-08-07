@@ -3293,6 +3293,10 @@ sftp_home_directory(sftp_session sftp, const char *username)
     sftp_message msg = NULL;
     ssh_buffer buffer = NULL;
     uint32_t id;
+    sftp_attributes attr = NULL;
+    char *homepath = NULL;
+    char *longpath = NULL;
+    char *ret = NULL;
     int rc;
 
     if (sftp == NULL) {
@@ -3336,9 +3340,6 @@ sftp_home_directory(sftp_session sftp, const char *username)
 
     if (msg->packet_type == SSH_FXP_NAME) {
         uint32_t count = 0;
-        char *homepath = NULL;
-        char *longpath = NULL;
-        sftp_attributes attr = NULL;
 
         rc = ssh_buffer_unpack(msg->payload, "ds", &count, &homepath);
         if (rc != SSH_OK) {
@@ -3346,7 +3347,7 @@ sftp_home_directory(sftp_session sftp, const char *username)
                           SSH_ERROR,
                           "Failed to query user home directory");
             sftp_set_error(sftp, SSH_FX_FAILURE);
-            return NULL;
+            goto cleanup;
         }
         /*
           for SFTP version > 3, longname field in SSH_FXP_NAME is omitted.
@@ -3358,7 +3359,7 @@ sftp_home_directory(sftp_session sftp, const char *username)
                               SSH_ERROR,
                               "Failed to extract longname from payload");
                 sftp_set_error(sftp, SSH_FX_FAILURE);
-                return NULL;
+                goto cleanup;
             }
         }
         attr = sftp_parse_attr(sftp, msg->payload, 0);
@@ -3366,9 +3367,8 @@ sftp_home_directory(sftp_session sftp, const char *username)
             ssh_set_error(sftp->session,
                           SSH_FATAL,
                           "Couldn't parse the SFTP attributes");
-            return NULL;
+            goto cleanup;
         }
-        sftp_message_free(msg);
 
         if (count != 1) {
             if (count > 1) {
@@ -3379,19 +3379,15 @@ sftp_home_directory(sftp_session sftp, const char *username)
                 ssh_set_error(sftp->session, SSH_ERROR, "No result returned");
             }
             sftp_set_error(sftp, SSH_FX_FAILURE);
-            return NULL;
+            goto cleanup;
         }
 
-        if (longpath) {
-            free(longpath);
-        }
-        sftp_attributes_free(attr);
-        return homepath;
+        ret = homepath;
+        homepath = NULL;
     } else if (msg->packet_type == SSH_FXP_STATUS) {
         status = parse_status_msg(msg);
-        sftp_message_free(msg);
         if (status == NULL) {
-            return NULL;
+            goto cleanup;
         }
 
         sftp_set_error(sftp, status->status);
@@ -3399,18 +3395,22 @@ sftp_home_directory(sftp_session sftp, const char *username)
                       SSH_REQUEST_DENIED,
                       "SFTP server: %s",
                       status->errormsg);
-        status_msg_free(status);
     } else {
         ssh_set_error(
             sftp->session,
             SSH_FATAL,
             "Received message %d when attempting to query user home directory",
             msg->packet_type);
-        sftp_message_free(msg);
         sftp_set_error(sftp, SSH_FX_BAD_MESSAGE);
     }
 
-    return NULL;
+cleanup:
+    sftp_message_free(msg);
+    status_msg_free(status);
+    sftp_attributes_free(attr);
+    SAFE_FREE(homepath);
+    SAFE_FREE(longpath);
+    return ret;
 }
 
 sftp_name_id_map sftp_name_id_map_new(uint32_t count)
