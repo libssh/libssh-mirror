@@ -1157,7 +1157,13 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request)
         ssh_string oid = NULL;
         char *hexa = NULL;
         int i;
-        ssh_buffer_get_u32(packet, &n_oid);
+        rc = ssh_buffer_get_u32(packet, &n_oid);
+        if (rc != sizeof(uint32_t)) {
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "USERAUTH_REQUEST: Failed to unpack OIDs");
+            goto error;
+        }
         n_oid = ntohl(n_oid);
         if (n_oid > 100) {
             ssh_set_error(
