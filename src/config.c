@@ -137,7 +137,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
     {"forwardx11", SOC_NA, true},
     {"forwardx11timeout", SOC_NA, true},
     {"forwardx11trusted", SOC_NA, true},
-    {"gatewayports", SOC_NA, true},
+    {"gatewayports", SOC_GATEWAY_PORTS, true},
     {"ignoreunknown", SOC_NA, true},
     {"localcommand", SOC_NA, true},
     {"localforward", SOC_LOCAL_FORWARD, true},
@@ -2117,6 +2117,14 @@ static int ssh_config_parse_line_internal(ssh_session session,
                 ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT, &b);
                 ssh_options_set(session, SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH, p);
             }
+        }
+        break;
+    case SOC_GATEWAY_PORTS:
+        i = ssh_config_get_yesno(&s, -1);
+        CHECK_COND_OR_FAIL(i < 0, "Invalid argument");
+        if (*parsing) {
+            bool b = (i == 1) ? true : false;
+            ssh_options_set(session, SSH_OPTIONS_GATEWAY_PORTS, &b);
         }
         break;
     case SOC_SEND_ENV:

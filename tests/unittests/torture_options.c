@@ -2958,6 +2958,32 @@ static void torture_options_set_exit_on_forward_failure(void **state)
     assert_true(session->opts.exit_on_forward_failure);
 }
 
+static void torture_options_set_gateway_ports(void **state)
+{
+    ssh_session session = *state;
+    bool val = false;
+    int rc = SSH_OK;
+
+    /* Default value after setup() should be false */
+    assert_false(session->opts.gateway_ports);
+
+    /* NULL value must be rejected */
+    rc = ssh_options_set(session, SSH_OPTIONS_GATEWAY_PORTS, NULL);
+    assert_int_equal(rc, -1);
+
+    /* GatewayPorts will be enabled */
+    val = true;
+    rc = ssh_options_set(session, SSH_OPTIONS_GATEWAY_PORTS, &val);
+    assert_ssh_return_code(session, rc);
+    assert_true(session->opts.gateway_ports);
+
+    /* GatewayPorts will be disabled */
+    val = false;
+    rc = ssh_options_set(session, SSH_OPTIONS_GATEWAY_PORTS, &val);
+    assert_ssh_return_code(session, rc);
+    assert_false(session->opts.gateway_ports);
+}
+
 static void torture_options_set_server_alive_interval(void **state)
 {
     ssh_session session = *state;
@@ -3839,6 +3865,27 @@ static void torture_options_get_int(void **state)
     rc = ssh_options_set(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &bval);
     assert_ssh_return_code(session, rc);
     rc = ssh_options_get_int(session, SSH_OPTIONS_EXIT_ON_FORWARD_FAILURE, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* SSH_OPTIONS_GATEWAY_PORTS: default should be 0 */
+    rc = ssh_options_get_int(session, SSH_OPTIONS_GATEWAY_PORTS, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 0);
+
+    /* After enabling, getter should return 1 */
+    bval = true;
+    rc = ssh_options_set(session, SSH_OPTIONS_GATEWAY_PORTS, &bval);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_GATEWAY_PORTS, &result);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(result, 1);
+
+    /* After disabling, getter should return 0 */
+    bval = false;
+    rc = ssh_options_set(session, SSH_OPTIONS_GATEWAY_PORTS, &bval);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_GATEWAY_PORTS, &result);
     assert_int_equal(rc, SSH_OK);
     assert_int_equal(result, 0);
 
@@ -5019,6 +5066,9 @@ torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_forward_agent,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_gateway_ports,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(

@@ -65,6 +65,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG28 "libssh_testconfig28.tmp"
 #define LIBSSH_TESTCONFIG30 "libssh_testconfig30.tmp"
 #define LIBSSH_TESTCONFIG31 "libssh_testconfig31.tmp"
+#define LIBSSH_TESTCONFIG34 "libssh_testconfig34.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 #define LIBSSH_TEST_PUBKEYTYPES "libssh_test_PubkeyAcceptedKeyTypes.tmp"
 #define LIBSSH_TEST_PUBKEYALGORITHMS "libssh_test_PubkeyAcceptedAlgorithms.tmp"
@@ -366,6 +367,11 @@ extern LIBSSH_THREAD int ssh_log_level;
     "\tForwardAgent true\n"            \
     "Host fwd_false\n"                 \
     "\tForwardAgent false\n"
+#define LIBSSH_TESTCONFIG_STRING34 \
+    "Host nogateway\n"             \
+    "\tGatewayPorts no\n"          \
+    "Host withgateway\n"           \
+    "\tGatewayPorts yes\n"
 
 #define LIBSSH_TEST_PUBKEYTYPES_STRING \
     "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
@@ -491,6 +497,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG30);
     unlink(LIBSSH_TESTCONFIG31);
     unlink(LIBSSH_TESTCONFIG32);
+    unlink(LIBSSH_TESTCONFIG34);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -589,6 +596,9 @@ static int setup_config_files(void **state)
     /* ForwardAgent */
     torture_write_file(LIBSSH_TESTCONFIG32,
                        LIBSSH_TESTCONFIG_STRING32);
+    /* GatewayPorts */
+    torture_write_file(LIBSSH_TESTCONFIG34,
+                       LIBSSH_TESTCONFIG_STRING34);
     /* SendEnv */
     torture_write_file(LIBSSH_TESTCONFIG25,
                        LIBSSH_TESTCONFIG_STRING25);
@@ -652,6 +662,7 @@ static int teardown_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG30);
     unlink(LIBSSH_TESTCONFIG31);
     unlink(LIBSSH_TESTCONFIG32);
+    unlink(LIBSSH_TESTCONFIG34);
     unlink(LIBSSH_TEST_PUBKEYTYPES);
     unlink(LIBSSH_TEST_PUBKEYALGORITHMS);
     unlink(LIBSSH_TEST_NONEWLINEEND);
@@ -2714,6 +2725,51 @@ static void torture_config_exit_on_forward_failure_string(void **state)
 static void torture_config_exit_on_forward_failure_file(void **state)
 {
     torture_config_exit_on_forward_failure(state, LIBSSH_TESTCONFIG29, NULL);
+}
+
+/**
+ * @brief Verify we can parse GatewayPorts configuration option
+ */
+static void torture_config_gateway_ports(void **state,
+                                         const char *file,
+                                         const char *string)
+{
+    ssh_session session = *state;
+
+    int gateway_ports = -1;
+    int rc = SSH_OK;
+
+    /* GatewayPorts no: gateway_ports should be 0 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "nogateway");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_GATEWAY_PORTS, &gateway_ports);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(gateway_ports, 0);
+
+    /* GatewayPorts yes: gateway_ports should be 1 */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "withgateway");
+    _parse_config(session, file, string, SSH_OK);
+    rc = ssh_options_get_int(session, SSH_OPTIONS_GATEWAY_PORTS, &gateway_ports);
+    assert_int_equal(rc, SSH_OK);
+    assert_int_equal(gateway_ports, 1);
+}
+
+/**
+ * @brief Verify we can parse GatewayPorts configuration option from string
+ */
+static void torture_config_gateway_ports_string(void **state)
+{
+    torture_config_gateway_ports(state, NULL, LIBSSH_TESTCONFIG_STRING34);
+}
+
+/**
+ * @brief Verify we can parse GatewayPorts configuration option from file
+ */
+static void torture_config_gateway_ports_file(void **state)
+{
+    torture_config_gateway_ports(state, LIBSSH_TESTCONFIG34, NULL);
 }
 
 /**
@@ -5643,6 +5699,12 @@ int torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_forward_agent_string,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_gateway_ports_file,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_gateway_ports_string,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(

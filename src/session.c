@@ -125,6 +125,7 @@ ssh_session ssh_new(void)
     session->opts.server_alive_interval = 0;
     session->opts.server_alive_count_max = 3;
     session->opts.batch_mode = false;
+    session->opts.gateway_ports = false;
     session->opts.control_master = SSH_CONTROL_MASTER_NO;
 
     session->opts.flags = SSH_OPT_FLAG_PASSWORD_AUTH |

@@ -84,6 +84,7 @@ enum ssh_config_opcode_e {
     SOC_REMOTE_FORWARD,
     SOC_EXIT_ON_FORWARD_FAILURE,
     SOC_FORWARD_AGENT,
+    SOC_GATEWAY_PORTS,
 
     SOC_MAX /* Keep this one last in the list */
 };

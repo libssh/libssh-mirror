@@ -311,6 +311,7 @@ struct ssh_session_struct {
         bool exit_on_forward_failure;
         bool forward_agent;
         char *forward_agent_sock_path;
+        bool gateway_ports;
     } opts;
 
     /* server options */

@@ -426,6 +426,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
     new->opts.escape_char           = src->opts.escape_char;
     new->opts.address_family        = src->opts.address_family;
     new->opts.exit_on_forward_failure = src->opts.exit_on_forward_failure;
+    new->opts.gateway_ports         = src->opts.gateway_ports;
     new->opts.server_alive_interval = src->opts.server_alive_interval;
     new->opts.server_alive_count_max = src->opts.server_alive_count_max;
     new->opts.forward_agent         = src->opts.forward_agent;
@@ -605,6 +606,8 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
     case SSH_OPTIONS_FORWARD_AGENT:
     case SSH_OPTIONS_FORWARD_AGENT_SOCK_PATH:
         return SOC_FORWARD_AGENT;
+    case SSH_OPTIONS_GATEWAY_PORTS:
+        return SOC_GATEWAY_PORTS;
     /*
      * Accumulative options append to a list instead of replacing a value, so
      * the "first value wins" precedence between config and the application does
@@ -1137,6 +1140,17 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
  *                automatically use this socket for agent forwarding based on
  *                this setting.
  *                (const char *)
+ *              - SSH_OPTIONS_GATEWAY_PORTS
+ *                If set to true, remote hosts are allowed to connect to local
+ *                forwarded ports. When no bind address is specified for a
+ *                local or dynamic forwarding, the listener is bound to the
+ *                wildcard address (all interfaces) instead of the loopback
+ *                address. An explicitly specified bind address always takes
+ *                precedence over this setting. This value is parsed from the
+ *                configuration file and stored for the calling application to
+ *                read; libssh does not automatically bind forwarded listeners
+ *                based on this setting.
+ *                (bool)
  *              - SSH_OPTIONS_SEND_ENV
  *                Append one environment variable name pattern to the list of
  *                patterns to send to the server. Multiple calls accumulate
@@ -2320,6 +2334,15 @@ int ssh_options_set(ssh_session session,
                 }
             }
             break;
+        case SSH_OPTIONS_GATEWAY_PORTS:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                bool *x = (bool *)value;
+                session->opts.gateway_ports = *x;
+            }
+            break;
         default:
             ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
             return -1;
@@ -2407,6 +2430,7 @@ char *ssh_options_get_algo(ssh_session session,
  *                  - SSH_OPTIONS_RSA_MIN_SIZE
  *                  - SSH_OPTIONS_PASSWORD_AUTH
  *                  - SSH_OPTIONS_PUBKEY_AUTH
+ *                  - SSH_OPTIONS_GATEWAY_PORTS
  *                  - SSH_OPTIONS_KBDINT_AUTH
  *                  - SSH_OPTIONS_GSSAPI_AUTH
  *                  - SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS
@@ -2492,6 +2516,9 @@ int ssh_options_get_int(ssh_session session,
         break;
     case SSH_OPTIONS_FORWARD_AGENT:
         *value = session->opts.forward_agent ? 1 : 0;
+        break;
+    case SSH_OPTIONS_GATEWAY_PORTS:
+        *value = session->opts.gateway_ports ? 1 : 0;
         break;
     default:
         ssh_set_error_invalid(session);
