@@ -147,12 +147,11 @@ LIBSSH_API int ssh_bind_listen(ssh_bind ssh_bind_o);
  * @return              `SSH_OK` on success, `SSH_ERROR` if an error occurred.
  *
  * @code
- *     struct ssh_callbacks_struct cb = {
- *         .userdata = data,
- *         .auth_function = my_auth_function
+ *     struct ssh_bind_callbacks_struct cb = {
+ *         .incoming_connection = my_incoming_connection_function
  *     };
  *     ssh_callbacks_init(&cb);
- *     ssh_bind_set_callbacks(session, &cb);
+ *     ssh_bind_set_callbacks(session, &cb, NULL);
  * @endcode
  */
 LIBSSH_API int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
