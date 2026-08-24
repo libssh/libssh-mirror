@@ -30,7 +30,7 @@ provided functions.
 
 Since version 0.8.0, libpthread is the default threads library used by libssh.
 
-To use libpthread, simply link it to you application.
+To use libpthread, simply link it to your application.
 
 If you are using libssh statically linked, don't forget to call ssh_init()
 before using any of libssh provided functions (and ssh_finalize() in  the end).
