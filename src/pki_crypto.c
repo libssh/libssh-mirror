@@ -862,7 +862,7 @@ int pki_key_generate_rsa(ssh_key key, int parameter)
         return SSH_ERROR;
     }
 #endif /* OPENSSL_VERSION_NUMBER */
-	return SSH_OK;
+    return SSH_OK;
 }
 
 #ifdef HAVE_OPENSSL_ECC
@@ -1174,7 +1174,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
         ecdsa = EVP_PKEY_get0_EC_KEY(pkey);
         if (ecdsa == NULL) {
             SSH_LOG(SSH_LOG_TRACE,
-		    "Error parsing private key: %s",
+                    "Error parsing private key: %s",
                     ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
