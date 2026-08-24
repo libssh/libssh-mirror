@@ -94,8 +94,8 @@ static ssh_string ssh_ecdh_generate(ssh_session session)
     const void *pubkey = NULL;
     size_t pubkey_len;
     int nid;
-    int rc;
 #endif /* OPENSSL_VERSION_NUMBER */
+    int rc;
 
     curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
@@ -120,10 +120,25 @@ static ssh_string ssh_ecdh_generate(ssh_session session)
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     group = EC_KEY_get0_group(key);
+    if (group == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Failed to get group");
+        EC_KEY_free(key);
+        return NULL;
+    }
 
-    EC_KEY_generate_key(key);
+    rc = EC_KEY_generate_key(key);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE, "Failed to generate EC key");
+        EC_KEY_free(key);
+        return NULL;
+    }
 
     point = EC_KEY_get0_public_key(key);
+    if (point == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Failed to get EC point");
+        EC_KEY_free(key);
+        return NULL;
+    }
 
     pubkey_string = pki_key_make_ecpoint_string(group, point);
 #else
