@@ -792,8 +792,9 @@ fail:
     return NULL;
 }
 
-int pki_key_generate_rsa(ssh_key key, int parameter){
-	int rc;
+int pki_key_generate_rsa(ssh_key key, int parameter)
+{
+    int rc;
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     BIGNUM *e = NULL;
     RSA *key_rsa = NULL;
@@ -859,8 +860,9 @@ int pki_key_generate_rsa(ssh_key key, int parameter){
 
     EVP_PKEY_CTX_free(pctx);
 
-    if (rc != 1 || key->key == NULL)
+    if (rc != 1 || key->key == NULL) {
         return SSH_ERROR;
+    }
 #endif /* OPENSSL_VERSION_NUMBER */
 	return SSH_OK;
 }
