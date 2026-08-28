@@ -162,6 +162,7 @@ mbedtls_ctr_drbg_context *ssh_get_mbedtls_ctr_drbg_context(void);
 
 #endif /* MBEDTLS_VERSION_MAJOR */
 
+int ssh_mbedtls_initialized(void);
 int ssh_mbedtls_random(void *where, int len, int strong);
 
 ssh_string make_ecpoint_string(const mbedtls_ecp_group *g, const

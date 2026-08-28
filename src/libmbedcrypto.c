@@ -64,12 +64,12 @@ int ssh_kdf(struct ssh_crypto_struct *crypto,
                              key_type, output, requested_len);
 }
 
-#if MBEDTLS_VERSION_MAJOR >= 4
 int ssh_mbedtls_initialized(void)
 {
     return libmbedcrypto_initialized;
 }
-#else /* MBEDTLS_VERSION_MAJOR < 4 */
+
+#if MBEDTLS_VERSION_MAJOR < 4
 
 void ssh_reseed(void)
 {

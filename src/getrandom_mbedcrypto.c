@@ -33,6 +33,9 @@ int
 ssh_mbedtls_random(void *where, int len, int strong)
 {
     int rc = 0;
+    if (!ssh_mbedtls_initialized()) {
+        return 0;
+    }
     if (strong) {
         mbedtls_ctr_drbg_set_prediction_resistance(&ssh_mbedtls_ctr_drbg,
                                                    MBEDTLS_CTR_DRBG_PR_ON);
