@@ -1869,6 +1869,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
     ssh_message msg = NULL;
     char *request = NULL;
     uint8_t want_reply;
+    uint32_t bind_port = 0;
     int rc = SSH_PACKET_USED;
     int r;
 
@@ -1899,10 +1900,11 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
         r = ssh_buffer_unpack(packet,
                               "sd",
                               &msg->global_request.bind_address,
-                              &msg->global_request.bind_port);
+                              &bind_port);
         if (r != SSH_OK) {
             goto reply_with_failure;
         }
+        msg->global_request.bind_port = (uint16_t)bind_port;
         msg->global_request.type = SSH_GLOBAL_REQUEST_TCPIP_FORWARD;
         msg->global_request.want_reply = want_reply;
 
@@ -1940,10 +1942,11 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request)
         r = ssh_buffer_unpack(packet,
                               "sd",
                               &msg->global_request.bind_address,
-                              &msg->global_request.bind_port);
+                              &bind_port);
         if (r != SSH_OK) {
             goto reply_with_failure;
         }
+        msg->global_request.bind_port = (uint16_t)bind_port;
         msg->global_request.type = SSH_GLOBAL_REQUEST_CANCEL_TCPIP_FORWARD;
         msg->global_request.want_reply = want_reply;
 
