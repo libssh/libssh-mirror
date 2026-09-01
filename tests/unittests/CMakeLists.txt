@@ -143,9 +143,19 @@ foreach(_UNIT_TEST ${LIBSSH_UNIT_TESTS})
                     LINK_LIBRARIES ${TEST_TARGET_LIBRARIES}
     )
 
+    set(_TEST_ENV ${TORTURE_UNIT_ENVIRONMENT})
+    # Do not use system openssl.cnf for the pkcs11 uri tests.
+    # It can load a pkcs11 provider too early before we will set up environment
+    # variables that are needed for the pkcs11 provider to access correct
+    # tokens, causing unexpected failures.
+    # Make sure this comes before ssh_init(), which initializes OpenSSL!
+    if (_UNIT_TEST MATCHES "uri$")
+        list(APPEND _TEST_ENV OPENSSL_CONF=${CMAKE_SOURCE_DIR}/tests/etc/openssl.cnf)
+    endif()
+
     set_property(TEST ${_UNIT_TEST}
                  PROPERTY
-                     ENVIRONMENT ${TORTURE_UNIT_ENVIRONMENT})
+                     ENVIRONMENT ${_TEST_ENV})
 endforeach()
 
 if (CMAKE_USE_PTHREADS_INIT)

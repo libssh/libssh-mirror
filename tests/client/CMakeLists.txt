@@ -104,6 +104,16 @@ foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
         )
     endif()
 
+    set(_TEST_ENV ${TORTURE_CLIENT_ENVIRONMENT})
+    # Do not use system openssl.cnf for the pkcs11 uri tests.
+    # It can load a pkcs11 provider too early before we will set up environment
+    # variables that are needed for the pkcs11 provider to access correct
+    # tokens, causing unexpected failures.
+    # Make sure this comes before ssh_init(), which initializes OpenSSL!
+    if (_CLI_TEST STREQUAL "torture_auth_pkcs11")
+        list(APPEND _TEST_ENV OPENSSL_CONF=${CMAKE_SOURCE_DIR}/tests/etc/openssl.cnf)
+    endif()
+
     if (OSX)
         set_property(
             TEST
@@ -115,6 +125,6 @@ foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
             TEST
                 ${_CLI_TEST}
             PROPERTY
-                ENVIRONMENT ${TORTURE_CLIENT_ENVIRONMENT})
+                ENVIRONMENT ${_TEST_ENV})
     endif()
 endforeach()
