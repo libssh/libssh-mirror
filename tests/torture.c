@@ -2203,6 +2203,29 @@ __attribute__((weak)) int torture_run_tests(void)
 #endif /* defined(HAVE_WEAK_ATTRIBUTE) && defined(TORTURE_SHARED) */
 
 /**
+ * Initialize torture context. No-op except for OpenSSL or GSSAPI
+ *
+ * Applications using OpenSSL are expected to call OPENSSL_init_crypto() before
+ * any cryptographic operation is started. If not done, this is called from
+ * within the first OpenSSL API crypto call, which works ok if we are not
+ * calling the first operation from threads and in FIPS mode.
+ *
+ * Calling this function from ssh_crypto_init() does not sounds like a good idea
+ * either as we really can not know if the libssh is the first and only
+ * library using openssl in the address space.
+ *
+ * This needs to be called at the start of the main function, most importantly
+ * for the tests using threads.
+ */
+void torture_initialize(void)
+{
+#if defined(HAVE_LIBCRYPTO) || defined(WITH_GSSAPI)
+    int r = OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL);
+    assert_int_equal(r, 1);
+#endif
+}
+
+/**
  * Finalize the torture context. No-op except for OpenSSL or GSSAPI
  *
  * When OpenSSL is built without the at-exit handlers, it won't call the
@@ -2227,6 +2250,8 @@ int main(int argc, char **argv)
     struct argument_s arguments;
     char *env = getenv("LIBSSH_VERBOSITY");
     int rv;
+
+    torture_initialize();
 
     arguments.verbose = 0;
     arguments.pattern = NULL;
