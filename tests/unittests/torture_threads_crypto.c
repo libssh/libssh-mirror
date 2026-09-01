@@ -150,8 +150,8 @@ static void *thread_crypto_aes256_cbc(void *threadid)
     assert_non_null(cipher.encrypt);
 
     /* This is for dumb static analyzer without modelling support */
-    if (cipher.set_encrypt_key == NULL ||
-        cipher.encrypt == NULL) {
+    if (cipher.set_decrypt_key == NULL ||
+        cipher.decrypt == NULL) {
         return NULL;
     }
 
