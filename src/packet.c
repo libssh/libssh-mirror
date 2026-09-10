@@ -1663,12 +1663,14 @@ static void ssh_packet_socket_controlflow_callback(int code, void *userdata)
         it = ssh_list_get_iterator(session->channels);
         while (it != NULL) {
             channel = ssh_iterator_value(ssh_channel, it);
-            ssh_callbacks_execute_list(channel->callbacks,
-                                       ssh_channel_callbacks,
-                                       channel_write_wontblock_function,
-                                       session,
-                                       channel,
-                                       channel->remote_window);
+            if (channel->remote_window > 0) {
+                ssh_callbacks_execute_list(channel->callbacks,
+                                           ssh_channel_callbacks,
+                                           channel_write_wontblock_function,
+                                           session,
+                                           channel,
+                                           channel->remote_window);
+            }
             it = it->next;
         }
     }

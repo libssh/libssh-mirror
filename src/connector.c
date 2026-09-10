@@ -406,6 +406,13 @@ static void ssh_connector_fd_in_cb(ssh_connector connector)
         if (connector->out_channel != NULL) {
             uint32_t size = ssh_channel_window_size(connector->out_channel);
 
+            /* A cached writable flag may outlive the channel window. */
+            if (size == 0) {
+                connector->out_wontblock = 0;
+                connector->in_available = 1;
+                return;
+            }
+
             /* Don't attempt reading more than the window */
             toread = MIN(size, CHUNKSIZE);
         }

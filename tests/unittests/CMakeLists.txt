@@ -41,6 +41,7 @@ if (UNIX AND NOT WIN32)
     set(LIBSSH_UNIT_TESTS
         ${LIBSSH_UNIT_TESTS}
         # this uses a socketpair
+        torture_connector
         torture_packet
         # requires ssh-keygen
         torture_keyfiles
