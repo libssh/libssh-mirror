@@ -37,6 +37,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -51,6 +52,7 @@
 #else
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <windows.h>
 #endif
 
 #include "libssh/agent.h"
@@ -67,6 +69,16 @@
   (((x) == SSH_AGENT_FAILURE) || ((x) == SSH_COM_AGENT2_FAILURE) || \
    ((x) == SSH2_AGENT_FAILURE))
 
+#ifdef _WIN32
+#define SSH_AGENT_WINDOWS_PIPE "\\\\.\\pipe\\openssh-ssh-agent"
+
+static bool agent_pipe_is_open(const ssh_agent agent)
+{
+    return agent != NULL && agent->pipe_handle != NULL &&
+           agent->pipe_handle != INVALID_HANDLE_VALUE;
+}
+#endif
+
 static uint32_t
 atomicio(struct ssh_agent_struct *agent, void *buf, uint32_t n, int do_read)
 {
@@ -76,6 +88,28 @@ atomicio(struct ssh_agent_struct *agent, void *buf, uint32_t n, int do_read)
     ssh_pollfd_t pfd;
     ssh_channel channel = agent->channel;
     socket_t fd;
+
+#ifdef _WIN32
+    if (agent_pipe_is_open(agent)) {
+        HANDLE pipe = (HANDLE)agent->pipe_handle;
+        DWORD transferred = 0;
+
+        while (n > pos) {
+            BOOL ok;
+
+            if (do_read) {
+                ok = ReadFile(pipe, b + pos, n - pos, &transferred, NULL);
+            } else {
+                ok = WriteFile(pipe, b + pos, n - pos, &transferred, NULL);
+            }
+            if (!ok || transferred == 0) {
+                return pos;
+            }
+            pos += transferred;
+        }
+        return pos;
+    }
+#endif
 
     /* Using a socket ? */
     if (channel == NULL) {
@@ -148,6 +182,9 @@ ssh_agent ssh_agent_new(struct ssh_session_struct *session)
         return NULL;
     }
     agent->channel = NULL;
+#ifdef _WIN32
+    agent->pipe_handle = NULL;
+#endif
     return agent;
 }
 
@@ -223,6 +260,13 @@ void ssh_agent_close(struct ssh_agent_struct *agent)
         return;
     }
 
+#ifdef _WIN32
+    if (agent_pipe_is_open(agent)) {
+        CloseHandle((HANDLE)agent->pipe_handle);
+        agent->pipe_handle = NULL;
+    }
+#endif
+
     ssh_socket_close(agent->sock);
 }
 
@@ -240,6 +284,108 @@ void ssh_agent_free(ssh_agent agent)
     }
 }
 
+#ifdef _WIN32
+static bool agent_path_is_named_pipe(const char *path)
+{
+    return path != NULL &&
+           (_strnicmp(path, "\\\\.\\pipe\\", 9) == 0 ||
+            _strnicmp(path, "//./pipe/", 9) == 0);
+}
+
+static bool agent_path_is_assuan_redirect(const char *path)
+{
+    HANDLE file = INVALID_HANDLE_VALUE;
+    char header[8] = {0};
+    DWORD bytes_read = 0;
+    bool read_result = false;
+    bool is_redirect = false;
+
+    if (path == NULL) {
+        return false;
+    }
+
+    file = CreateFileA(path,
+                       GENERIC_READ,
+                       FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       NULL,
+                       OPEN_EXISTING,
+                       FILE_ATTRIBUTE_NORMAL,
+                       NULL);
+    if (file == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    read_result = ReadFile(file, header, sizeof(header), &bytes_read, NULL);
+    if (read_result && bytes_read == sizeof(header) &&
+        memcmp(header, "%Assuan%", sizeof(header)) == 0) {
+        is_redirect = true;
+    }
+    CloseHandle(file);
+    return is_redirect;
+}
+
+static int agent_connect_named_pipe(ssh_session session, const char *path)
+{
+    char native_path[MAX_PATH] = {0};
+    const char *open_path = path;
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+    DWORD error = ERROR_SUCCESS;
+    DWORD initial_error = ERROR_SUCCESS;
+    bool wait_result = false;
+    bool alternate_path = false;
+
+    alternate_path = _strnicmp(path, "//./pipe/", 9) == 0;
+    if (alternate_path) {
+        int rc = snprintf(native_path,
+                          sizeof(native_path),
+                          "\\\\.\\pipe\\%s",
+                          path + 9);
+        if (rc < 0 || (size_t)rc >= sizeof(native_path)) {
+            return -1;
+        }
+        open_path = native_path;
+    }
+
+    pipe = CreateFileA(open_path,
+                       GENERIC_READ | GENERIC_WRITE,
+                       0,
+                       NULL,
+                       OPEN_EXISTING,
+                       0,
+                       NULL);
+    if (pipe == INVALID_HANDLE_VALUE) {
+        initial_error = GetLastError();
+    }
+    if (pipe == INVALID_HANDLE_VALUE && initial_error == ERROR_PIPE_BUSY) {
+        wait_result = WaitNamedPipeA(open_path, 5000);
+        if (wait_result) {
+            pipe = CreateFileA(open_path,
+                               GENERIC_READ | GENERIC_WRITE,
+                               0,
+                               NULL,
+                               OPEN_EXISTING,
+                               0,
+                               NULL);
+        }
+    }
+    if (pipe == INVALID_HANDLE_VALUE) {
+        error = GetLastError();
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Error connecting to SSH agent named pipe %s: %" PRIu32,
+                      open_path,
+                      (uint32_t)error);
+        return -1;
+    }
+
+    session->agent->pipe_handle = pipe;
+    SSH_LOG(SSH_LOG_PROTOCOL,
+            "Connected to SSH agent named pipe %s",
+            open_path);
+    return 0;
+}
+#endif
+
 static int agent_connect(ssh_session session)
 {
     const char *auth_sock = NULL;
@@ -256,13 +402,33 @@ static int agent_connect(ssh_session session)
                                            : getenv("SSH_AUTH_SOCK");
 
     if (auth_sock && *auth_sock) {
+#ifdef _WIN32
+        bool named_pipe_path = agent_path_is_named_pipe(auth_sock);
+        if (named_pipe_path) {
+            return agent_connect_named_pipe(session, auth_sock);
+        }
+#endif
         if (ssh_socket_unix(session->agent->sock, auth_sock) < 0) {
+#ifdef _WIN32
+            /* Gpg4win exposes its OpenSSH-compatible agent on the standard
+             * Windows named pipe. Its agent-ssh-socket path is an Assuan
+             * redirection file rather than a Winsock AF_UNIX socket. */
+            bool assuan_redirect = agent_path_is_assuan_redirect(auth_sock);
+            if (assuan_redirect) {
+                return agent_connect_named_pipe(session,
+                                                SSH_AGENT_WINDOWS_PIPE);
+            }
+#endif
             return -1;
         }
         return 0;
     }
 
+#ifdef _WIN32
+    return agent_connect_named_pipe(session, SSH_AGENT_WINDOWS_PIPE);
+#else
     return -1;
+#endif
 }
 
 #if 0
@@ -495,11 +661,24 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
 
 int ssh_agent_is_running(ssh_session session)
 {
+    bool socket_open = false;
+#ifdef _WIN32
+    bool pipe_open = false;
+#endif
+
     if (session == NULL || session->agent == NULL) {
         return 0;
     }
 
-    if (ssh_socket_is_open(session->agent->sock)) {
+    socket_open = ssh_socket_is_open(session->agent->sock);
+#ifdef _WIN32
+    pipe_open = agent_pipe_is_open(session->agent);
+#endif
+    if (socket_open
+#ifdef _WIN32
+        || pipe_open
+#endif
+    ) {
         return 1;
     } else {
         if (agent_connect(session) < 0) {

@@ -86,6 +86,9 @@ struct ssh_agent_struct {
   ssh_buffer ident;
   unsigned int count;
   ssh_channel channel;
+#ifdef _WIN32
+  void *pipe_handle;
+#endif
 };
 
 /* agent.c */
