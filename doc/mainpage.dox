@@ -246,9 +246,9 @@ It was later modified and expanded by the following RFCs.
 
 There are also drafts that are being currently developed and followed.
 
- - <a href="https://tools.ietf.org/html/draft-ietf-sshm-chacha20-poly1305-02" target="_blank">draft-ietf-sshm-chacha20-poly1305-02</a>
+ - <a href="https://tools.ietf.org/html/draft-ietf-sshm-chacha20-poly1305-04" target="_blank">draft-ietf-sshm-chacha20-poly1305-04</a>
     Secure Shell (SSH) authenticated encryption cipher: chacha20-poly1305
- - <a href="https://tools.ietf.org/html/draft-ietf-sshm-strict-kex-01" target="_blank">draft-ietf-sshm-strict-kex-01</a>
+ - <a href="https://tools.ietf.org/html/draft-ietf-sshm-strict-kex-02" target="_blank">draft-ietf-sshm-strict-kex-02</a>
     SSH Strict KEX extension
 
 Interesting cryptography documents:
