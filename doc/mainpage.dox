@@ -240,11 +240,12 @@ It was later modified and expanded by the following RFCs.
     sntrup761 and X25519 with SHA-512: sntrup761x25519-sha512
  - <a href="https://tools.ietf.org/html/rfc9987" target="_blank">RFC 9987</a>,
     Secure Shell (SSH) Agent Protocol
+ - <a href="https://tools.ietf.org/html/rfc10042" target="_blank">RFC 10042</a>,
+    Post-Quantum/Traditional Hybrid Key Exchange with the Module-Lattice-Based
+    Key-Encapsulation Mechanism for Use in SSH
 
 There are also drafts that are being currently developed and followed.
 
- - <a href="https://tools.ietf.org/html/draft-ietf-sshm-mlkem-hybrid-kex-09" target="_blank">draft-ietf-sshm-mlkem-hybrid-kex-09</a>
-    PQ/T Hybrid Key Exchange with ML-KEM in SSH
  - <a href="https://tools.ietf.org/html/draft-ietf-sshm-chacha20-poly1305-02" target="_blank">draft-ietf-sshm-chacha20-poly1305-02</a>
     Secure Shell (SSH) authenticated encryption cipher: chacha20-poly1305
  - <a href="https://tools.ietf.org/html/draft-ietf-sshm-strict-kex-01" target="_blank">draft-ietf-sshm-strict-kex-01</a>
