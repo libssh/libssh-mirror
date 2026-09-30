@@ -250,6 +250,8 @@ There are also drafts that are being currently developed and followed.
     Secure Shell (SSH) authenticated encryption cipher: chacha20-poly1305
  - <a href="https://tools.ietf.org/html/draft-ietf-sshm-strict-kex-02" target="_blank">draft-ietf-sshm-strict-kex-02</a>
     SSH Strict KEX extension
+ - <a href="https://tools.ietf.org/html/draft-josefsson-sshsig-format-04" target="_blank">draft-josefsson-sshsig-format-04</a>
+    Lightweight Secure Shell (SSH) Signature Format
 
 Interesting cryptography documents:
 
