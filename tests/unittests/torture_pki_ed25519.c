@@ -1058,6 +1058,86 @@ static void torture_pki_ed25519_import_privkey_base64_passphrase(void **state)
     SSH_KEY_FREE(key);
 }
 
+static void torture_pki_openssh_bcrypt_rounds_invalid(void **state)
+{
+    ssh_buffer kdf_buf = NULL;
+    ssh_buffer key_buf = NULL;
+    ssh_string salt = NULL;
+    ssh_string kdfoptions = NULL;
+    ssh_string pubkey = NULL;
+    ssh_string privkey = NULL;
+    char *b64_data = NULL;
+    char key_str[2048] = {0};
+    ssh_key key = NULL;
+    uint32_t bad_rounds[] = {0, (1 << 20) + 1, 0xffffffff};
+    size_t i;
+    int rc;
+
+    (void)state;
+
+    salt = ssh_string_new(16);
+    assert_non_null(salt);
+    pubkey = ssh_string_new(32);
+    assert_non_null(pubkey);
+    privkey = ssh_string_new(64);
+    assert_non_null(privkey);
+
+    for (i = 0; i < ARRAY_SIZE(bad_rounds); i++) {
+        kdf_buf = ssh_buffer_new();
+        assert_non_null(kdf_buf);
+        rc = ssh_buffer_pack(kdf_buf, "Sd", salt, bad_rounds[i]);
+        assert_int_equal(rc, SSH_OK);
+
+        kdfoptions = ssh_string_new(ssh_buffer_get_len(kdf_buf));
+        assert_non_null(kdfoptions);
+        memcpy(ssh_string_data(kdfoptions),
+               ssh_buffer_get(kdf_buf),
+               ssh_buffer_get_len(kdf_buf));
+        SSH_BUFFER_FREE(kdf_buf);
+
+        key_buf = ssh_buffer_new();
+        assert_non_null(key_buf);
+        rc = ssh_buffer_pack(key_buf,
+                             "PssSdSdP",
+                             strlen(OPENSSH_AUTH_MAGIC) + 1,
+                             OPENSSH_AUTH_MAGIC,
+                             "aes128-cbc",
+                             "bcrypt",
+                             kdfoptions,
+                             (uint32_t)1,
+                             pubkey,
+                             (uint32_t)ssh_string_len(privkey),
+                             (size_t)ssh_string_len(privkey),
+                             ssh_string_data(privkey));
+        assert_int_equal(rc, SSH_OK);
+        SSH_STRING_FREE(kdfoptions);
+
+        b64_data = (char *)bin_to_base64(ssh_buffer_get(key_buf),
+                                         ssh_buffer_get_len(key_buf));
+        assert_non_null(b64_data);
+        SSH_BUFFER_FREE(key_buf);
+
+        snprintf(key_str, sizeof(key_str),
+                 "%s\n%s\n%s\n",
+                 OPENSSH_HEADER_BEGIN,
+                 b64_data,
+                 OPENSSH_HEADER_END);
+        SAFE_FREE(b64_data);
+
+        rc = ssh_pki_import_privkey_base64(key_str,
+                                           "password",
+                                           NULL,
+                                           NULL,
+                                           &key);
+        assert_int_equal(rc, SSH_ERROR);
+        assert_null(key);
+    }
+
+    SSH_STRING_FREE(salt);
+    SSH_STRING_FREE(pubkey);
+    SSH_STRING_FREE(privkey);
+}
+
 static void torture_pki_ed25519_privkey_dup(void **state)
 {
     const char *passphrase = torture_get_testkey_passphrase();
@@ -1183,6 +1263,7 @@ int torture_run_tests(void) {
                                         setup_ed25519_key,
                                         teardown),
         cmocka_unit_test(torture_pki_ed25519_import_privkey_base64_passphrase),
+        cmocka_unit_test(torture_pki_openssh_bcrypt_rounds_invalid),
         cmocka_unit_test(torture_pki_ed25519_sign),
         cmocka_unit_test(torture_pki_ed25519_sign_openssh_privkey_passphrase),
 #ifdef HAVE_LIBCRYPTO

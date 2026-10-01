@@ -44,6 +44,8 @@ int bcrypt_pbkdf(const char *pass,
 #define OPENSSH_HEADER_END "-----END OPENSSH PRIVATE KEY-----"
 /* Magic defined in OpenSSH/PROTOCOL.key */
 #define OPENSSH_AUTH_MAGIC      "openssh-key-v1"
+#define OPENSSH_BCRYPT_DEFAULT_ROUNDS 32
+#define OPENSSH_BCRYPT_MAX_ROUNDS     1<<20
 
 /* Determine type of ssh key. */
 enum ssh_key_e {

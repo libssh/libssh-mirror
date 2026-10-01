@@ -164,6 +164,14 @@ static int pki_private_key_decrypt(ssh_string blob,
         return SSH_ERROR;
     }
 
+    if (rounds < 1 || rounds > OPENSSH_BCRYPT_MAX_ROUNDS) {
+        SAFE_FREE(salt);
+        SSH_LOG(SSH_LOG_TRACE,
+                "Invalid number of bcrypt rounds: %" PRIu32,
+                rounds);
+        return SSH_ERROR;
+    }
+
     /* We need material for key (keysize bits / 8) and IV (blocksize)  */
     key_material_len =  cipher.keysize/8 + cipher.blocksize;
     if (key_material_len > sizeof(key_material)) {
@@ -440,6 +448,14 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
         SSH_LOG(SSH_LOG_TRACE, "Unsupported KDF %s", kdfname);
         return SSH_ERROR;
     }
+
+    if (rounds < 1 || rounds > OPENSSH_BCRYPT_MAX_ROUNDS) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Invalid number of bcrypt rounds: %" PRIu32,
+                rounds);
+        return SSH_ERROR;
+    }
+
     /* We need material for key (keysize bits / 8) and IV (blocksize)  */
     key_material_len =  cipher.keysize/8 + cipher.blocksize;
     if (key_material_len > sizeof(key_material)){
@@ -510,7 +526,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     ssh_string pubkey_s = NULL;
     ssh_buffer privkey_buffer = NULL;
     uint32_t rnd;
-    uint32_t rounds = 16;
+    uint32_t rounds = OPENSSH_BCRYPT_DEFAULT_ROUNDS;
     ssh_string salt = NULL;
     ssh_string kdf_options = NULL;
     int to_encrypt=0;
