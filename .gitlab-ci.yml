@@ -808,7 +808,7 @@ coverity:
   stage: analysis
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS9_BUILD
   script:
-    - mkdir obj && cd obj
+    - mkdir -p obj && cd obj
     - wget https://scan.coverity.com/download/linux64 --post-data "token=$COVERITY_SCAN_TOKEN&project=$COVERITY_SCAN_PROJECT_NAME" -O /tmp/coverity_tool.tgz
     - tar xf /tmp/coverity_tool.tgz
     - cmake -DCMAKE_BUILD_TYPE=Debug $CMAKE_BUILD_OPTIONS $CMAKE_TEST_OPTIONS ..
