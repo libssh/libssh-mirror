@@ -656,7 +656,6 @@ ssh_config_parse_proxy_jump(ssh_session session, const char *s, bool do_parsing)
                                       false);
             if (rv != SSH_OK) {
                 ssh_set_error_invalid(session);
-                SAFE_FREE(jump_host);
                 goto out;
             }
             /* Leave the port at 0 when it is not given, so that the jump
@@ -671,7 +670,6 @@ ssh_config_parse_proxy_jump(ssh_session session, const char *s, bool do_parsing)
                 session->opts.proxy_jumps = ssh_list_new();
                 if (session->opts.proxy_jumps == NULL) {
                     ssh_set_error_oom(session);
-                    SAFE_FREE(jump_host);
                     rv = SSH_ERROR;
                     goto out;
                 }
@@ -681,9 +679,10 @@ ssh_config_parse_proxy_jump(ssh_session session, const char *s, bool do_parsing)
             rv = ssh_list_prepend(session->opts.proxy_jumps, jump_host);
             if (rv != SSH_OK) {
                 ssh_set_error_oom(session);
-                SAFE_FREE(jump_host);
                 goto out;
             }
+            /* moved ownership to the ssh_list */
+            jump_host = NULL;
         } else if (parse_entry) {
             /* We actually care only about the first item */
             rv = ssh_config_parse_uri(cp,
@@ -752,6 +751,7 @@ out:
     if (rv != SSH_OK) {
         ssh_proxyjumps_free(session->opts.proxy_jumps);
     }
+    ssh_jump_info_free(jump_host);
     SAFE_FREE(username);
     SAFE_FREE(hostname);
     SAFE_FREE(port);
@@ -1814,7 +1814,7 @@ static int ssh_config_parse_line_internal(ssh_session session,
                 CHECK_COND_OR_FAIL(1, "Invalid data limit");
                 break;
             }
-            
+
             val = (double)ll;
             if (*endp == '.') {
                 endp++;

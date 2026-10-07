@@ -2646,6 +2646,21 @@ int ssh_check_username_syntax(const char *username)
     return SSH_OK;
 }
 
+/* @brief Free the ssh_jump_info_struct and its members.
+ *
+ * @param[in] jump Proxy jump info structure to free (may be NULL)
+ */
+void ssh_jump_info_free(struct ssh_jump_info_struct *jump)
+{
+    if (jump == NULL) {
+        return;
+    }
+
+    SAFE_FREE(jump->hostname);
+    SAFE_FREE(jump->username);
+    SAFE_FREE(jump);
+}
+
 /**
  * @brief Free proxy jump list
  *
@@ -2664,9 +2679,7 @@ ssh_proxyjumps_free(struct ssh_list *proxy_jump_list)
          jump != NULL;
          jump = ssh_list_pop_head(struct ssh_jump_info_struct *,
                                   proxy_jump_list)) {
-        SAFE_FREE(jump->hostname);
-        SAFE_FREE(jump->username);
-        SAFE_FREE(jump);
+        ssh_jump_info_free(jump);
     }
 }
 

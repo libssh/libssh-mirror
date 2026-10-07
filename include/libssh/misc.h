@@ -92,6 +92,8 @@ struct ssh_jump_info_struct {
     int port;
 };
 
+void ssh_jump_info_free(struct ssh_jump_info_struct *jump);
+
 struct ssh_timestamp {
   long seconds;
   long useconds;
