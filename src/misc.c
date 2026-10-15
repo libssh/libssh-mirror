@@ -112,16 +112,9 @@
 static char *ssh_get_user_home_dir_internal(void)
 {
     char tmp[PATH_MAX] = {0};
-    char *szPath = NULL;
 
     if (SHGetSpecialFolderPathA(NULL, tmp, CSIDL_PROFILE, TRUE)) {
-        szPath = malloc(strlen(tmp) + 1);
-        if (szPath == NULL) {
-            return NULL;
-        }
-
-        strcpy(szPath, tmp);
-        return szPath;
+        return strdup(tmp);
     }
 
     return NULL;
