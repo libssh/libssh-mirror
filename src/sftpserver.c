@@ -1807,6 +1807,8 @@ static int
 readdir_long_name(char *z_file_name, struct stat *z_st, char *z_long_name)
 {
     char time[50];
+    const char *mtime = "?";
+    char *tstr = NULL;
     char *ptr = z_long_name, *nl = NULL;
     int mode = z_st->st_mode;
 
@@ -1871,9 +1873,14 @@ readdir_long_name(char *z_file_name, struct stat *z_st, char *z_long_name)
     *ptr++ = ' ';
     *ptr = '\0';
 
-    ctime_r(&z_st->st_mtime, time);
-    if ((nl = strchr(time, '\n'))) {
-        *nl = '\0';
+    tstr = ctime_r(&z_st->st_mtime, time);
+    if (tstr != NULL) {
+        nl = strchr(time, '\n');
+        if (nl != NULL) {
+            *nl = '\0';
+        }
+        /* Skip the day of the week */
+        mtime = time + 4;
     }
     snprintf(ptr,
              MAX_LONG_NAME_LEN - strlen(z_long_name),
@@ -1882,7 +1889,7 @@ readdir_long_name(char *z_file_name, struct stat *z_st, char *z_long_name)
              (int)z_st->st_uid,
              (int)z_st->st_gid,
              (int)z_st->st_size,
-             time + 4,
+             mtime,
              z_file_name);
 
     return SSH_OK;
@@ -1948,6 +1955,8 @@ process_readdir(sftp_client_message client_msg)
             if (lstat(long_path, &st) == 0) {
                 stat_to_filexfer_attrib(&st, &attr);
             } else {
+                /* Build the long name without any file information */
+                ZERO_STRUCT(st);
                 clear_filexfer_attrib(&attr);
             }
 

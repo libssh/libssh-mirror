@@ -1253,6 +1253,92 @@ torture_server_sftp_readdir(void **state)
     assert_ssh_return_code(session, rc);
 }
 
+static void torture_server_sftp_readdir_lstat_failure(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    struct torture_sftp *tsftp = NULL;
+    sftp_session sftp = NULL;
+    ssh_session session = NULL;
+    sftp_file new_file = NULL;
+    sftp_dir dir = NULL;
+    sftp_attributes a = NULL;
+    char tmp_dir[PATH_MAX] = {0};
+    char tmp_file[PATH_MAX] = {0};
+    char link_path[PATH_MAX] = {0};
+    int num_files = 0;
+    int rc;
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    tsftp = s->ssh.tsftp;
+    assert_non_null(tsftp);
+
+    sftp = tsftp->sftp;
+    assert_non_null(sftp);
+
+    snprintf(tmp_dir,
+             sizeof(tmp_dir),
+             "%s/%s/readdir_dir",
+             tss->cwd,
+             tss->temp_dir);
+    rc = sftp_mkdir(sftp, tmp_dir, 0751);
+    assert_ssh_return_code(session, rc);
+
+    rc = snprintf(tmp_file, sizeof(tmp_file), "%s/readdir_file", tmp_dir);
+    assert_true(rc > 0 && rc < (int)sizeof(tmp_file));
+    new_file = sftp_open(sftp, tmp_file, O_WRONLY | O_CREAT, 0700);
+    assert_non_null(new_file);
+    rc = sftp_close(new_file);
+    assert_ssh_return_code(session, rc);
+
+    /* Open the directory through a symlink and remove the symlink, so the
+     * entries are still listed but can not be looked up by their path */
+    snprintf(link_path,
+             sizeof(link_path),
+             "%s/%s/readdir_link",
+             tss->cwd,
+             tss->temp_dir);
+    rc = sftp_symlink(sftp, tmp_dir, link_path);
+    assert_ssh_return_code(session, rc);
+
+    dir = sftp_opendir(sftp, link_path);
+    assert_non_null(dir);
+
+    rc = sftp_unlink(sftp, link_path);
+    assert_int_equal(rc, SSH_OK);
+
+    while ((a = sftp_readdir(sftp, dir))) {
+        if (strcmp(a->name, "readdir_file") == 0) {
+            assert_int_equal(a->flags, 0);
+            assert_string_equal(
+                a->longname,
+                "----------   0 0 0 0 Jan  1 00:00:00 1970 readdir_file");
+        } else if (strcmp(a->name, ".") != 0 && strcmp(a->name, "..") != 0) {
+            /* There is a file we did not create */
+            assert_true(false);
+        }
+
+        num_files++;
+        sftp_attributes_free(a);
+    }
+    assert_int_equal(num_files, 3);
+    rc = sftp_dir_eof(dir);
+    assert_int_equal(rc, 1);
+    rc = sftp_closedir(dir);
+    assert_ssh_return_code(session, rc);
+
+    rc = sftp_unlink(sftp, tmp_file);
+    assert_int_equal(rc, SSH_OK);
+    rc = sftp_rmdir(sftp, tmp_dir);
+    assert_int_equal(rc, SSH_OK);
+}
 
 /* The max number of handles is 256 in sftpserver.h -- keep in sync! */
 #define SFTP_HANDLES 256
@@ -1813,6 +1899,10 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_server_sftp_readdir,
                                         session_setup_sftp,
                                         session_teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_server_sftp_readdir_lstat_failure,
+            session_setup_sftp,
+            session_teardown),
         cmocka_unit_test_setup_teardown(torture_server_sftp_handles_exhaustion,
                                         session_setup_sftp,
                                         session_teardown),
