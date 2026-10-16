@@ -1799,7 +1799,7 @@ int ssh_analyze_banner(ssh_session session, int server)
         char *tmp = NULL;
         unsigned long int major = 0UL;
         unsigned long int minor = 0UL;
-        int off = 0;
+        const char *minor_str = NULL;
 
         /*
          * The banner is typical:
@@ -1818,13 +1818,22 @@ int ssh_analyze_banner(ssh_session session, int server)
                 goto done;
             }
 
+            /* The minor version follows the dot after the major version */
+            if (*tmp != '.') {
+                goto done;
+            }
+
+            /* strtoul() would skip whitespace and accept a sign */
+            minor_str = tmp + 1;
+            if (!isdigit((unsigned char)*minor_str)) {
+                goto done;
+            }
+
             errno = 0;
-            off = major >= 10 ? 11 : 10;
-            minor = strtoul(openssh + off, &tmp, 10);
-            if ((tmp == (openssh + off)) ||
-                ((errno == ERANGE) && (major == ULONG_MAX)) ||
-                ((errno != 0) && (major == 0)) ||
-                (minor > 100)) {
+            minor = strtoul(minor_str, &tmp, 10);
+            if ((tmp == minor_str) ||
+                ((errno == ERANGE) && (minor == ULONG_MAX)) ||
+                ((errno != 0) && (minor == 0)) || (minor > 100)) {
                 /* invalid minor */
                 errno = 0;
                 goto done;

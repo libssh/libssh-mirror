@@ -556,6 +556,36 @@ static void torture_ssh_analyze_banner(void **state) {
     /* OpenSSH banners: Double digit in major version */
     assert_server_banner_accepted("SSH-2.0-OpenSSH_10.0p1");
     assert_int_equal(SSH_VERSION_INT(10, 0, 0), session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_10.2");
+    assert_int_equal(SSH_VERSION_INT(10, 2, 0), session->openssh);
+
+    /* OpenSSH banners: missing minor version results in zero */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_10");
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_10");
+    assert_int_equal(0, session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_10.");
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_10.");
+    assert_int_equal(0, session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_5");
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_5");
+    assert_int_equal(0, session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_10_1");
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_10_1");
+    assert_int_equal(0, session->openssh);
+
+    /* OpenSSH banners: minor not starting with a digit results in zero */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_10. 1");
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_10. 1");
+    assert_int_equal(0, session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_10.+1");
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_10.+1");
+    assert_int_equal(0, session->openssh);
 
     ssh_free(session);
 }
