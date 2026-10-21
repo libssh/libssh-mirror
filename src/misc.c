@@ -1794,6 +1794,7 @@ int ssh_analyze_banner(ssh_session session, int server)
     }
 
     /* Make a best-effort to extract OpenSSH version numbers. */
+    session->openssh = 0;
     openssh = strstr(banner, "OpenSSH");
     if (openssh != NULL) {
         char *tmp = NULL;

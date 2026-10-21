@@ -587,6 +587,28 @@ static void torture_ssh_analyze_banner(void **state) {
     assert_server_banner_accepted("SSH-2.0-OpenSSH_10.+1");
     assert_int_equal(0, session->openssh);
 
+    /*
+     * A new banner without a valid OpenSSH version clears the previous one.
+     * The second banner of each case is analyzed on the same session, so it
+     * cannot use the assert_*_banner_accepted() macros, which free the
+     * session and start from a new one.
+     */
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_10.2");
+    assert_int_equal(SSH_VERSION_INT(10, 2, 0), session->openssh);
+    session->serverbanner = strdup("SSH-2.0-OpenSSH_10");
+    assert_non_null(session->serverbanner);
+    assert_banner_accepted(0 /*client*/);
+    assert_int_equal(0, session->openssh);
+    SAFE_FREE(session->serverbanner);
+
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_5.9p1");
+    assert_int_equal(SSH_VERSION_INT(5, 9, 0), session->openssh);
+    session->clientbanner = strdup("SSH-2.0-dropbear_2025.88");
+    assert_non_null(session->clientbanner);
+    assert_banner_accepted(1 /*server*/);
+    assert_int_equal(0, session->openssh);
+    SAFE_FREE(session->clientbanner);
+
     ssh_free(session);
 }
 
