@@ -39,8 +39,7 @@
 #define BLOCKSIZE 4092
 #endif
 
-static z_stream *
-initcompress(ssh_session session, int level)
+static z_stream *initcompress(ssh_session session)
 {
     z_stream *stream = NULL;
     int status;
@@ -50,7 +49,7 @@ initcompress(ssh_session session, int level)
         return NULL;
     }
 
-    status = deflateInit(stream, level);
+    status = deflateInit2(stream, Z_BEST_SPEED, Z_DEFLATED, 15, 8, Z_HUFFMAN_ONLY);
     if (status != Z_OK) {
         deflateEnd(stream);
         SAFE_FREE(stream);
@@ -64,8 +63,7 @@ initcompress(ssh_session session, int level)
     return stream;
 }
 
-static ssh_buffer
-gzip_compress(ssh_session session, ssh_buffer source, int level)
+static ssh_buffer gzip_compress(ssh_session session, ssh_buffer source)
 {
     struct ssh_crypto_struct *crypto = NULL;
     z_stream *zout = NULL;
@@ -82,7 +80,7 @@ gzip_compress(ssh_session session, ssh_buffer source, int level)
     }
     zout = crypto->compress_out_ctx;
     if (zout == NULL) {
-        zout = crypto->compress_out_ctx = initcompress(session, level);
+        zout = crypto->compress_out_ctx = initcompress(session);
         if (zout == NULL) {
             return NULL;
         }
@@ -124,7 +122,7 @@ compress_buffer(ssh_session session, ssh_buffer buf)
     ssh_buffer dest = NULL;
     int rv;
 
-    dest = gzip_compress(session, buf, session->opts.compressionlevel);
+    dest = gzip_compress(session, buf);
     if (dest == NULL) {
         return -1;
     }

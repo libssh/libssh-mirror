@@ -413,6 +413,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest)
     new->opts.port                  = src->opts.port;
     new->opts.timeout               = src->opts.timeout;
     new->opts.timeout_usec          = src->opts.timeout_usec;
+    /* NO-OP due to side channel leakage fix */
     new->opts.compressionlevel      = src->opts.compressionlevel;
     new->opts.StrictHostKeyChecking = src->opts.StrictHostKeyChecking;
     new->opts.gss_delegate_creds    = src->opts.gss_delegate_creds;
@@ -873,8 +874,7 @@ static enum ssh_config_opcode_e ssh_opt_type_to_opcode(enum ssh_options_e type)
  *                algorithm name if needed ("zlib","zlib@openssh.com","none").
  *
  *              - SSH_OPTIONS_COMPRESSION_LEVEL:
- *                Set the compression level to use for zlib functions. (int,
- *                value from 1 to 9, 9 being the most efficient but slower).
+ *                Deprecated
  *
  *              - SSH_OPTIONS_STRICTHOSTKEYCHECK:
  *                Set the parameter StrictHostKeyChecking to control how
@@ -1748,17 +1748,6 @@ int ssh_options_set(ssh_session session,
                 return -1;
             break;
         case SSH_OPTIONS_COMPRESSION_LEVEL:
-            if (value == NULL) {
-                ssh_set_error_invalid(session);
-                return -1;
-            } else {
-                int *x = (int *)value;
-                if (*x < 1 || *x > 9) {
-                    ssh_set_error_invalid(session);
-                    return -1;
-                }
-                session->opts.compressionlevel = *x & 0xff;
-            }
             break;
         case SSH_OPTIONS_STRICTHOSTKEYCHECK:
             if (value == NULL) {
