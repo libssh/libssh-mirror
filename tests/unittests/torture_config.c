@@ -4806,6 +4806,63 @@ static void torture_config_match_pattern(void **state)
     assert_int_equal(rv, 0);
 }
 
+static void torture_config_match_group(void **state)
+{
+    int rv = 0;
+
+    (void)state;
+
+    /* NULL arguments are correctly handled */
+    rv = match_group(NULL, "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+    rv = match_group("rsa-sha2-512", NULL);
+    assert_int_equal(rv, 0);
+
+    /* Exact match: an object matches only when it equals a group element */
+    rv = match_group("ssh-ed25519,rsa-sha2-512,rsa-sha2-256", "rsa-sha2-512");
+    assert_int_equal(rv, 1);
+    rv = match_group("rsa-sha2-512", "rsa-sha2-512");
+    assert_int_equal(rv, 1);
+    rv = match_group("ssh-ed25519,rsa-sha2-512", "rsa-sha2-256");
+    assert_int_equal(rv, 0);
+
+    /* No partial match: a longer object or a longer element does not match */
+    rv = match_group("ssh-ed25519,rsa-sha2-512",
+                     "ssh-ed25519-cert-v01@openssh.com");
+    assert_int_equal(rv, 0);
+    rv = match_group("rsa-sha2-512-cert-v01@openssh.com,ssh-ed25519",
+                     "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+
+    /* '*', '?' and '!' are ordinary characters: no wildcards, no negation */
+    rv = match_group("*,ssh-ed25519", "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+    rv = match_group("?,ssh-ed25519", "x");
+    assert_int_equal(rv, 0);
+    rv = match_group("!ssh-ed25519,ssh-ed25519", "ssh-ed25519");
+    assert_int_equal(rv, 1);
+    rv = match_group("!ssh-ed25519,rsa-sha2-512", "!ssh-ed25519");
+    assert_int_equal(rv, 1);
+
+    /* Empty element handling: empty group, leading, doubled or trailing ',' */
+    rv = match_group(",curve25519-sha256", "kex-strict-s-v00@openssh.com");
+    assert_int_equal(rv, 0);
+    rv = match_group("", "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+    rv = match_group(",", "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+    rv = match_group("ssh-ed25519,", "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+    rv = match_group("ssh-ed25519,,rsa-sha2-256", "rsa-sha2-512");
+    assert_int_equal(rv, 0);
+    rv = match_group(",ssh-ed25519", "");
+    assert_int_equal(rv, 1);
+    rv = match_group(",ext-info-c", "ext-info-c");
+    assert_int_equal(rv, 1);
+    rv = match_group("ssh-ed25519,,rsa-sha2-256", "rsa-sha2-256");
+    assert_int_equal(rv, 1);
+}
+
 /* Identity file can be specified multiple times in the configuration
  */
 static void torture_config_identity(void **state)
@@ -5850,6 +5907,9 @@ int torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_match_pattern,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_match_group,
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_identity,
