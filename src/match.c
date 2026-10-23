@@ -589,6 +589,7 @@ int match_group(const char *group, const char *object)
 {
     const char *a = NULL;
     const char *z = NULL;
+    int cmp;
 
     if (group == NULL || object == NULL) {
         return 0;
@@ -598,12 +599,14 @@ int match_group(const char *group, const char *object)
     do {
         a = strchr(z, ',');
         if (a == NULL) {
-            if (strcmp(z, object) == 0) {
+            cmp = strcmp(z, object);
+            if (cmp == 0) {
                 return 1;
             }
             return 0;
         } else {
-            if (strncmp(z, object, a - z) == 0) {
+            cmp = strncmp(z, object, a - z);
+            if (cmp == 0 && object[a - z] == '\0') {
                 return 1;
             }
         }
