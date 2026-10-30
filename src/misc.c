@@ -1793,6 +1793,9 @@ int ssh_analyze_banner(ssh_session session, int server)
             return -1;
     }
 
+    /* Clear the Cisco scp quirk a previous banner may have set */
+    session->flags &= ~SSH_SESSION_FLAG_SCP_QUOTING_BROKEN;
+
     /* Make a best-effort to extract OpenSSH version numbers. */
     session->openssh = 0;
     openssh = strstr(banner, "OpenSSH");

@@ -609,6 +609,15 @@ static void torture_ssh_analyze_banner(void **state) {
     assert_int_equal(0, session->openssh);
     SAFE_FREE(session->clientbanner);
 
+    /* A new banner not from Cisco clears the scp quoting quirk */
+    assert_server_banner_accepted("SSH-2.0-Cisco-1.25");
+    assert_true(session->flags & SSH_SESSION_FLAG_SCP_QUOTING_BROKEN);
+    session->serverbanner = strdup("SSH-2.0-OpenSSH_10.2");
+    assert_non_null(session->serverbanner);
+    assert_banner_accepted(0 /*client*/);
+    assert_false(session->flags & SSH_SESSION_FLAG_SCP_QUOTING_BROKEN);
+    SAFE_FREE(session->serverbanner);
+
     ssh_free(session);
 }
 
