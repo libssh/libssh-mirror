@@ -1090,6 +1090,98 @@ static int ssh_config_get_pubkey_auth(char **str, int notfound)
 
     return ssh_config_get_token_value(str, pubkey_auth_map, notfound);
 }
+
+#define SSH_CONFIG_LOG_VALUE_MAX 256
+
+/*
+ * Replace non-printable bytes so config values cannot inject terminal
+ * control sequences into logs.
+ */
+static void
+ssh_config_sanitize_log_value(const char *value, char *buf, size_t buflen)
+{
+    size_t i;
+
+    strlcpy(buf, value, buflen);
+
+    for (i = 0; buf[i] != '\0'; i++) {
+        unsigned char c = (unsigned char)buf[i];
+
+        if (c < 0x20 || c > 0x7E) {
+            buf[i] = '?';
+        }
+    }
+}
+
+/* Log an unusable algorithm list at INFO; parsing continues. */
+static void ssh_config_log_unusable_algo(unsigned int count,
+                                         bool is_cli,
+                                         const char *keyword,
+                                         const char *value)
+{
+    char prefix[32] = "";
+    char safe[SSH_CONFIG_LOG_VALUE_MAX];
+
+    /* The command line has no line number. */
+    if (!is_cli) {
+        snprintf(prefix, sizeof(prefix), "line %u: ", count);
+    }
+
+    ssh_config_sanitize_log_value(value, safe, sizeof(safe));
+
+    SSH_LOG(SSH_LOG_INFO,
+            "%s%s: no supported algorithm in '%s'; ignoring this setting",
+            prefix,
+            keyword,
+            safe);
+}
+
+/*
+ * Return true and log at WARN when the setter failed for a real error.
+ * An SSH_REQUEST_DENIED (unusable list) is tolerated: clear it from the
+ * session and return false so parsing continues.
+ */
+static bool ssh_config_algo_failed(ssh_session session,
+                                   int rv,
+                                   bool is_cli,
+                                   unsigned int count,
+                                   const char *keyword)
+{
+    char prefix[32] = "";
+    char safe[SSH_CONFIG_LOG_VALUE_MAX];
+    const char *error = NULL;
+
+    if (rv == SSH_OK) {
+        return false;
+    }
+
+    if (ssh_get_error_code(session) == SSH_REQUEST_DENIED) {
+        /*
+         * Unusable list: tolerated and ignored by the caller, so do not
+         * leave the setter's error on the session.
+         */
+        ssh_reset_error(session);
+        return false;
+    }
+
+    /*
+     * Any error other than SSH_REQUEST_DENIED is a real failure, not an
+     * unusable list. This includes OOM: ssh_options_set_algo() reports
+     * ENOMEM as SSH_FATAL, so the config parse fails instead of
+     * continuing.
+     */
+    error = ssh_get_error(session);
+
+    if (!is_cli) {
+        snprintf(prefix, sizeof(prefix), "line %u: ", count);
+    }
+
+    ssh_config_sanitize_log_value(error, safe, sizeof(safe));
+    SSH_LOG(SSH_LOG_WARN, "%s%s: %s", prefix, keyword, safe);
+
+    return true;
+}
+
 #define CHECK_COND_OR_FAIL(cond, error_message)                \
     if ((cond)) {                                              \
         SSH_LOG(SSH_LOG_DEBUG,                                 \
@@ -1638,16 +1730,48 @@ static int ssh_config_parse_line_internal(ssh_session session,
       p = ssh_config_get_str_tok(&s, NULL);
       CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
       if (*parsing) {
-          ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, p);
-          ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, p);
+          int sc_rv;
+
+          rv = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, p);
+          if (ssh_config_algo_failed(session, rv, is_cli, count, keyword)) {
+              SAFE_FREE(x);
+              return SSH_ERROR;
+          }
+
+          sc_rv = ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, p);
+          if (ssh_config_algo_failed(session, sc_rv, is_cli, count, keyword)) {
+              SAFE_FREE(x);
+              return SSH_ERROR;
+          }
+
+          /* Report only when neither direction accepts the list. */
+          if (rv != SSH_OK && sc_rv != SSH_OK) {
+              ssh_config_log_unusable_algo(count, is_cli, keyword, p);
+          }
       }
       break;
     case SOC_MACS:
       p = ssh_config_get_str_tok(&s, NULL);
       CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
       if (*parsing) {
-          ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, p);
-          ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, p);
+          int sc_rv;
+
+          rv = ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, p);
+          if (ssh_config_algo_failed(session, rv, is_cli, count, keyword)) {
+              SAFE_FREE(x);
+              return SSH_ERROR;
+          }
+
+          sc_rv = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, p);
+          if (ssh_config_algo_failed(session, sc_rv, is_cli, count, keyword)) {
+              SAFE_FREE(x);
+              return SSH_ERROR;
+          }
+
+          /* Report only when neither direction accepts the list. */
+          if (rv != SSH_OK && sc_rv != SSH_OK) {
+              ssh_config_log_unusable_algo(count, is_cli, keyword, p);
+          }
       }
       break;
     case SOC_COMPRESSION:
@@ -1781,21 +1905,44 @@ static int ssh_config_parse_line_internal(ssh_session session,
         p = ssh_config_get_str_tok(&s, NULL);
         CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
         if (*parsing) {
-            ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, p);
+            rv = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, p);
+            if (ssh_config_algo_failed(session, rv, is_cli, count, keyword)) {
+                SAFE_FREE(x);
+                return SSH_ERROR;
+            }
+            if (rv != SSH_OK) {
+                ssh_config_log_unusable_algo(count, is_cli, keyword, p);
+            }
         }
         break;
     case SOC_PUBKEYACCEPTEDKEYTYPES:
         p = ssh_config_get_str_tok(&s, NULL);
         CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
         if (*parsing) {
-            ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES, p);
+            rv = ssh_options_set(session,
+                                 SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                                 p);
+            if (ssh_config_algo_failed(session, rv, is_cli, count, keyword)) {
+                SAFE_FREE(x);
+                return SSH_ERROR;
+            }
+            if (rv != SSH_OK) {
+                ssh_config_log_unusable_algo(count, is_cli, keyword, p);
+            }
         }
         break;
     case SOC_KEXALGORITHMS:
         p = ssh_config_get_str_tok(&s, NULL);
         CHECK_COND_OR_FAIL(p == NULL, "Missing argument");
         if (*parsing) {
-            ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, p);
+            rv = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, p);
+            if (ssh_config_algo_failed(session, rv, is_cli, count, keyword)) {
+                SAFE_FREE(x);
+                return SSH_ERROR;
+            }
+            if (rv != SSH_OK) {
+                ssh_config_log_unusable_algo(count, is_cli, keyword, p);
+            }
         }
         break;
     case SOC_REKEYLIMIT:

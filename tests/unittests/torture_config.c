@@ -5753,6 +5753,183 @@ static void torture_config_loglevel_not_overridden(void **state)
     assert_int_equal(session->common.log_verbosity, SSH_LOG_TRACE);
 }
 
+/*
+ * ALGO_MARKER must match the message emitted by
+ * ssh_config_log_unusable_algo(): the spy below filters on it.
+ */
+#define ALGO_MARKER  "no supported algorithm"
+#define ALGO_BOGUS   "this-algo-does-not-exist-xyz"
+#define ALGO_BOGUS_A "this-algo-does-not-exist-a"
+#define ALGO_BOGUS_B "this-algo-does-not-exist-b"
+
+/* Log spy: counts messages containing ALGO_MARKER, keeps the last one. */
+static struct {
+    int old_level;
+    int count;
+    int priority; /* of the last marker message */
+    char text[512];
+} algo;
+
+static void algo_log_cb(int priority,
+                        const char *function,
+                        const char *buffer,
+                        void *userdata)
+{
+    (void)function;
+    (void)userdata;
+    if (strstr(buffer, ALGO_MARKER) == NULL) {
+        return;
+    }
+    algo.count++;
+    algo.priority = priority;
+    snprintf(algo.text, sizeof(algo.text), "%s", buffer);
+}
+
+static int setup_algo(void **state)
+{
+    int rc;
+
+    rc = setup(state);
+    if (rc != 0) {
+        return rc;
+    }
+
+    algo.old_level = ssh_get_log_level();
+    algo.count = 0;
+    ssh_set_log_callback(algo_log_cb);
+    ssh_set_log_level(SSH_LOG_INFO);
+
+    return 0;
+}
+
+static int teardown_algo(void **state)
+{
+    ssh_set_log_level(algo.old_level);
+    _ssh_reset_log_cb();
+
+    return teardown(state);
+}
+
+/* Reset the config and the capture, then parse. */
+static int algo_parse(ssh_session session, const char *cfg)
+{
+    torture_reset_config(session);
+    ssh_reset_error(session);
+    algo.count = 0;
+
+    return ssh_config_parse_string(session, cfg);
+}
+
+/* A tolerated unusable list must not leave a stale session error. */
+static void assert_algo_error_clean(ssh_session session)
+{
+    assert_int_equal(ssh_get_error_code(session), SSH_NO_ERROR);
+    assert_string_equal(ssh_get_error(session), "");
+}
+
+/**
+ * @brief unusable algorithm lists log one INFO message each; usable
+ * lists, removal lists and non-matching Host blocks stay silent, and
+ * CLI input only omits the line number
+ */
+static void torture_config_algo_unusable(void **state)
+{
+    static const struct {
+        const char *cfg;
+        const char *expected;
+    } cases[] = {
+        {
+            "KexAlgorithms " ALGO_BOGUS_A "," ALGO_BOGUS_B "\n",
+            "line 1: KexAlgorithms: no supported algorithm in '" ALGO_BOGUS_A
+            "," ALGO_BOGUS_B "'; ignoring this setting",
+        },
+        {
+            "Ciphers " ALGO_BOGUS "\n",
+            "line 1: Ciphers: no supported algorithm in '" ALGO_BOGUS
+            "'; ignoring this setting",
+        },
+        {
+            "MACs " ALGO_BOGUS "\n",
+            "line 1: MACs: no supported algorithm in '" ALGO_BOGUS
+            "'; ignoring this setting",
+        },
+        {
+            "Port 22\nHostKeyAlgorithms " ALGO_BOGUS "\n",
+            "line 2: HostKeyAlgorithms: no supported algorithm in '" ALGO_BOGUS
+            "'; ignoring this setting",
+        },
+        {
+            "PubkeyAcceptedKeyTypes " ALGO_BOGUS "\n",
+            "line 1: PubkeyAcceptedKeyTypes: no supported algorithm in "
+            "'" ALGO_BOGUS "'; ignoring this setting",
+        },
+    };
+    ssh_session session = *state;
+    const char *expected_cli =
+        "KexAlgorithms: no supported algorithm in '" ALGO_BOGUS
+        "'; ignoring this setting";
+    size_t i;
+    int rc;
+
+    /* One INFO message with the exact wording per unusable keyword. */
+    for (i = 0; i < ARRAY_SIZE(cases); i++) {
+        rc = algo_parse(session, cases[i].cfg);
+        assert_ssh_return_code_equal(session, rc, SSH_OK);
+        assert_algo_error_clean(session);
+        assert_int_equal(algo.count, 1);
+        assert_int_equal(algo.priority, SSH_LOG_INFO);
+        assert_non_null(strstr(algo.text, cases[i].expected));
+    }
+
+    /*
+     * A usable name next to a bogus one is accepted without a message.
+     * ("aes256-ctr" is in the default and FIPS cipher lists.)
+     */
+    rc = algo_parse(session, "Ciphers " ALGO_BOGUS ",aes256-ctr\n");
+    assert_ssh_return_code_equal(session, rc, SSH_OK);
+    assert_algo_error_clean(session);
+    assert_int_equal(algo.count, 0);
+
+    /* "-alg" removal lists are accepted without a message. */
+    rc = algo_parse(session, "KexAlgorithms -" ALGO_BOGUS "\n");
+    assert_ssh_return_code_equal(session, rc, SSH_OK);
+    assert_algo_error_clean(session);
+    assert_int_equal(algo.count, 0);
+
+    /* A non-matching Host block: nothing was applied -> no log. */
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_ssh_return_code_equal(session, rc, SSH_OK);
+    rc = algo_parse(session,
+                    "Host nomatch.example\n"
+                    "KexAlgorithms " ALGO_BOGUS "\n");
+    assert_ssh_return_code_equal(session, rc, SSH_OK);
+    assert_algo_error_clean(session);
+    assert_int_equal(algo.count, 0);
+
+    /* CLI input has no line number, so the wording must not say one. */
+    torture_reset_config(session);
+    algo.count = 0;
+    rc = ssh_config_parse_line_cli(session, "KexAlgorithms " ALGO_BOGUS);
+    assert_ssh_return_code_equal(session, rc, SSH_OK); /* still non-fatal */
+    assert_algo_error_clean(session);
+    assert_int_equal(algo.count, 1);
+    assert_int_equal(algo.priority, SSH_LOG_INFO);
+    assert_non_null(strstr(algo.text, expected_cli));
+    assert_null(strstr(algo.text, "line 0"));
+
+    /* Values with terminal control sequences must be sanitized. */
+    rc = algo_parse(session, "Ciphers \x1b]0;fake\x07\x7f\x9b" ALGO_BOGUS "\n");
+    assert_ssh_return_code_equal(session, rc, SSH_OK);
+    assert_algo_error_clean(session);
+    assert_int_equal(algo.count, 1);
+    assert_int_equal(algo.priority, SSH_LOG_INFO);
+    assert_null(strstr(algo.text, "\x1b"));
+    assert_null(strstr(algo.text, "\x07"));
+    assert_null(strstr(algo.text, "\x7f"));
+    assert_null(strstr(algo.text, "\x9b"));
+    assert_non_null(strstr(algo.text, "?]0;fake???" ALGO_BOGUS));
+}
+
 int torture_run_tests(void)
 {
     int rc;
@@ -6029,9 +6206,11 @@ int torture_run_tests(void)
                                         setup,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_identity,
-                                        setup, teardown),
+                                        setup,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_config_identity_override,
-                                        setup, teardown),
+                                        setup,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_config_make_absolute,
                                         setup,
                                         teardown),
@@ -6078,6 +6257,9 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_config_loglevel_not_overridden,
                                         setup,
                                         teardown),
+        cmocka_unit_test_setup_teardown(torture_config_algo_unusable,
+                                        setup_algo,
+                                        teardown_algo),
     };
 
     ssh_init();
