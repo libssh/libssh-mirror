@@ -369,7 +369,9 @@ static void torture_options_set_key_exchange(void **state)
     rc = ssh_options_set(session,
                          SSH_OPTIONS_KEY_EXCHANGE,
                          "unknown-crap@example.com,more-crap@example.com");
-    assert_false(rc == 0);
+    assert_int_equal(rc, SSH_ERROR);
+    assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    assert_non_null(strstr(ssh_get_error(session), "no allowed algorithm"));
 }
 
 static void torture_options_get_key_exchange(void **state)

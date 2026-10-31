@@ -24,6 +24,7 @@
 
 #include "config.h"
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -472,6 +473,9 @@ int ssh_options_set_algo(ssh_session session,
      * as it is. */
     char *p = (char *)list;
 
+    /* Clear errno so ENOMEM means allocation failure (best-effort). */
+    errno = 0;
+
     if (algo < SSH_COMP_C_S) {
         if (list[0] == '+') {
             p = ssh_add_to_default_algos(algo, list+1);
@@ -483,7 +487,15 @@ int ssh_options_set_algo(ssh_session session,
     }
 
     if (p == list) {
-        if (ssh_fips_mode()) {
+        bool fips = ssh_fips_mode();
+
+        /*
+         * ssh_fips_mode() can set errno itself (OpenSSL config probe).
+         * Clear it after the probe, before the allocating filter.
+         */
+        errno = 0;
+
+        if (fips) {
             p = ssh_keep_fips_algos(algo, list);
         } else {
             p = ssh_keep_known_algos(algo, list);
@@ -491,6 +503,11 @@ int ssh_options_set_algo(ssh_session session,
     }
 
     if (p == NULL) {
+        if (errno == ENOMEM) {
+            ssh_set_error_oom(session);
+            return -1;
+        }
+
         ssh_set_error(session, SSH_REQUEST_DENIED,
                 "Setting method: no allowed algorithm for method \"%s\" (%s)",
                 ssh_kex_get_description(algo), list);
