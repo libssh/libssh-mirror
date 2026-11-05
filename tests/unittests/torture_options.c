@@ -2283,6 +2283,75 @@ static void torture_options_getopt(void **state)
 
 }
 
+static void torture_options_getopt_bind_address(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+    const char *argv[] = {EXECUTABLE_NAME,
+                          "-b",
+                          "192.0.2.10",
+                          "example.com",
+                          NULL};
+    int argc = 4;
+
+    rc = ssh_options_getopt(session, &argc, (char **)argv);
+    assert_ssh_return_code(session, rc);
+
+    /* -b and its argument are consumed; the hostname stays in place. */
+    assert_int_equal(argc, 2);
+    assert_string_equal(argv[0], EXECUTABLE_NAME);
+    assert_string_equal(argv[1], "example.com");
+
+    assert_non_null(session->opts.bindaddr);
+    assert_string_equal(session->opts.bindaddr, "192.0.2.10");
+
+    /* Mark the option as seen so config-file BindAddress cannot override it. */
+    assert_int_equal(session->opts.options_seen[SOC_BINDADDRESS], 1);
+
+    /* Verify end-to-end that a config-file BindAddress does not override -b. */
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "example.com");
+    assert_ssh_return_code(session, rc);
+
+    torture_write_file("test_config", "BindAddress 192.0.2.99\n");
+
+    rc = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rc);
+
+    unlink("test_config");
+
+    assert_string_equal(session->opts.bindaddr, "192.0.2.10");
+}
+
+static void torture_options_getopt_bind_address_attached(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+    const char *argv[] = {EXECUTABLE_NAME, "-b192.0.2.11", "example.com", NULL};
+    int argc = 3;
+
+    rc = ssh_options_getopt(session, &argc, (char **)argv);
+    assert_ssh_return_code(session, rc);
+
+    assert_int_equal(argc, 2);
+    assert_string_equal(argv[0], EXECUTABLE_NAME);
+    assert_string_equal(argv[1], "example.com");
+    assert_non_null(session->opts.bindaddr);
+    assert_string_equal(session->opts.bindaddr, "192.0.2.11");
+}
+
+static void torture_options_getopt_bind_address_empty(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+    const char *argv[] = {EXECUTABLE_NAME, "-b", "", NULL};
+    int argc = 3;
+
+    rc = ssh_options_getopt(session, &argc, (char **)argv);
+    assert_ssh_return_code_equal(session, rc, SSH_ERROR);
+    assert_null(session->opts.bindaddr);
+    assert_int_equal(session->opts.options_seen[SOC_BINDADDRESS], 0);
+}
+
 static void torture_options_getopt_o_option(void **state)
 {
     ssh_session session = *state;
@@ -5022,6 +5091,17 @@ torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_options_getopt,
                                         setup,
                                         teardown),
+        cmocka_unit_test_setup_teardown(torture_options_getopt_bind_address,
+                                        setup,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_options_getopt_bind_address_attached,
+            setup,
+            teardown),
+        cmocka_unit_test_setup_teardown(
+            torture_options_getopt_bind_address_empty,
+            setup,
+            teardown),
         cmocka_unit_test_setup_teardown(torture_options_getopt_o_option,
                                         setup,
                                         teardown),

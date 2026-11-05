@@ -2933,6 +2933,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
     char *cipher = NULL;
     char *identity = NULL;
     char *port = NULL;
+    char *bindaddr = NULL;
     char **save = NULL;
     char **tmp = NULL;
     size_t i = 0;
@@ -2960,6 +2961,9 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
             break;
         case 'p':
             port = optarg;
+            break;
+        case 'b':
+            bindaddr = optarg;
             break;
         case 'v':
             verbosity++;
@@ -3090,6 +3094,13 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
 
     if (port != NULL) {
         ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
+    }
+
+    if (bindaddr != NULL) {
+        rv = ssh_options_set(session, SSH_OPTIONS_BINDADDR, bindaddr);
+        if (rv < 0) {
+            return SSH_ERROR;
+        }
     }
 
     return SSH_OK;
