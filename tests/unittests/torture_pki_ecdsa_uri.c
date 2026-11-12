@@ -252,6 +252,8 @@ import_pubkey_without_loading_public_uri(void **state, const char *label)
     ssh_key pubkey = NULL;
     ssh_string pblob = NULL;
 
+    (void)state;
+
     rc = snprintf(uri, sizeof(uri), PRIV_URI_NO_PUB_FMT, label, label);
     assert_int_in_range(rc, 0, sizeof(uri) - 1);
 
@@ -263,13 +265,30 @@ import_pubkey_without_loading_public_uri(void **state, const char *label)
     assert_return_code(rc, errno);
     assert_non_null(privkey);
 
+    /*
+     * If the underlying PKCS#11 token or provider (e.g. Kryoptic or newer
+     * pkcs11-provider) can supply or derive the public key from the private key,
+     * export will succeed. Otherwise, it should fail gracefully without crashing.
+     */
     rc = ssh_pki_export_pubkey_blob(privkey, &pblob);
-    assert_int_not_equal(rc, 0);
-    assert_null(pblob);
+    if (rc == SSH_OK) {
+        assert_non_null(pblob);
+        ssh_string_free(pblob);
+    } else {
+        assert_null(pblob);
+    }
 
     rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
-    assert_int_not_equal(rc, 0);
-    assert_null(pubkey);
+    if (rc == SSH_OK) {
+        assert_non_null(pubkey);
+        rc = ssh_key_is_public(pubkey);
+        assert_int_equal(rc, 1);
+        rc = ssh_key_cmp(pubkey, privkey, SSH_KEY_CMP_PUBLIC);
+        assert_return_code(rc, errno);
+        SSH_KEY_FREE(pubkey);
+    } else {
+        assert_null(pubkey);
+    }
 
     SSH_KEY_FREE(privkey);
 }
@@ -554,7 +573,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_pki_ecdsa_duplicate_then_demote_uri_384),
         cmocka_unit_test(torture_pki_ecdsa_duplicate_then_demote_uri_521),
 
-        /** Expect fail on these negative test cases **/
+        /** Expect fail on this negative test case **/
         cmocka_unit_test(torture_pki_ecdsa_import_pubkey_uri_invalid_configurations),
         cmocka_unit_test(torture_pki_ecdsa_import_pubkey_without_loading_public_uri_256),
         cmocka_unit_test(torture_pki_ecdsa_import_pubkey_without_loading_public_uri_384),
