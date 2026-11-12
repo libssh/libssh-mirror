@@ -528,6 +528,7 @@ int ssh_dh_compute_shared_secret(struct dh_ctx *dh_ctx, int local, int remote,
                                  bignum *dest)
 {
     unsigned char *kstring = NULL;
+    size_t kstring_len = 0;
     int rc;
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     const_bignum pub_key = NULL;
@@ -544,7 +545,8 @@ int ssh_dh_compute_shared_secret(struct dh_ctx *dh_ctx, int local, int remote,
     }
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-    kstring = malloc(DH_size(dh_ctx->keypair[local]));
+    kstring_len = DH_size(dh_ctx->keypair[local]);
+    kstring = malloc(kstring_len);
     if (kstring == NULL) {
         rc = SSH_ERROR;
         goto done;
@@ -591,6 +593,7 @@ int ssh_dh_compute_shared_secret(struct dh_ctx *dh_ctx, int local, int remote,
         rc = SSH_ERROR;
         goto done;
     }
+    kstring_len = klen;
 
     rc = EVP_PKEY_derive(evp_ctx, kstring, &klen);
     if (rc != 1) {
@@ -610,6 +613,7 @@ done:
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
     EVP_PKEY_CTX_free(evp_ctx);
 #endif
-    free(kstring);
+    /* The raw shared secret */
+    BURN_FREE(kstring, kstring_len);
     return rc;
 }

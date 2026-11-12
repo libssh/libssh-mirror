@@ -206,10 +206,10 @@ void crypto_free(struct ssh_crypto_struct *crypto)
         SAFE_FREE(crypto->secret_hash);
     }
     compress_cleanup(crypto);
-    SAFE_FREE(crypto->encryptIV);
-    SAFE_FREE(crypto->decryptIV);
-    SAFE_FREE(crypto->encryptMAC);
-    SAFE_FREE(crypto->decryptMAC);
+    BURN_FREE(crypto->encryptIV, crypto->digest_len);
+    BURN_FREE(crypto->decryptIV, crypto->digest_len);
+    BURN_FREE(crypto->encryptMAC, hmac_digest_len(crypto->out_hmac));
+    BURN_FREE(crypto->decryptMAC, hmac_digest_len(crypto->in_hmac));
     if (crypto->encryptkey != NULL) {
         ssh_burn(crypto->encryptkey, crypto->out_cipher->keysize / 8);
         SAFE_FREE(crypto->encryptkey);

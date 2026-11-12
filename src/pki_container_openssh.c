@@ -200,6 +200,7 @@ static int pki_private_key_decrypt(ssh_string blob,
                      auth_data);
         if (rc != SSH_OK) {
             SAFE_FREE(salt);
+            ssh_burn(passphrase_buffer, sizeof(passphrase_buffer));
             return SSH_ERROR;
         }
         passphrase = passphrase_buffer;
@@ -213,14 +214,16 @@ static int pki_private_key_decrypt(ssh_string blob,
                       key_material_len,
                       rounds);
     SAFE_FREE(salt);
+    ssh_burn(passphrase_buffer, sizeof(passphrase_buffer));
     if (rc < 0){
+        ssh_burn(key_material, sizeof(key_material));
         return SSH_ERROR;
     }
-    ssh_burn(passphrase_buffer, sizeof(passphrase_buffer));
 
     cipher.set_decrypt_key(&cipher,
                            key_material,
                            key_material + cipher.keysize/8);
+    ssh_burn(key_material, sizeof(key_material));
     cipher.decrypt(&cipher,
                    ssh_string_data(blob),
                    ssh_string_data(blob),
@@ -384,7 +387,11 @@ out:
     SAFE_FREE(kdfname);
     SAFE_FREE(kdfoptions);
     SAFE_FREE(pubkey0);
-    SAFE_FREE(privkeys);
+    if (privkeys != NULL) {
+        /* Holds the decrypted private key */
+        ssh_string_burn(privkeys);
+        SAFE_FREE(privkeys);
+    }
     return key;
 }
 
@@ -479,6 +486,7 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
                      0,
                      auth_data);
         if (rc != SSH_OK){
+            ssh_burn(passphrase_buffer, sizeof(passphrase_buffer));
             return SSH_ERROR;
         }
         passphrase = passphrase_buffer;
@@ -491,19 +499,21 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
                       key_material,
                       key_material_len,
                       rounds);
+    ssh_burn(passphrase_buffer, sizeof(passphrase_buffer));
     if (rc < 0){
+        ssh_burn(key_material, sizeof(key_material));
         return SSH_ERROR;
     }
 
     cipher.set_encrypt_key(&cipher,
                            key_material,
                            key_material + cipher.keysize/8);
+    ssh_burn(key_material, sizeof(key_material));
     cipher.encrypt(&cipher,
                    ssh_buffer_get(privkey_buffer),
                    ssh_buffer_get(privkey_buffer),
                    ssh_buffer_get_len(privkey_buffer));
     ssh_cipher_clear(&cipher);
-    ssh_burn(passphrase_buffer, sizeof(passphrase_buffer));
 
     return SSH_OK;
 }

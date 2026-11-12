@@ -2034,12 +2034,12 @@ error:
     ssh_string_burn(k_string);
     SSH_STRING_FREE(k_string);
     if (rc != 0) {
-        free(IV_cli_to_srv);
-        free(IV_srv_to_cli);
-        free(enckey_cli_to_srv);
-        free(enckey_srv_to_cli);
-        free(intkey_cli_to_srv);
-        free(intkey_srv_to_cli);
+        BURN_FREE(IV_cli_to_srv, IV_len);
+        BURN_FREE(IV_srv_to_cli, IV_len);
+        BURN_FREE(enckey_cli_to_srv, enckey_cli_to_srv_len);
+        BURN_FREE(enckey_srv_to_cli, enckey_srv_to_cli_len);
+        BURN_FREE(intkey_cli_to_srv, intkey_cli_to_srv_len);
+        BURN_FREE(intkey_srv_to_cli, intkey_srv_to_cli_len);
     }
 
     return rc;
