@@ -2017,11 +2017,16 @@ int ssh_timeout_update(struct ssh_timestamp *ts, int timeout)
  */
 void burn_free(void *ptr, size_t len)
 {
-    if (ptr == NULL || len == 0) {
+    if (ptr == NULL) {
         return;
     }
 
-    ssh_burn(ptr, len);
+    /* BURN_FREE() clears the pointer, so always free it, even when there is
+     * nothing to wipe (e.g. a zero-length buffer such as the MAC key with no
+     * MAC, or a signature reported with zero length) */
+    if (len > 0) {
+        ssh_burn(ptr, len);
+    }
     free(ptr);
 }
 
