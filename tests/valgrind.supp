@@ -355,19 +355,6 @@
 }
 
 
-## sk-dummy.so
-# The sk-dummy.so enroll function allocates 1-byte memory for the signature, but marks the signature length as 0.
-# Since, we use burn_free to free the signature, it skips the freeing because the size is 0, which results in a memory leak.
-{
-   sk-dummy.so memory leak in sk_enroll
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:calloc
-   fun:sk_enroll
-   fun:pki_sk_enroll_key
-   ...
-}
-
 
 {
    malloc inside expand_hostname
