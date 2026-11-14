@@ -666,7 +666,9 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
  *                          entry structure. The user needs to free the memory
  *                          using SSH_KNOWNHOSTS_ENTRY_FREE().
  *
- * @return SSH_OK on success, SSH_ERROR otherwise.
+ * @return SSH_OK    on success,
+ *         SSH_AGAIN on host pattern mismatch or unknown key type,
+ *         SSH_ERROR otherwise.
  */
 int ssh_known_hosts_parse_line(const char *hostname,
                                const char *line,
@@ -784,7 +786,7 @@ int ssh_known_hosts_parse_line(const char *hostname,
     key_type = ssh_key_type_from_name(p);
     if (key_type == SSH_KEYTYPE_UNKNOWN) {
         SSH_LOG(SSH_LOG_TRACE, "key type '%s' unknown!", p);
-        rc = SSH_ERROR;
+        rc = SSH_AGAIN;
         goto out;
     }
 
