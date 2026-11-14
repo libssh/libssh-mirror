@@ -26,6 +26,11 @@
 #define LOCALHOST_HASHED_ED25519 "|1|ayWjmTf9mYgj7PuQNVOa7Lqkj5s=|hkbEh8FN6IkLo6t6GQGuBwamgsM= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
 #define LOCALHOST_PORT_WILDCARD "[localhost]:* ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
 #define LOCALHOST_STANDARD_PORT "[localhost]:22 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
+/* A key type libssh does not know, like ssh-mldsa44-ed25519 that OpenSSH
+ * records with UpdateHostKeys. The key data is never decoded. */
+#define LOCALHOST_UNKNOWN_TYPE "localhost unknown-type@libssh.org AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
+#define LOCALHOST_ED25519_KEY "AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
+#define OTHER_ED25519_KEY "AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+BU6Nh3PmAiqX"
 
 #define TMP_FILE_NAME "/tmp/known_hosts_XXXXXX"
 
@@ -173,6 +178,25 @@ close_fp:
     fclose(fp);
 
     return rc;
+}
+
+/* Same entries as setup_knownhosts_file(), after a line with an unknown key
+ * type for the same host */
+static int setup_knownhosts_file_unknown_type(void **state)
+{
+    char *tmp_file = NULL;
+
+    tmp_file = torture_create_temp_file(TMP_FILE_NAME);
+    assert_non_null(tmp_file);
+
+    *state = tmp_file;
+
+    torture_write_file(tmp_file,
+                       LOCALHOST_UNKNOWN_TYPE "\n"
+                       LOCALHOST_PATTERN_ED25519 "\n"
+                       LOCALHOST_RSA_LINE "\n");
+
+    return 0;
 }
 
 static int teardown_knownhosts_file(void **state)
@@ -357,6 +381,28 @@ static void torture_knownhosts_parse_line_hashed_ed25519(void **state) {
     SSH_KNOWNHOSTS_ENTRY_FREE(entry);
 }
 
+static void torture_knownhosts_parse_line_unknown_type(void **state)
+{
+    struct ssh_knownhosts_entry *entry = NULL;
+    int rc;
+
+    (void) state;
+
+    /* The line is skipped like one for another host, not an error */
+    rc = ssh_known_hosts_parse_line("localhost",
+                                    LOCALHOST_UNKNOWN_TYPE,
+                                    &entry);
+    assert_int_equal(rc, SSH_AGAIN);
+    assert_null(entry);
+
+    /* Skipping the line even if we don't care about hostname matching */
+    rc = ssh_known_hosts_parse_line(NULL,
+                                    LOCALHOST_UNKNOWN_TYPE,
+                                    &entry);
+    assert_int_equal(rc, SSH_AGAIN);
+    assert_null(entry);
+}
+
 static void torture_knownhosts_read_file(void **state)
 {
     const char *knownhosts_file = *state;
@@ -400,6 +446,54 @@ static void torture_knownhosts_read_file(void **state)
         SSH_KNOWNHOSTS_ENTRY_FREE(entry);
     }
     ssh_list_free(entry_list);
+}
+
+/* Server key verification (what ssh_session_is_known_server() does) must
+ * still find the known key after a line with an unknown key type */
+static void torture_knownhosts_check_server_key(void **state)
+{
+    const char *knownhosts_file = *state;
+    struct ssh_knownhosts_entry *entry = NULL;
+    enum ssh_known_hosts_e found;
+    ssh_key server_key = NULL;
+    ssh_key other_key = NULL;
+    int rc;
+
+    rc = ssh_pki_import_pubkey_base64(LOCALHOST_ED25519_KEY,
+                                      SSH_KEYTYPE_ED25519,
+                                      &server_key);
+    assert_int_equal(rc, SSH_OK);
+
+    found = ssh_known_hosts_check_server_key("localhost",
+                                             knownhosts_file,
+                                             server_key,
+                                             &entry);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+    assert_non_null(entry);
+    assert_int_equal(ssh_key_type(entry->publickey), SSH_KEYTYPE_ED25519);
+    SSH_KNOWNHOSTS_ENTRY_FREE(entry);
+
+    /* A different key of a known type is still reported as changed */
+    rc = ssh_pki_import_pubkey_base64(OTHER_ED25519_KEY,
+                                      SSH_KEYTYPE_ED25519,
+                                      &other_key);
+    assert_int_equal(rc, SSH_OK);
+
+    found = ssh_known_hosts_check_server_key("localhost",
+                                             knownhosts_file,
+                                             other_key,
+                                             NULL);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_CHANGED);
+
+    /* Other hosts are still unknown */
+    found = ssh_known_hosts_check_server_key("wurstbrot",
+                                             knownhosts_file,
+                                             server_key,
+                                             NULL);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_UNKNOWN);
+
+    SSH_KEY_FREE(other_key);
+    SSH_KEY_FREE(server_key);
 }
 
 static void torture_knownhosts_get_algorithms_names(void **state)
@@ -785,14 +879,27 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_knownhosts_parse_line_standard_port),
         cmocka_unit_test(torture_knownhosts_parse_line_pattern_ed25519),
         cmocka_unit_test(torture_knownhosts_parse_line_hashed_ed25519),
+        cmocka_unit_test(torture_knownhosts_parse_line_unknown_type),
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
                                         setup_knownhosts_file_duplicate,
                                         teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
+                                        setup_knownhosts_file_unknown_type,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_check_server_key,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_check_server_key,
+                                        setup_knownhosts_file_unknown_type,
+                                        teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_get_algorithms_names,
                                         setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_get_algorithms_names,
+                                        setup_knownhosts_file_unknown_type,
                                         teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_get_algorithms_names_unsupported,
                                         setup_knownhosts_file_unsupported_type,
@@ -805,11 +912,17 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
+                                        setup_knownhosts_file_unknown_type,
+                                        teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists_global,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms,
                                         setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms,
+                                        setup_knownhosts_file_unknown_type,
                                         teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms_global,
                                         setup_knownhosts_file,
