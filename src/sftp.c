@@ -81,20 +81,20 @@ static void sftp_ext_free(sftp_ext ext)
         return;
     }
 
-    if (ext->count > 0) {
-        if (ext->name != NULL) {
-            for (i = 0; i < ext->count; i++) {
-                SAFE_FREE(ext->name[i]);
-            }
-            SAFE_FREE(ext->name);
+    /* The arrays can be allocated while count is still 0 (when growing the
+     * second one failed in sftp_init()) */
+    if (ext->name != NULL) {
+        for (i = 0; i < ext->count; i++) {
+            SAFE_FREE(ext->name[i]);
         }
+        SAFE_FREE(ext->name);
+    }
 
-        if (ext->data != NULL) {
-            for (i = 0; i < ext->count; i++) {
-                SAFE_FREE(ext->data[i]);
-            }
-            SAFE_FREE(ext->data);
+    if (ext->data != NULL) {
+        for (i = 0; i < ext->count; i++) {
+            SAFE_FREE(ext->data[i]);
         }
+        SAFE_FREE(ext->data);
     }
 
     SAFE_FREE(ext);
@@ -529,6 +529,8 @@ int sftp_init(sftp_session sftp)
                 "SFTP server extension: %s, version: %s",
                 ext_name, ext_data);
 
+        /* Grow both arrays before storing the new entry, so that on failure
+         * the strings are not owned by the arrays yet */
         count++;
         tmp = realloc(sftp->ext->name, count * sizeof(char *));
         if (tmp == NULL) {
@@ -538,8 +540,6 @@ int sftp_init(sftp_session sftp)
             sftp_set_error(sftp, SSH_FX_FAILURE);
             return -1;
         }
-
-        tmp[count - 1] = ext_name;
         sftp->ext->name = tmp;
 
         tmp = realloc(sftp->ext->data, count * sizeof(char *));
@@ -550,10 +550,10 @@ int sftp_init(sftp_session sftp)
             sftp_set_error(sftp, SSH_FX_FAILURE);
             return -1;
         }
-
-        tmp[count - 1] = ext_data;
         sftp->ext->data = tmp;
 
+        sftp->ext->name[count - 1] = ext_name;
+        sftp->ext->data[count - 1] = ext_data;
         sftp->ext->count = count;
 
         rc = ssh_buffer_unpack(packet->payload, "s", &ext_name);
