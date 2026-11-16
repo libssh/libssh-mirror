@@ -778,6 +778,7 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path)
                 dir = calloc(1, sizeof(struct sftp_dir_struct));
                 if (dir == NULL) {
                     ssh_set_error_oom(sftp->session);
+                    SSH_STRING_FREE(file->handle);
                     free(file);
                     return NULL;
                 }
@@ -785,7 +786,9 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path)
                 dir->sftp = sftp;
                 dir->name = strdup(path);
                 if (dir->name == NULL) {
+                    ssh_set_error_oom(sftp->session);
                     SAFE_FREE(dir);
+                    SSH_STRING_FREE(file->handle);
                     SAFE_FREE(file);
                     return NULL;
                 }
