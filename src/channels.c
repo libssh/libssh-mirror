@@ -682,6 +682,8 @@ SSH_PACKET_CALLBACK(channel_rcv_data)
 
     data = ssh_string_data(str);
     if (channel_default_bufferize(channel, data, len, is_stderr) < 0) {
+        session->session_state = SSH_SESSION_STATE_ERROR;
+
         SSH_STRING_FREE(str);
 
         return SSH_PACKET_USED;
@@ -1051,10 +1053,10 @@ int channel_default_bufferize(ssh_channel channel,
             }
         }
 
+        /* On failure the buffer is unchanged. Keep it: the data already
+         * buffered is still valid and the readers expect the buffer */
         if (ssh_buffer_add_data(channel->stdout_buffer, data, len) < 0) {
             ssh_set_error_oom(session);
-            SSH_BUFFER_FREE(channel->stdout_buffer);
-            channel->stdout_buffer = NULL;
             return -1;
         }
     } else {
@@ -1067,10 +1069,10 @@ int channel_default_bufferize(ssh_channel channel,
             }
         }
 
+        /* On failure the buffer is unchanged. Keep it: the data already
+         * buffered is still valid and the readers expect the buffer */
         if (ssh_buffer_add_data(channel->stderr_buffer, data, len) < 0) {
             ssh_set_error_oom(session);
-            SSH_BUFFER_FREE(channel->stderr_buffer);
-            channel->stderr_buffer = NULL;
             return -1;
         }
     }

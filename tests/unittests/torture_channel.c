@@ -179,6 +179,50 @@ static void torture_channel_open_zero_maxpacket(void **state)
         "(must be authenticated)");
 }
 
+/*
+ * When adding data to a channel buffer failed, the buffer was freed and set
+ * to NULL, discarding the data already buffered, and the next
+ * ssh_channel_read() dereferenced the NULL buffer (found by the sftp client
+ * fuzzer with allocation failures).
+ */
+static void torture_channel_bufferize_failure(void **state)
+{
+    ssh_session session = NULL;
+    ssh_channel channel = NULL;
+    char data[] = "hello";
+    int is_stderr;
+    int rc;
+
+    (void)state;
+
+    session = ssh_new();
+    assert_non_null(session);
+    session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
+    channel = ssh_channel_new(session);
+    assert_non_null(channel);
+    channel->state = SSH_CHANNEL_STATE_OPEN;
+
+    for (is_stderr = 0; is_stderr <= 1; is_stderr++) {
+        ssh_buffer buffer = NULL;
+
+        rc = channel_default_bufferize(channel, data, 5, is_stderr);
+        assert_int_equal(rc, 0);
+
+        /* Larger than the maximum buffer size: adding the data fails
+         * without allocating anything */
+        rc = channel_default_bufferize(channel, data, 0x10000001, is_stderr);
+        assert_int_equal(rc, -1);
+
+        buffer = is_stderr ? channel->stderr_buffer : channel->stdout_buffer;
+        assert_non_null(buffer);
+        /* The data buffered before the failure is kept */
+        assert_int_equal(ssh_buffer_get_len(buffer), 5);
+        assert_memory_equal(ssh_buffer_get(buffer), data, 5);
+    }
+
+    ssh_free(session);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -187,6 +231,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_channel_open_conf),
         cmocka_unit_test(torture_channel_open_conf_zero_maxpacket),
         cmocka_unit_test(torture_channel_open_zero_maxpacket),
+        cmocka_unit_test(torture_channel_bufferize_failure),
     };
 
     ssh_init();
