@@ -662,7 +662,7 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
  * @param[in]  line         The line to compare and parse if we have a hostname
  *                          match.
  *
- * @param[in]  entry        A pointer to store the allocated known_hosts
+ * @param[out] entry        A pointer to store the allocated known_hosts
  *                          entry structure. The user needs to free the memory
  *                          using SSH_KNOWNHOSTS_ENTRY_FREE().
  *
@@ -682,6 +682,11 @@ int ssh_known_hosts_parse_line(const char *hostname,
     enum ssh_keytypes_e key_type;
     int match = 0;
     int rc = SSH_OK;
+
+    if (entry == NULL) {
+        return SSH_ERROR;
+    }
+    *entry = NULL;
 
     known_host = strdup(line);
     if (known_host == NULL) {
