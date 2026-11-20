@@ -844,8 +844,22 @@ static void torture_options_get_host(void **state)
 static void torture_options_set_port(void **state)
 {
     ssh_session session = *state;
+    static const struct {
+        const char *value;
+        const char *error;
+    } bad_ports[] = {
+        {"23abc", "Invalid port number: 23abc"},
+        {"five", "Invalid port number: five"},
+        {"", "Invalid argument in ssh_options_set"},
+        {NULL, "Invalid argument in ssh_options_set"},
+        {"0", "The provided port number (0) is negative or zero"},
+        {"-1", "The provided port number (-1) is negative or zero"},
+        {"65536", "The provided port number (65536) is too large"},
+        {"70000", "The provided port number (70000) is too large"},
+    };
     int rc;
     unsigned int port = 42;
+    size_t i;
 
     rc = ssh_options_set(session, SSH_OPTIONS_PORT, &port);
     assert_true(rc == 0);
@@ -853,14 +867,6 @@ static void torture_options_set_port(void **state)
 
     rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "23");
     assert_true(rc == 0);
-    assert_true(session->opts.port == 23);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "23abc");
-    assert_true(rc == -1);
-    assert_true(session->opts.port == 23);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "five");
-    assert_true(rc == -1);
     assert_true(session->opts.port == 23);
 
     port = 65535;
@@ -872,12 +878,17 @@ static void torture_options_set_port(void **state)
     assert_true(rc == 0);
     assert_true(session->opts.port == 65535);
 
+    for (i = 0; i < ARRAY_SIZE(bad_ports); i++) {
+        ssh_reset_error(session);
+        rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, bad_ports[i].value);
+        assert_int_equal(rc, -1);
+        assert_int_equal(session->opts.port, 65535);
+        assert_int_equal(ssh_get_error_code(session), SSH_FATAL);
+        assert_string_equal(ssh_get_error(session), bad_ports[i].error);
+    }
+
     port = 65536;
     rc = ssh_options_set(session, SSH_OPTIONS_PORT, &port);
-    assert_true(rc == -1);
-    assert_true(session->opts.port == 65535);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "65536");
     assert_true(rc == -1);
     assert_true(session->opts.port == 65535);
 
@@ -886,16 +897,8 @@ static void torture_options_set_port(void **state)
     assert_true(rc == -1);
     assert_true(session->opts.port == 65535);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "-1");
-    assert_true(rc == -1);
-    assert_true(session->opts.port == 65535);
-
     port = 70000;
     rc = ssh_options_set(session, SSH_OPTIONS_PORT, &port);
-    assert_true(rc == -1);
-    assert_true(session->opts.port == 65535);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "70000");
     assert_true(rc == -1);
     assert_true(session->opts.port == 65535);
 
@@ -2350,6 +2353,48 @@ static void torture_options_getopt_bind_address_empty(void **state)
     assert_ssh_return_code_equal(session, rc, SSH_ERROR);
     assert_null(session->opts.bindaddr);
     assert_int_equal(session->opts.options_seen[SOC_BINDADDRESS], 0);
+}
+
+static void torture_options_getopt_bad_port(void **state)
+{
+    ssh_session session = *state;
+    static const struct {
+        const char *value;
+        const char *error;
+    } bad_ports[] = {
+        {"notaport", "Invalid port number: notaport"},
+        {"99999", "The provided port number (99999) is too large"},
+        {"", "Invalid argument in ssh_options_set"},
+    };
+    size_t i;
+
+    for (i = 0; i < ARRAY_SIZE(bad_ports); i++) {
+        char exe[] = EXECUTABLE_NAME;
+        char option[] = "-p";
+        char port[16];
+        char host[] = "example.com";
+        char *argv[] = {exe, option, port, host, NULL};
+        int argc = (int)(sizeof(argv) / sizeof(argv[0])) - 1;
+        int rc;
+
+        snprintf(port, sizeof(port), "%s", bad_ports[i].value);
+
+        /* Seed a non-default port so a clobber on failure is detectable. */
+        rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "2222");
+        assert_ssh_return_code(session, rc);
+        assert_int_equal(session->opts.port, 2222);
+
+        ssh_reset_error(session);
+
+        rc = ssh_options_getopt(session, &argc, argv);
+        assert_ssh_return_code_equal(session, rc, SSH_ERROR);
+        assert_int_equal(ssh_get_error_code(session), SSH_FATAL);
+        assert_string_equal(ssh_get_error(session), bad_ports[i].error);
+
+        assert_int_equal(argc, 2);
+        assert_string_equal(argv[1], "example.com");
+        assert_int_equal(session->opts.port, 2222);
+    }
 }
 
 static void torture_options_getopt_o_option(void **state)
@@ -5102,6 +5147,9 @@ torture_run_tests(void)
             torture_options_getopt_bind_address_empty,
             setup,
             teardown),
+        cmocka_unit_test_setup_teardown(torture_options_getopt_bad_port,
+                                        setup,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_options_getopt_o_option,
                                         setup,
                                         teardown),

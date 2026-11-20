@@ -1343,12 +1343,28 @@ int ssh_options_set(ssh_session session,
                 i = strtol(q, &p, 10);
                 if (q == p || *p != '\0') {
                     SSH_LOG(SSH_LOG_DEBUG, "No port number was parsed");
+                    ssh_set_error(session,
+                                  SSH_FATAL,
+                                  "Invalid port number: %s",
+                                  v);
                     SAFE_FREE(q);
                     return -1;
                 }
                 SAFE_FREE(q);
-                if (i <= 0 || i > 65535) {
-                    ssh_set_error_invalid(session);
+                if (i > 65535) {
+                    ssh_set_error(session,
+                                  SSH_FATAL,
+                                  "The provided port number (%ld) is "
+                                  "too large",
+                                  i);
+                    return -1;
+                }
+                if (i <= 0) {
+                    ssh_set_error(session,
+                                  SSH_FATAL,
+                                  "The provided port number (%ld) is "
+                                  "negative or zero",
+                                  i);
                     return -1;
                 }
 
@@ -2917,13 +2933,20 @@ int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
  * myssh -l user localhost\n
  * The command won't set the hostname value of options to localhost.
  *
+ * If an option fails (for example an invalid port number after -p),
+ * SSH_ERROR is returned. Options applied before the failure remain set
+ * on the session, and argv and argc have already been rewritten, except
+ * for an invalid -o option, which is detected earlier and leaves them
+ * unchanged. Handling the partially configured session is up to the
+ * caller.
+ *
  * @param session       The session to configure.
  *
  * @param argcptr       The pointer to the argument count.
  *
  * @param argv          The arguments list pointer.
  *
- * @returns 0 on success, < 0 on error.
+ * @returns 0 on success, SSH_ERROR on error.
  *
  * @see ssh_session_new()
  */
@@ -3093,7 +3116,10 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
     }
 
     if (port != NULL) {
-        ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
+        rv = ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
+        if (rv < 0) {
+            return SSH_ERROR;
+        }
     }
 
     if (bindaddr != NULL) {
