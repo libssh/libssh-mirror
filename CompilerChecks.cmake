@@ -59,8 +59,7 @@ if (UNIX)
     add_c_compiler_flag("-Werror=format-security" SUPPORTED_COMPILER_FLAGS)
 
     # Allow zero for a variadic macro argument
-    string(TOLOWER "${CMAKE_C_COMPILER_ID}" _C_COMPILER_ID)
-    if ("${_C_COMPILER_ID}" STREQUAL "clang")
+    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
         add_c_compiler_flag("-Wno-gnu-zero-variadic-macro-arguments" SUPPORTED_COMPILER_FLAGS)
     endif()
 
